@@ -6,7 +6,6 @@ The main syste
 The set of all countries is the "root set" of the [jurisdiction](https://en.wikipedia.org/wiki/Jurisdiction) hierarchy,
 and **each country has its local official geocode**, due to the sovereignty of nations over their geocodes.
 
-
 ## The GGeohash and other grid-based geocodes
 
 
@@ -39,14 +38,14 @@ Even the set of [international waters](https://en.wikipedia.org/wiki/Internation
 So, jurisdiction resolution starts with the **country resolution**, and the set of all crontries (or contry-like regins)
 forms a [mosaic](https://en.wikipedia.org/wiki/Tessellation) over the globe.
 
-<img align="right" width="180" src="https://github.com/osm-codes/CO_new/blob/main/_assets/powers2-grid.png">
+<img align="right" width="180" src="../_assets/powers2-grid.png"/>
 
 All country's geocode system is based in a *quadrilateral [hierarchical grid](https://en.wikipedia.org/wiki/Geocode#Hierarchical_grids)*
 with refinement resolution of "powers of 2" (see illustrative table).  The "root grid", that is a set of ***cover cells***,
 has square cells of side size at the top of the  "powers of 2" table (see levels 0 to 5).
-For example the Colombian geocode system starts with a cover of ~262&nbsp;km (illustered bellow) and Brasil with&nbsp;~524&nbsp;km&nbsp;(2×262.144).
+For example the Colombian geocode system starts with, at level-0, a cover of &#126;262&nbsp;km (illustered bellow) and Brasil with&nbsp;&#126;524&nbsp;km&nbsp;(2×262).
 
-![](https://raw.githubusercontent.com/osm-codes/CO_new/main/_assets/libgrid_CO-L0cover.280px.png)
+![](https://raw.githubusercontent.com/osm-codes/CO_new/main/assets/libgrid_CO-L0cover.280px.png)
 
 So, each "root cell" is a quadrilateral polygon, and the country's ***cover polygon*** is the union of all country's root cells is a raster-like polygon.
 Some cover polygons will be overlap with others, so, to be a ***global cover mosaic***, the  *cover polygons* are cutted at the overlaps.
@@ -84,3 +83,9 @@ Definitions in the case of Colombia:
 To get XY coordionates from UV:
 * `x = max_x - u*(max_x-min_x)`
 * `y = max_y - v*(max_y-min_y)`
+
+----
+
+Ver https://github.com/AddressForAll/pg_pubLib-v1/blob/main/docs/pgis-geohash.md
+
+e

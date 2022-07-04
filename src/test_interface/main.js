@@ -104,12 +104,21 @@ precision.onAdd = function (map) {
     this.select    = L.DomUtil.create('select', '', this.container);
     this.label2    = L.DomUtil.create('label', '', this.container);
     this.checkbox  = L.DomUtil.create('input', '', this.container);
+    this.label3    = L.DomUtil.create('label', '', this.container);
+    this.checkbox3 = L.DomUtil.create('input', '', this.container);
 
     this.label2.for= 'grid';
     this.label2.innerHTML= ' view child cells: ';
     this.checkbox.id = 'grid';
     this.checkbox.type = 'checkbox';
-    this.checkbox.value = 1;
+    this.checkbox.checked = false;
+
+    this.label3.for= 'to_16h';
+    this.label3.innerHTML= ' to_16h: ';
+    this.checkbox3.id = 'to_16h';
+    this.checkbox3.type = 'checkbox';
+    this.checkbox3.checked = false;
+
     this.search.type = 'text';
     this.search.placeholder = 'lat,lng, e.g.: 3.5,-72.3;u=1';
     this.search.id = 'latlngtextbar';
@@ -256,7 +265,8 @@ function searchEncode(data)
     {
         let dig = document.getElementById('digits_size').value
         let grid = document.getElementById('grid')
-        var uri = "https://osm.codes/geo:" + (input.match(/.*;u=.*/) ? input : input + ";u=" + dig ) + ".json" + (grid.checked ? '/grid' : '')
+        let to_16h = document.getElementById('to_16h')
+        var uri = "https://osm.codes/geo:" + (input.match(/.*;u=.*/) ? input : input + ";u=" + dig ) + ".json" + (to_16h.checked ? '/to_16h' : '') + (grid.checked ? '/grid' : '')
 
         var popupContent = "latlng: " + input;
         layerPolygonCurrent.clearLayers();
@@ -375,7 +385,7 @@ function onMapClick(e)
 {
     let dig = document.getElementById('digits_size').value
     let grid = document.getElementById('grid')
-    var uri = "https://osm.codes/geo:" + e.latlng['lat'] + "," + e.latlng['lng'] + ";u=" + dig + ".json" + (grid.checked ? '/grid' : '')
+    var uri = "https://osm.codes/geo:" + e.latlng['lat'] + "," + e.latlng['lng'] + ";u=" + dig + ".json" + (to_16h.checked ? '/to_16h' : '') + (grid.checked ? '/grid' : '')
     var popupContent = "latlng: " + e.latlng['lat'] + "," + e.latlng['lng'];
 
     layerPolygonCurrent.clearLayers();
@@ -409,7 +419,15 @@ let pathname = window.location.pathname;
 
 if(pathname !== "/view/")
 {
-    if (pathname.match(/\/grid/))
+    if (pathname.match(/\/to_16h/))
+    {
+        loadGeojson(uri.replace(/\/to_16h/, ".json/to_16h"),style,onEachFeature);
+    }
+    else if (pathname.match(/\/to_16h\/grid/))
+    {
+        loadGeojson(uri.replace(/\/to_16h\/grid/, ".json/to_16h/grid"),style,onEachFeature);
+    }
+    else if (pathname.match(/\/grid/))
     {
         loadGeojson(uri.replace(/\/grid/, ".json/grid"),style,onEachFeature);
     }

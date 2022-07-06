@@ -95,45 +95,53 @@ searchDecode.onAdd = function (map) {
 
     return this.container; };
 
-var precision = L.control({position: 'topleft'});
-precision.onAdd = function (map) {
+var searchEncode = L.control({position: 'topleft'});
+searchEncode.onAdd = function (map) {
     this.container = L.DomUtil.create('div');
     this.search    = L.DomUtil.create('input', '', this.container);
     this.button    = L.DomUtil.create('button','leaflet-control-button',this.container);
-    this.label     = L.DomUtil.create('label', '', this.container);
-    this.select    = L.DomUtil.create('select', '', this.container);
-    this.label2    = L.DomUtil.create('label', '', this.container);
-    this.checkbox  = L.DomUtil.create('input', '', this.container);
-    this.label3    = L.DomUtil.create('label', '', this.container);
-    this.checkbox3 = L.DomUtil.create('input', '', this.container);
-
-    this.label2.for= 'grid';
-    this.label2.innerHTML= ' view child cells: ';
-    this.checkbox.id = 'grid';
-    this.checkbox.type = 'checkbox';
-    this.checkbox.checked = false;
-
-    this.label3.for= 'to_16h';
-    this.label3.innerHTML= ' to_16h: ';
-    this.checkbox3.id = 'to_16h';
-    this.checkbox3.type = 'checkbox';
-    this.checkbox3.checked = false;
 
     this.search.type = 'text';
     this.search.placeholder = 'lat,lng, e.g.: 3.5,-72.3;u=1';
     this.search.id = 'latlngtextbar';
     this.button.type = 'button';
     this.button.innerHTML= "Encode";
-    this.select.id = 'digits_size';
-    this.select.name = 'dig';
-    this.select.innerHTML = '<option value="100000">1</option><option value="50000">2</option><option value="5000">3</option><option value="1000">4</option><option value="200">5</option><option value="40">6</option><option value="8">7</option><option value="1">8</option>';
-    this.label.for= 'dig';
-    this.label.innerHTML= '<br>Digits: ';
 
     L.DomEvent.disableScrollPropagation(this.container);
     L.DomEvent.disableClickPropagation(this.container);
     L.DomEvent.on(this.button, 'click', searchEncode, this.container);
     L.DomEvent.on(this.search, 'keyup', function(data){if(data.keyCode === 13){searchEncode(data);}}, this.container);
+
+    return this.container; };
+
+var level = L.control({position: 'topleft'});
+level.onAdd = function (map) {
+    this.container     = L.DomUtil.create('div');
+    this.select_base   = L.DomUtil.create('select', '', this.container);
+    this.label_level   = L.DomUtil.create('label', '', this.container);
+    this.select_level  = L.DomUtil.create('select', '', this.container);
+    this.label_grid    = L.DomUtil.create('label', '', this.container);
+    this.checkbox_grid = L.DomUtil.create('input', '', this.container);
+
+    this.label_grid.for = 'grid';
+    this.label_grid.innerHTML = ' with grid: ';
+    this.checkbox_grid.id = 'grid';
+    this.checkbox_grid.type = 'checkbox';
+    this.checkbox_grid.checked = false;
+
+    this.label_level.for = 'level';
+    this.label_level.innerHTML = ' Level: ';
+    this.select_level.id = 'level_size';
+    this.select_level.name = 'level';
+    this.select_level.innerHTML = '<option value="100000">0 (1)</option><option value="50000">2.5 (2)</option><option value="5000">5 (3)</option><option value="1000">7.5 (4)</option><option value="200">10 (5)</option><option value="40">12.5 (6)</option><option value="8">15 (7)</option><option value="1">17.5 (8)</option>';
+
+    this.select_base.id = 'base';
+    this.select_base.name = 'base';
+    this.select_base.innerHTML = '<option value="32">base32</option><option value="16">base16h</option>';
+
+    L.DomEvent.disableScrollPropagation(this.container);
+    L.DomEvent.disableClickPropagation(this.container);
+    L.DomEvent.on(this.select_base, 'change', toggleLevelBase, this.container);
 
     return this.container; };
 
@@ -213,6 +221,18 @@ zoomAll.onAdd = function (map) {
 
     return this.container; };
 
+function toggleLevelBase()
+{
+    if(document.getElementById('base').value == 16)
+    {
+        document.getElementById('level_size').innerHTML = '<option value="300000">0 (2)</option><option value="250000">0.5 (3)</option><option value="150000">1 (3)</option><option value="100000">1.5 (3)</option><option value="75000">2 (3)</option><option value="50000">2.5 (4)</option><option value="40000">3 (4)</option><option value="25000">3.5 (4)</option><option value="20000">4 (4)</option><option value="13000">4.5 (5)</option><option value="10000">5 (5)</option><option value="7000">5.5 (5)</option><option value="5000">6 (5)</option><option value="3500">6.5 (6)</option><option value="2500">7 (6)</option><option value="1750">7.5 (6)</option><option value="1250">8 (6)</option><option value="900">8.5 (7)</option><option value="600">9 (7)</option><option value="450">9.5 (7)</option><option value="300">10 (7)</option><option value="200">10.5 (8)</option><option value="150">11 (8)</option><option value="100">11.5 (8)</option><option value="75">12 (8)</option><option value="50">12.5 (9)</option><option value="40">13 (9)</option><option value="25">13.5 (9)</option><option value="20">14 (9)</option><option value="15">14.5 (10)</option><option value="10">15 (10)</option><option value="7">15.5 (10)</option><option value="5">16 (10)</option><option value="3">16.5 (11)</option><option value="2">17 (11)</option><option value="1">17.5 (11)</option><option value="0">18 (11)</option>';
+    }
+    else
+    {
+        document.getElementById('level_size').innerHTML = '<option value="100000">0 (1)</option><option value="50000">2.5 (2)</option><option value="5000">5 (3)</option><option value="1000">7.5 (4)</option><option value="200">10 (5)</option><option value="40">12.5 (6)</option><option value="8">15 (7)</option><option value="1">17.5 (8)</option>';
+    }
+}
+
 function toggleTooltipLayers()
 {
     map.eachLayer(function(l)
@@ -263,10 +283,10 @@ function searchEncode(data)
 
     if(input !== null && input !== '')
     {
-        let dig = document.getElementById('digits_size').value
+        let level = document.getElementById('level_size').value
         let grid = document.getElementById('grid')
-        let to_16h = document.getElementById('to_16h')
-        var uri = "https://osm.codes/geo:" + (input.match(/.*;u=.*/) ? input : input + ";u=" + dig ) + ".json" + (to_16h.checked ? '/to_16h' : '') + (grid.checked ? '/grid' : '')
+        let base = document.getElementById('base')
+        var uri = "https://osm.codes/geo:" + (input.match(/.*;u=.*/) ? input : input + ";u=" + level ) + ".json" + (base.value == 16 ? '/to_16h' : '') + (grid.checked ? '/grid' : '')
 
         var popupContent = "latlng: " + input;
         layerPolygonCurrent.clearLayers();
@@ -383,9 +403,10 @@ function loadGeojson(uri,style,onEachFeature)
 
 function onMapClick(e)
 {
-    let dig = document.getElementById('digits_size').value
+    let level = document.getElementById('level_size').value
     let grid = document.getElementById('grid')
-    var uri = "https://osm.codes/geo:" + e.latlng['lat'] + "," + e.latlng['lng'] + ";u=" + dig + ".json" + (to_16h.checked ? '/to_16h' : '') + (grid.checked ? '/grid' : '')
+    let base = document.getElementById('base')
+    var uri = "https://osm.codes/geo:" + e.latlng['lat'] + "," + e.latlng['lng'] + ";u=" + level + ".json" + (base.value == 16 ? '/to_16h' : '') + (grid.checked ? '/grid' : '')
     var popupContent = "latlng: " + e.latlng['lat'] + "," + e.latlng['lng'];
 
     layerPolygonCurrent.clearLayers();
@@ -407,7 +428,8 @@ escala.addTo(map);
 zoom.addTo(map);
 searchJurisdiction.addTo(map);
 searchDecode.addTo(map);
-precision.addTo(map);
+searchEncode.addTo(map);
+level.addTo(map);
 clear.addTo(map);
 fitBounds.addTo(map);
 fitCenter.addTo(map);

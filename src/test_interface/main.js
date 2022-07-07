@@ -133,7 +133,7 @@ level.onAdd = function (map) {
     this.label_level.innerHTML = ' Level: ';
     this.select_level.id = 'level_size';
     this.select_level.name = 'level';
-    this.select_level.innerHTML = '<option value="100000">0 (1)</option><option value="50000">2.5 (2)</option><option value="5000">5 (3)</option><option value="1000">7.5 (4)</option><option value="200">10 (5)</option><option value="40">12.5 (6)</option><option value="8">15 (7)</option><option value="1">17.5 (8)</option>';
+    this.select_level.innerHTML = '<option value="100000">0 (1)(+50km)</option><option value="50000">2.5 (2)(50km)</option><option value="5000">5 (3)(5km)</option><option value="1000">7.5 (4)(1km)</option><option value="200">10 (5)(200m)</option><option value="40">12.5 (6)(40m)</option><option value="8">15 (7)(8m)</option><option value="1">17.5 (8)(1m)</option>';
 
     this.select_base.id = 'base';
     this.select_base.name = 'base';
@@ -225,11 +225,11 @@ function toggleLevelBase()
 {
     if(document.getElementById('base').value == 16)
     {
-        document.getElementById('level_size').innerHTML = '<option value="300000">0 (2)</option><option value="250000">0.5 (3)</option><option value="150000">1 (3)</option><option value="100000">1.5 (3)</option><option value="75000">2 (3)</option><option value="50000">2.5 (4)</option><option value="40000">3 (4)</option><option value="25000">3.5 (4)</option><option value="20000">4 (4)</option><option value="13000">4.5 (5)</option><option value="10000">5 (5)</option><option value="7000">5.5 (5)</option><option value="5000">6 (5)</option><option value="3500">6.5 (6)</option><option value="2500">7 (6)</option><option value="1750">7.5 (6)</option><option value="1250">8 (6)</option><option value="900">8.5 (7)</option><option value="600">9 (7)</option><option value="450">9.5 (7)</option><option value="300">10 (7)</option><option value="200">10.5 (8)</option><option value="150">11 (8)</option><option value="100">11.5 (8)</option><option value="75">12 (8)</option><option value="50">12.5 (9)</option><option value="40">13 (9)</option><option value="25">13.5 (9)</option><option value="20">14 (9)</option><option value="15">14.5 (10)</option><option value="10">15 (10)</option><option value="7">15.5 (10)</option><option value="5">16 (10)</option><option value="3">16.5 (11)</option><option value="2">17 (11)</option><option value="1">17.5 (11)</option><option value="0">18 (11)</option>';
+        document.getElementById('level_size').innerHTML = '<option value="300000">0 (2)(+250km)</option><option value="250000">0.5 (3)(250km)</option><option value="150000">1 (3)(150km)</option><option value="100000">1.5 (3)(100km)</option><option value="75000">2 (3)(75km)</option><option value="50000">2.5 (4)(50km)</option><option value="40000">3 (4)(40km)</option><option value="25000">3.5 (4)(25km)</option><option value="20000">4 (4)(20km)</option><option value="13000">4.5 (5)(13km)</option><option value="10000">5 (5)(10km)</option><option value="7000">5.5 (5)(7km)</option><option value="5000">6 (5)(5km)</option><option value="3500">6.5 (6)(3.5km)</option><option value="2500">7 (6)(2.5km)</option><option value="1750">7.5 (6)(1750m)</option><option value="1250">8 (6)(1250m)</option><option value="900">8.5 (7)(900m)</option><option value="600">9 (7)(600m)</option><option value="450">9.5 (7)(450m)</option><option value="300">10 (7)(300m)</option><option value="200">10.5 (8)(200m)</option><option value="150">11 (8)(150m)</option><option value="100">11.5 (8)(100m)</option><option value="75">12 (8)(75m)</option><option value="50">12.5 (9)(50m)</option><option value="40">13 (9)(40m)</option><option value="25">13.5 (9)(25m)</option><option value="20">14 (9)(20m)</option><option value="15">14.5 (10)(15m)</option><option value="10">15 (10)(10m)</option><option value="7">15.5 (10)(7m)</option><option value="5">16 (10)(5m)</option><option value="3">16.5 (11)(3)</option><option value="2">17 (11)(2m)</option><option value="1">17.5 (11)(1.5m)</option><option value="0">18 (11)(1m)</option>';
     }
     else
     {
-        document.getElementById('level_size').innerHTML = '<option value="100000">0 (1)</option><option value="50000">2.5 (2)</option><option value="5000">5 (3)</option><option value="1000">7.5 (4)</option><option value="200">10 (5)</option><option value="40">12.5 (6)</option><option value="8">15 (7)</option><option value="1">17.5 (8)</option>';
+        document.getElementById('level_size').innerHTML = '<option value="100000">0 (1)(+50km)</option><option value="50000">2.5 (2)(50km)</option><option value="5000">5 (3)(5km)</option><option value="1000">7.5 (4)(1km)</option><option value="200">10 (5)(200m)</option><option value="40">12.5 (6)(40m)</option><option value="8">15 (7)(8m)</option><option value="1">17.5 (8)(1m)</option>';
     }
 }
 
@@ -353,15 +353,15 @@ function onEachFeature(feature,layer)
 
         if(feature.properties.code_subcell)
         {
-            layer.bindTooltip(feature.properties.code_subcell,{permanent:toggleTooltipStatus,direction:'center'});
+            layer.bindTooltip(feature.properties.code_subcell,{permanent:toggleTooltipStatus,direction:'center',className:'tooltip' + feature.properties.base});
         }
         else if(feature.properties.short_code)
         {
-            layer.bindTooltip(feature.properties.short_code,{permanent:toggleTooltipStatus,direction:'center'});
+            layer.bindTooltip(feature.properties.short_code,{permanent:toggleTooltipStatus,direction:'center',className:'tooltip' + feature.properties.base});
         }
         else
         {
-            layer.bindTooltip(feature.properties.code,{permanent:toggleTooltipStatus,direction:'center'});
+            layer.bindTooltip(feature.properties.code,{permanent:toggleTooltipStatus,direction:'center',className:'tooltip' + feature.properties.base});
         }
     }
 }
@@ -423,9 +423,9 @@ function showZoomLevel()
     document.getElementById('zoom').innerHTML = map.getZoom();
 }
 
+zoom.addTo(map);
 layers.addTo(map);
 escala.addTo(map);
-zoom.addTo(map);
 searchJurisdiction.addTo(map);
 searchDecode.addTo(map);
 searchEncode.addTo(map);
@@ -457,4 +457,20 @@ if(pathname !== "/view/")
     {
         loadGeojson(uri + '.json',style,onEachFeature);
     }
+    var regex = /\+/;
+    if(regex.test(pathname))
+    {
+        document.getElementById('base').value = 16;
+        toggleLevelBase();
+    }
 }
+
+var a = document.getElementById('custom-map-controls');
+a.appendChild(searchJurisdiction.getContainer());
+a.appendChild(searchDecode.getContainer());
+a.appendChild(searchEncode.getContainer());
+a.appendChild(level.getContainer());
+a.appendChild(clear.getContainer());
+a.appendChild(fitBounds.getContainer());
+a.appendChild(fitCenter.getContainer());
+a.appendChild(toggleTooltip.getContainer());

@@ -1,5 +1,25 @@
 #map {
-	width: 85vw;
-	height: 85vh;
+	position: absolute;
+	width: 70vw;
+	height: 90vh;
+	float: left;
+	top: 0;
+	left: 0
 }
 
+#custom-map-controls {
+	position: absolute;
+	width: 30vw;
+	height: 90vh;
+	float: right;
+	top: 0;
+	right: 0;
+	padding-top:2%;
+	padding-left:2%;
+	box-sizing: border-box
+}
+
+.leaflet-tooltip.tooltipbase16h {
+	border-left-color: rgb(255, 250, 205, 1);
+	background-color: rgb(255, 250, 205, 1)
+}

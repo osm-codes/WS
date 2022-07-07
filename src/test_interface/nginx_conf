@@ -47,7 +47,6 @@ server { ## OSM.CODES
 
         add_header X-Frame-Options SAMEORIGIN; #iframe
 
-
         # sql schema api da dl03t_main
         ## return csv
         location /_sql.csv {
@@ -117,7 +116,7 @@ server { ## OSM.CODES
           proxy_pass http://127.0.0.1:3120;
         }
 
-        ## com grid 16
+        ## uri com grid 16h
         location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?.json/to_16h/grid$" {
           rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+).json/to_16h/grid$"
                   "/rpc/osmcode_encode2?uri=$1%3B$2&view_child=true&p_base=16" break;
@@ -126,7 +125,7 @@ server { ## OSM.CODES
           proxy_pass http://127.0.0.1:3120;
         }
 
-        ## sem grid 16
+        ## uri sem grid 16h
         location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?.json/to_16h$" {
           rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+).json/to_16h$"
                   "/rpc/osmcode_encode2?uri=$1%3B$2&view_child=false&p_base=16" break;
@@ -145,8 +144,8 @@ server { ## OSM.CODES
         }
 
         ## absoluto 16h
-        location ~* "^/CO\+[0123456789ABCDEF]+.json$" {
-          rewrite "(?i)^/CO\+([0123456789ABCDEF]+).json$"
+        location ~* "^/CO\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])​?.json$" {
+          rewrite "(?i)^/CO\+([0123456789ABCDEF]+([GHJKLMNPQRSTVZ])​?).json$"
                   /rpc/decode_geojson?p_code=$1&p_base=16 break;
           proxy_pass http://127.0.0.1:3120;
         }
@@ -219,21 +218,21 @@ server { ## OSM.CODES
           rewrite "(?i)^/CO-[A-Z]-[A-Z]+(((-[A-Z])?(~[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)?)|~)?$" /view/ break;
         }
 
-        ### absoluto 16
-        location ~* "^/CO\+[0123456789ABCDEF]+$" {
-          rewrite "(?i)^/CO\+([0123456789ABCDEF]+$)" /view/ break;
+        ### absoluto 16h
+        location ~* "^/CO\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])​?$" {
+          rewrite "(?i)^/CO\+([0123456789ABCDEF]+([GHJKLMNPQRSTVZ])​?$)" /view/ break;
         }
 
-        location ~* "^/CO-[A-Z]{3}-[A-Z]+(((-[A-Z])?(\+[0123456789ABCDEF]+)?)|\+)?$" {
-          rewrite "(?i)^/CO-[A-Z]{3}-[A-Z]+(((-[A-Z])?(\+[0123456789ABCDEF]+)?)|\+)?$" /view/ break;
+        location ~* "^/CO-[A-Z]{3}-[A-Z]+(((-[A-Z])?(\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])​?)?)|\+)?$" {
+          rewrite "(?i)^/CO-[A-Z]{3}-[A-Z]+(((-[A-Z])?(\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])​?)?)|\+)?$" /view/ break;
         }
 
-        location ~* "^/CO-[A-Z]{2,}(((-[A-Z])?(\+[0123456789ABCDEF]+)?)|\+)?$" {
-          rewrite "(?i)^/CO-[A-Z]{2,}(((-[A-Z])?(\+[0123456789ABCDEF]+)?)|\+)?$" /view/ break;
+        location ~* "^/CO-[A-Z]{2,}(((-[A-Z])?(\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])​?)?)|\+)?$" {
+          rewrite "(?i)^/CO-[A-Z]{2,}(((-[A-Z])?(\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])​?)?)|\+)?$" /view/ break;
         }
 
-        location ~* "^/CO-[A-Z]-[A-Z]+(((-[A-Z])?(\+[0123456789ABCDEF]+)?)|\+)?$" {
-          rewrite "(?i)^/CO-[A-Z]-[A-Z]+(((-[A-Z])?(\+[0123456789ABCDEF]+)?)|\+)?$" /view/ break;
+        location ~* "^/CO-[A-Z]-[A-Z]+(((-[A-Z])?(\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])​?)?)|\+)?$" {
+          rewrite "(?i)^/CO-[A-Z]-[A-Z]+(((-[A-Z])?(\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])​?)?)|\+)?$" /view/ break;
         }
 
 

@@ -1,3 +1,5 @@
+var uri_base = "https://osm.codes"
+
 var osmUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 var osmAttrib = '&copy; <a href="https://osm.org/copyright">OpenStreetMap contributors</a>';
 var mapboxUrl = 'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
@@ -121,23 +123,23 @@ level.onAdd = function (map) {
     this.label_level   = L.DomUtil.create('label', '', this.container);
     this.select_level  = L.DomUtil.create('select', '', this.container);
     this.label_grid    = L.DomUtil.create('label', '', this.container);
-    this.checkbox_grid = L.DomUtil.create('input', '', this.container);
+    this.select_grid   = L.DomUtil.create('select', '', this.container);
 
     this.label_grid.for = 'grid';
     this.label_grid.innerHTML = ' with grid: ';
-    this.checkbox_grid.id = 'grid';
-    this.checkbox_grid.type = 'checkbox';
-    this.checkbox_grid.checked = false;
+    this.select_grid.id = 'grid';
+    this.select_grid.name = 'grid';
+    this.select_grid.innerHTML = '<option></option><option value="grid32">grid32</option>';
 
     this.label_level.for = 'level';
     this.label_level.innerHTML = ' Level: ';
     this.select_level.id = 'level_size';
     this.select_level.name = 'level';
-    this.select_level.innerHTML = '<option value="100000">0 (1)(+50km)</option><option value="50000">2.5 (2)(50km)</option><option value="5000">5 (3)(5km)</option><option value="1000">7.5 (4)(1km)</option><option value="200">10 (5)(200m)</option><option value="40">12.5 (6)(40m)</option><option value="8">15 (7)(8m)</option><option value="1">17.5 (8)(1m)</option>';
+    this.select_level.innerHTML = '<option value="100000">0 (1)(262,14km)</option><option value="50000">2.5 (2)(46,34km)</option><option value="5000">5 (3)(8,192km)</option><option value="1000">7.5 (4)(1,45km)</option><option value="200">10 (5)(256m)</option><option value="40">12.5 (6)(45m)</option><option value="8">15 (7)(8m)</option><option value="1">17.5 (8)(1,4m)</option>';
 
     this.select_base.id = 'base';
     this.select_base.name = 'base';
-    this.select_base.innerHTML = '<option value="32">base32</option><option value="16">base16h</option>';
+    this.select_base.innerHTML = '<option value="base32">base32</option><option value="base16h">base16h</option>';
 
     L.DomEvent.disableScrollPropagation(this.container);
     L.DomEvent.disableClickPropagation(this.container);
@@ -223,13 +225,17 @@ zoomAll.onAdd = function (map) {
 
 function toggleLevelBase()
 {
-    if(document.getElementById('base').value == 16)
+    if(document.getElementById('base').value == 'base16h')
     {
-        document.getElementById('level_size').innerHTML = '<option value="300000">0 (2)(+250km)</option><option value="250000">0.5 (3)(250km)</option><option value="150000">1 (3)(150km)</option><option value="100000">1.5 (3)(100km)</option><option value="75000">2 (3)(75km)</option><option value="50000">2.5 (4)(50km)</option><option value="40000">3 (4)(40km)</option><option value="25000">3.5 (4)(25km)</option><option value="20000">4 (4)(20km)</option><option value="13000">4.5 (5)(13km)</option><option value="10000">5 (5)(10km)</option><option value="7000">5.5 (5)(7km)</option><option value="5000">6 (5)(5km)</option><option value="3500">6.5 (6)(3.5km)</option><option value="2500">7 (6)(2.5km)</option><option value="1750">7.5 (6)(1750m)</option><option value="1250">8 (6)(1250m)</option><option value="900">8.5 (7)(900m)</option><option value="600">9 (7)(600m)</option><option value="450">9.5 (7)(450m)</option><option value="300">10 (7)(300m)</option><option value="200">10.5 (8)(200m)</option><option value="150">11 (8)(150m)</option><option value="100">11.5 (8)(100m)</option><option value="75">12 (8)(75m)</option><option value="50">12.5 (9)(50m)</option><option value="40">13 (9)(40m)</option><option value="25">13.5 (9)(25m)</option><option value="20">14 (9)(20m)</option><option value="15">14.5 (10)(15m)</option><option value="10">15 (10)(10m)</option><option value="7">15.5 (10)(7m)</option><option value="5">16 (10)(5m)</option><option value="3">16.5 (11)(3)</option><option value="2">17 (11)(2m)</option><option value="1">17.5 (11)(1.5m)</option><option value="0">18 (11)(1m)</option>';
+        document.getElementById('level_size').innerHTML = '<option value="300000">0 (2)(262,14km)</option><option value="250000">0.5 (3)(185,54km)</option><option value="150000">1 (3)(131,07km)</option><option value="100000">1.5 (3)(92,68km)</option><option value="75000">2 (3)(65,54km)</option><option value="50000">2.5 (4)(46,34km)</option><option value="40000">3 (4)(32,78km)</option><option value="25000">3.5 (4)(23,17km)</option><option value="20000">4 (4)(16,38km)</option><option value="13000">4.5 (5)(11,58km)</option><option value="10000">5 (5)(8192m)</option><option value="7000">5.5 (5)(5792,6m)</option><option value="5000">6 (5)(4096m)</option><option value="3500">6.5 (6)(2896,3m)</option><option value="2500">7 (6)(2048m)</option><option value="1750">7.5 (6)(1448,2m)</option><option value="1250">8 (6)(1024m)</option><option value="900">8.5 (7)(724,1m)</option><option value="600">9 (7)(512m)</option><option value="450">9.5 (7)(362m)</option><option value="300">10 (7)(256m)</option><option value="200">10.5 (8)(181m)</option><option value="150">11 (8)(128m)</option><option value="100">11.5 (8)(90,5m)</option><option value="75">12 (8)(64m)</option><option value="50">12.5 (9)(45,3m)</option><option value="40">13 (9)(32m)</option><option value="25">13.5 (9)(22,6m)</option><option value="20">14 (9)(16m)</option><option value="15">14.5 (10)(11,3m)</option><option value="10">15 (10)(8m)</option><option value="7">15.5 (10)(5,7m)</option><option value="5">16 (10)(4m)</option><option value="3">16.5 (11)(2,8)</option><option value="2">17 (11)(2m)</option><option value="1">17.5 (11)(1,4m)</option><option value="0">18 (11)(1m)</option>';
+
+        document.getElementById('grid').innerHTML = '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option>';
     }
     else
     {
-        document.getElementById('level_size').innerHTML = '<option value="100000">0 (1)(+50km)</option><option value="50000">2.5 (2)(50km)</option><option value="5000">5 (3)(5km)</option><option value="1000">7.5 (4)(1km)</option><option value="200">10 (5)(200m)</option><option value="40">12.5 (6)(40m)</option><option value="8">15 (7)(8m)</option><option value="1">17.5 (8)(1m)</option>';
+        document.getElementById('level_size').innerHTML = '<option value="100000">0 (1)(262,14km)</option><option value="50000">2.5 (2)(46,34km)</option><option value="5000">5 (3)(8,192km)</option><option value="1000">7.5 (4)(1,45km)</option><option value="200">10 (5)(256m)</option><option value="40">12.5 (6)(45m)</option><option value="8">15 (7)(8m)</option><option value="1">17.5 (8)(1,4m)</option>';
+
+        document.getElementById('grid').innerHTML = '<option></option><option value="grid32">grid32</option>';
     }
 }
 
@@ -255,7 +261,7 @@ function searchDecodeGgeocode(data)
 
     if(input !== null && input !== '')
     {
-        var uri = "https://osm.codes/" + input.toUpperCase() + ".json"
+        var uri = uri_base + "/" + input.toUpperCase() + ".json"
 
         layerPolygonCurrent.clearLayers();
         loadGeojson(uri,style,onEachFeature);
@@ -269,7 +275,7 @@ function searchDecodeJurisdiction(data)
 
     if(input !== null && input !== '')
     {
-        var uri = "https://osm.codes/geo:iso_ext:" + input + ".json"
+        var uri = uri_base + "/geo:iso_ext:" + input + ".json"
 
         layerPolygonCurrent.clearLayers();
         loadGeojson(uri,style,onEachFeature);
@@ -286,7 +292,7 @@ function searchEncode(data)
         let level = document.getElementById('level_size').value
         let grid = document.getElementById('grid')
         let base = document.getElementById('base')
-        var uri = "https://osm.codes/geo:" + (input.match(/.*;u=.*/) ? input : input + ";u=" + level ) + ".json" + (base.value == 16 ? '/to_16h' : '') + (grid.checked ? '/grid' : '')
+        var uri = uri_base + "/geo:" + (input.match(/.*;u=.*/) ? input : input + ";u=" + level ) + ".json" + (base.value != 'base32' ? '/' + base.value : '') + (grid.value ? '/' + grid.value : '')
 
         var popupContent = "latlng: " + input;
         layerPolygonCurrent.clearLayers();
@@ -406,7 +412,7 @@ function onMapClick(e)
     let level = document.getElementById('level_size').value
     let grid = document.getElementById('grid')
     let base = document.getElementById('base')
-    var uri = "https://osm.codes/geo:" + e.latlng['lat'] + "," + e.latlng['lng'] + ";u=" + level + ".json" + (base.value == 16 ? '/to_16h' : '') + (grid.checked ? '/grid' : '')
+    var uri = uri_base + "/geo:" + e.latlng['lat'] + "," + e.latlng['lng'] + ";u=" + level + ".json" + (base.value != 'base32' ? '/' + base.value : '') + (grid.value ? '/' + grid.value : '')
     var popupContent = "latlng: " + e.latlng['lat'] + "," + e.latlng['lng'];
 
     layerPolygonCurrent.clearLayers();
@@ -441,13 +447,13 @@ let pathname = window.location.pathname;
 
 if(pathname !== "/view/")
 {
-    if (pathname.match(/\/to_16h/))
+    if (pathname.match(/\/base16h/))
     {
-        loadGeojson(uri.replace(/\/to_16h/, ".json/to_16h"),style,onEachFeature);
+        loadGeojson(uri.replace(/\/base16h/, ".json/base16h"),style,onEachFeature);
     }
-    else if (pathname.match(/\/to_16h\/grid/))
+    else if (pathname.match(/\/base16h\/grid/))
     {
-        loadGeojson(uri.replace(/\/to_16h\/grid/, ".json/to_16h/grid"),style,onEachFeature);
+        loadGeojson(uri.replace(/\/base16h\/grid/, ".json/base16h/grid"),style,onEachFeature);
     }
     else if (pathname.match(/\/grid/))
     {
@@ -460,7 +466,7 @@ if(pathname !== "/view/")
     var regex = /\+/;
     if(regex.test(pathname))
     {
-        document.getElementById('base').value = 16;
+        document.getElementById('base').value = 'base16h';
         toggleLevelBase();
     }
 }

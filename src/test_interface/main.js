@@ -30,14 +30,19 @@ var overlays = {
     'Current marker': layerMarkerCurrent,
     'All markers': layerMarkerAll };
 
-var mapOptions = {
+var mapDefaultCO = {
     center: [3.5,-72.3],
     zoom: 6,
     current_zoom: 6 };
 
+var mapDefaultBR = {
+    center: [-15.7967,-47.8802],
+    zoom: 4,
+    current_zoom: 4 };
+
 var map = L.map('map',{
-    center: mapOptions.center,
-    zoom:   mapOptions.zoom,
+    center: mapDefaultCO.center,
+    zoom:   mapDefaultCO.zoom,
     zoomControl: false,
     renderer: L.svg(),
     layers: [grayscale, layerPolygonCurrent] });
@@ -45,8 +50,8 @@ var map = L.map('map',{
 var toggleTooltipStatus = true;
 
 map.attributionControl.setPrefix(false);
-map.addControl(new L.Control.Fullscreen()); /* https://github.com/Leaflet/Leaflet.fullscreen */
-map.on('zoom', function(e){mapOptions.current_zoom = map.getZoom();});
+map.addControl(new L.Control.Fullscreen({position:'topright'})); /* https://github.com/Leaflet/Leaflet.fullscreen */
+map.on('zoom', function(e){mapDefaultCO.current_zoom = map.getZoom();});
 map.on('click', onMapClick);
 map.on('zoomend', showZoomLevel);
 showZoomLevel();
@@ -258,7 +263,7 @@ country.onAdd = function (map) {
 
     L.DomEvent.disableScrollPropagation(this.container);
     L.DomEvent.disableClickPropagation(this.container);
-    L.DomEvent.on(this.select_country, 'change', toggleLevelBase, this.container);
+    L.DomEvent.on(this.select_country, 'change', toggleCountry, this.container);
 
     return this.container; };
 
@@ -370,19 +375,41 @@ zoomAll.onAdd = function (map) {
 
     return this.container; };
 
-function clearAll()
+function clearAllLayers()
 {
     layerPolygonCurrent.clearLayers();
     layerPolygonAll.clearLayers();
     layerMarkerCurrent.clearLayers();
     layerMarkerAll.clearLayers();
-    map.setView(mapOptions.center, mapOptions.zoom);
-    document.getElementById('listtextsearchbar').value = '';
+}
 
+function clearAll()
+{
+    clearAllLayers();
+
+    map.setView(mapDefaultCO.center, mapDefaultCO.zoom);
+
+    document.getElementById('listtextsearchbar').value = '';
     document.querySelector('#base').value = 'base32';
     document.querySelector('#country').value = 'CO';
     document.querySelector('#grid').value = '';
     toggleLevelBase()
+}
+
+function toggleCountry()
+{
+    let countryValue = document.getElementById('country').value;
+
+    if(countryValue == 'CO')
+    {
+        map.setView(mapDefaultCO.center, mapDefaultCO.zoom);
+    }
+    else if (countryValue == 'BR')
+    {
+        map.setView(mapDefaultBR.center, mapDefaultBR.zoom);
+    }
+
+    toggleLevelBase();
 }
 
 function toggleLevelBase()
@@ -450,6 +477,8 @@ function searchDecodeGgeocode(data)
 
 function searchDecodeListGgeocode(data)
 {
+    clearAllLayers();
+
     let input = document.getElementById('listtextsearchbar').value;
     let country = document.getElementById('country').value;
 

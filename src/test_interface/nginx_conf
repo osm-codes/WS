@@ -182,6 +182,10 @@ server { ## OSM.CODES
           rewrite "(?i)^/(CO|BR)((-[A-Z]{1,3})?-[A-Z]+)?\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?" /view/ break;
         }
 
+        ### decode list absoluto 32
+        location ~* "^/(CO|BR)-([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+){0,}/list$" {
+          rewrite "(?i)^/(CO|BR)-(([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+){0,})/list$" /view/ break;
+        }
 
         location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?(/base16h)?(/grid(2|4|8|16|32))?$" {
           rewrite  "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?(/base16h)?(/grid(2|4|8|16|32))?$" /view/ break;

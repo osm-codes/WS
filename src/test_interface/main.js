@@ -45,12 +45,13 @@ var map = L.map('map',{
 var toggleTooltipStatus = true;
 
 map.attributionControl.setPrefix(false);
+map.addControl(new L.Control.Fullscreen()); /* https://github.com/Leaflet/Leaflet.fullscreen */
 map.on('zoom', function(e){mapOptions.current_zoom = map.getZoom();});
 map.on('click', onMapClick);
 map.on('zoomend', showZoomLevel);
 showZoomLevel();
 
-var zoom   = L.control.zoom({position:'topleft'});
+var zoom   = L.control.zoom({position:'topright'});
 var layers = L.control.layers(baseLayers, overlays,{position:'topright'});
 var escala = L.control.scale({position:'bottomright',imperial: false});
 
@@ -672,6 +673,10 @@ if(pathname !== "/view/")
     else if (pathname.match(/\/grid/))
     {
         loadGeojson(uri.replace(/\/grid/, ".json/grid"),style,onEachFeature);
+    }
+    else if (pathname.match(/\/list/))
+    {
+        loadGeojson(uri.replace(/\/list/, ".json/list"),style,onEachFeature2);
     }
     else
     {

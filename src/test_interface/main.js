@@ -54,6 +54,113 @@ var zoom   = L.control.zoom({position:'topleft'});
 var layers = L.control.layers(baseLayers, overlays,{position:'topright'});
 var escala = L.control.scale({position:'bottomright',imperial: false});
 
+var selectLevelBase32CO = '\
+<option value="100000">0 (1)(262,14km)</option>\
+<option value="25000">2.5 (2)(46,34km)</option>\
+<option value="5000">5 (3)(8,192km)</option>\
+<option value="750">7.5 (4)(1450m)</option>\
+<option value="150">10 (5)(256m)</option>\
+<option value="25">12.5 (6)(45m)</option>\
+<option value="5">15 (7)(8m)</option>\
+<option value="0">17.5 (8)(140cm)</option>';
+
+var selectLevelBase16hCO = '<option value="150000">0 (2)(262,14km)</option>\
+<option value="100000">0.5 (3)(185,54km)</option>\
+<option value="75000">1 (3)(131,07km)</option>\
+<option value="50000">1.5 (3)(92,68km)</option>\
+<option value="40000">2 (3)(65,54km)</option>\
+<option value="25000">2.5 (4)(46,34km)</option>\
+<option value="20000">3 (4)(32,78km)</option>\
+<option value="15000">3.5 (4)(23,17km)</option>\
+<option value="10000">4 (4)(16,38km)</option>\
+<option value="6000">4.5 (5)(11,58km)</option>\
+<option value="5000">5 (5)(8192m)</option>\
+<option value="3500">5.5 (5)(5792,6m)</option>\
+<option value="2500">6 (5)(4096m)</option>\
+<option value="1500">6.5 (6)(2896,3m)</option>\
+<option value="1250">7 (6)(2048m)</option>\
+<option value="750">7.5 (6)(1448,2m)</option>\
+<option value="600">8 (6)(1024m)</option>\
+<option value="450">8.5 (7)(724,1m)</option>\
+<option value="300">9 (7)(512m)</option>\
+<option value="225">9.5 (7)(362m)</option>\
+<option value="150">10 (7)(256m)</option>\
+<option value="100">10.5 (8)(181m)</option>\
+<option value="75">11 (8)(128m)</option>\
+<option value="50">11.5 (8)(90,5m)</option>\
+<option value="40">12 (8)(64m)</option>\
+<option value="25">12.5 (9)(45,3m)</option>\
+<option value="20">13 (9)(32m)</option>\
+<option value="15">13.5 (9)(22,6m)</option>\
+<option value="8">14 (9)(16m)</option>\
+<option value="7">14.5 (10)(11,3m)</option>\
+<option value="5">15 (10)(8m)</option>\
+<option value="3">15.5 (10)(5,7m)</option>\
+<option value="2">16 (10)(4m)</option>\
+<option value="1.4">16.5 (11)(2,8)</option>\
+<option value="1">17 (11)(2m)</option>\
+<option value="0.7">17.5 (11)(1,4m)</option>\
+<option value="0">18 (11)(1m)</option>';
+
+var selectLevelBase32BR = '\
+<option value="500000">0 (1)(1048km)</option>\
+<option value="50000">2.5 (2)(185,36km)</option>\
+<option value="10000">5 (3)(32,76km)</option>\
+<option value="5000">7.5 (4)(5,79km)</option>\
+<option value="500">10 (5)(1024m)</option>\
+<option value="100">12.5 (6)(181m)</option>\
+<option value="10">15 (7)(32m)</option>\
+<option value="4">17.5 (8)(5,7cm)</option>\
+<option value="0">20 (9)(1m)</option>';
+
+var selectLevelBase16hBR = '\
+<option value="500000">0 (2)(1048,57km)</option>\
+<option value="400000">0.5 (3)(741,45km)</option>\
+<option value="300000">1 (3)(524,28km)</option>\
+<option value="200000">1.5 (3)(370,72km)</option>\
+<option value="150000">2 (3)(262,14km)</option>\
+<option value="100000">2.5 (4)(185,54km)</option>\
+<option value="75000">3 (4)(131,07km)</option>\
+<option value="50000">3.5 (4)(92,68km)</option>\
+<option value="40000">4 (4)(65,54km)</option>\
+<option value="25000">4.5 (5)(46,34km)</option>\
+<option value="20000">5 (5)(32,78km)</option>\
+<option value="15000">5.5 (5)(23,17km)</option>\
+<option value="10000">6 (5)(16,38km)</option>\
+<option value="6000">6.5 (6)(11,58km)</option>\
+<option value="5000">7 (6)(8192m)</option>\
+<option value="3500">7.5 (6)(5792,6m)</option>\
+<option value="2500">8 (6)(4096m)</option>\
+<option value="1500">8.5 (7)(2896,3m)</option>\
+<option value="1250">9 (7)(2048m)</option>\
+<option value="750">9.5 (7)(1448,2m)</option>\
+<option value="600">10 (7)(1024m)</option>\
+<option value="450">10.5 (8)(724,1m)</option>\
+<option value="300">11 (8)(512m)</option>\
+<option value="225">11.5 (8)(362m)</option>\
+<option value="150">12 (8)(256m)</option>\
+<option value="100">13.5 (9)(181m)</option>\
+<option value="75">13 (9)(128m)</option>\
+<option value="50">13.5 (9)(90,5m)</option>\
+<option value="40">14 (9)(64m)</option>\
+<option value="25">14.5 (10)(45,3m)</option>\
+<option value="20">15 (10)(32m)</option>\
+<option value="15">15.5 (10)(22,6m)</option>\
+<option value="8">16 (10)(16m)</option>\
+<option value="7">16.5 (11)(11,3m)</option>\
+<option value="5">17 (11)(8m)</option>\
+<option value="3">17.5 (11)(5,7m)</option>\
+<option value="2">18 (11)(4m)</option>\
+<option value="1.4">18.5 (12)(2,8)</option>\
+<option value="1">19 (12)(2m)</option>\
+<option value="0.7">19.5 (12)(1,4m)</option>\
+<option value="0">20 (12)(1m)</option>';
+
+var selectBases = '<option value="base32">base32</option><option value="base16h">base16h</option>';
+var selectCountrys = '<option value="BR">Brasil</option><option value="CO" selected>Colombia</option>';
+var selectGridBase32 = '<option></option><option value="grid32">grid32</option>';
+var selectGridBase16h = '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option>';
+
 var searchJurisdiction = L.control({position: 'topleft'});
 searchJurisdiction.onAdd = function (map) {
     this.container = L.DomUtil.create('div');
@@ -97,6 +204,26 @@ searchDecode.onAdd = function (map) {
 
     return this.container; };
 
+var searchDecodeList = L.control({position: 'topleft'});
+searchDecodeList.onAdd = function (map) {
+    this.container = L.DomUtil.create('div');
+    this.search    = L.DomUtil.create('textarea', '', this.container);
+    this.button    = L.DomUtil.create('button','leaflet-control-button',this.container);
+
+    this.search.placeholder = 'list geocodes, e.g.: 3D5,3D4,2';
+    this.search.id = 'listtextsearchbar';
+    this.button.type = 'button';
+    this.button.innerHTML= "Decode";
+
+    L.DomEvent.disableScrollPropagation(this.button);
+    L.DomEvent.disableClickPropagation(this.button);
+    L.DomEvent.disableScrollPropagation(this.search);
+    L.DomEvent.disableClickPropagation(this.search);
+    L.DomEvent.on(this.button, 'click', searchDecodeListGgeocode, this.container);
+    L.DomEvent.on(this.search, 'keyup', function(data){if(data.keyCode === 13){searchDecodeListGgeocode(data);}}, this.container);
+
+    return this.container; };
+
 var searchEncode = L.control({position: 'topleft'});
 searchEncode.onAdd = function (map) {
     this.container = L.DomUtil.create('div');
@@ -116,6 +243,24 @@ searchEncode.onAdd = function (map) {
 
     return this.container; };
 
+var country = L.control({position: 'topleft'});
+country.onAdd = function (map) {
+    this.container      = L.DomUtil.create('div');
+    this.label_country  = L.DomUtil.create('label', '', this.container);
+    this.select_country = L.DomUtil.create('select', '', this.container);
+
+    this.label_country.for = 'country';
+    this.label_country.innerHTML = 'Country: ';
+    this.select_country.id = 'country';
+    this.select_country.name = 'country';
+    this.select_country.innerHTML = selectCountrys;
+
+    L.DomEvent.disableScrollPropagation(this.container);
+    L.DomEvent.disableClickPropagation(this.container);
+    L.DomEvent.on(this.select_country, 'change', toggleLevelBase, this.container);
+
+    return this.container; };
+
 var level = L.control({position: 'topleft'});
 level.onAdd = function (map) {
     this.container     = L.DomUtil.create('div');
@@ -129,23 +274,24 @@ level.onAdd = function (map) {
     this.label_grid.innerHTML = ' with grid: ';
     this.select_grid.id = 'grid';
     this.select_grid.name = 'grid';
-    this.select_grid.innerHTML = '<option></option><option value="grid32">grid32</option>';
+    this.select_grid.innerHTML = selectGridBase32
 
     this.label_level.for = 'level';
     this.label_level.innerHTML = ' Level: ';
     this.select_level.id = 'level_size';
     this.select_level.name = 'level';
-    this.select_level.innerHTML = '<option value="100000">0 (1)(262,14km)</option><option value="50000">2.5 (2)(46,34km)</option><option value="5000">5 (3)(8,192km)</option><option value="1000">7.5 (4)(1,45km)</option><option value="200">10 (5)(256m)</option><option value="40">12.5 (6)(45m)</option><option value="8">15 (7)(8m)</option><option value="1">17.5 (8)(1,4m)</option>';
+    this.select_level.innerHTML = selectLevelBase32CO;
 
     this.select_base.id = 'base';
     this.select_base.name = 'base';
-    this.select_base.innerHTML = '<option value="base32">base32</option><option value="base16h">base16h</option>';
+    this.select_base.innerHTML = selectBases;
 
     L.DomEvent.disableScrollPropagation(this.container);
     L.DomEvent.disableClickPropagation(this.container);
     L.DomEvent.on(this.select_base, 'change', toggleLevelBase, this.container);
 
     return this.container; };
+
 
 var clear = L.control({position: 'topleft'});
 clear.onAdd = function (map) {
@@ -157,7 +303,7 @@ clear.onAdd = function (map) {
 
     L.DomEvent.disableScrollPropagation(this.button);
     L.DomEvent.disableClickPropagation(this.button);
-    L.DomEvent.on(this.button, 'click', function(e){layerPolygonCurrent.clearLayers(); layerPolygonAll.clearLayers(); layerMarkerCurrent.clearLayers(); layerMarkerAll.clearLayers(); map.setView(mapOptions.center, mapOptions.zoom);}, this.container);
+    L.DomEvent.on(this.button, 'click', clearAll, this.container);
 
     return this.container; };
 
@@ -223,19 +369,51 @@ zoomAll.onAdd = function (map) {
 
     return this.container; };
 
+function clearAll()
+{
+    layerPolygonCurrent.clearLayers();
+    layerPolygonAll.clearLayers();
+    layerMarkerCurrent.clearLayers();
+    layerMarkerAll.clearLayers();
+    map.setView(mapOptions.center, mapOptions.zoom);
+    document.getElementById('listtextsearchbar').value = '';
+
+    document.querySelector('#base').value = 'base32';
+    document.querySelector('#country').value = 'CO';
+    document.querySelector('#grid').value = '';
+    toggleLevelBase()
+}
+
 function toggleLevelBase()
 {
+    let countryValue = document.getElementById('country').value;
+
     if(document.getElementById('base').value == 'base16h')
     {
-        document.getElementById('level_size').innerHTML = '<option value="300000">0 (2)(262,14km)</option><option value="250000">0.5 (3)(185,54km)</option><option value="150000">1 (3)(131,07km)</option><option value="100000">1.5 (3)(92,68km)</option><option value="75000">2 (3)(65,54km)</option><option value="50000">2.5 (4)(46,34km)</option><option value="40000">3 (4)(32,78km)</option><option value="25000">3.5 (4)(23,17km)</option><option value="20000">4 (4)(16,38km)</option><option value="13000">4.5 (5)(11,58km)</option><option value="10000">5 (5)(8192m)</option><option value="7000">5.5 (5)(5792,6m)</option><option value="5000">6 (5)(4096m)</option><option value="3500">6.5 (6)(2896,3m)</option><option value="2500">7 (6)(2048m)</option><option value="1750">7.5 (6)(1448,2m)</option><option value="1250">8 (6)(1024m)</option><option value="900">8.5 (7)(724,1m)</option><option value="600">9 (7)(512m)</option><option value="450">9.5 (7)(362m)</option><option value="300">10 (7)(256m)</option><option value="200">10.5 (8)(181m)</option><option value="150">11 (8)(128m)</option><option value="100">11.5 (8)(90,5m)</option><option value="75">12 (8)(64m)</option><option value="50">12.5 (9)(45,3m)</option><option value="40">13 (9)(32m)</option><option value="25">13.5 (9)(22,6m)</option><option value="20">14 (9)(16m)</option><option value="15">14.5 (10)(11,3m)</option><option value="10">15 (10)(8m)</option><option value="7">15.5 (10)(5,7m)</option><option value="5">16 (10)(4m)</option><option value="3">16.5 (11)(2,8)</option><option value="2">17 (11)(2m)</option><option value="1">17.5 (11)(1,4m)</option><option value="0">18 (11)(1m)</option>';
 
-        document.getElementById('grid').innerHTML = '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option>';
+        if(countryValue == 'CO')
+        {
+            document.getElementById('level_size').innerHTML = selectLevelBase16hCO;
+        }
+        else if (countryValue == 'BR')
+        {
+            document.getElementById('level_size').innerHTML = selectLevelBase16hBR;
+        }
+
+        document.getElementById('grid').innerHTML = selectGridBase16h;
     }
     else
     {
-        document.getElementById('level_size').innerHTML = '<option value="100000">0 (1)(262,14km)</option><option value="50000">2.5 (2)(46,34km)</option><option value="5000">5 (3)(8,192km)</option><option value="1000">7.5 (4)(1,45km)</option><option value="200">10 (5)(256m)</option><option value="40">12.5 (6)(45m)</option><option value="8">15 (7)(8m)</option><option value="1">17.5 (8)(1,4m)</option>';
+        if(countryValue == 'CO')
+        {
+            document.getElementById('level_size').innerHTML = selectLevelBase32CO;
+        }
+        else if (countryValue == 'BR')
+        {
+            document.getElementById('level_size').innerHTML = selectLevelBase32BR;
+        }
 
-        document.getElementById('grid').innerHTML = '<option></option><option value="grid32">grid32</option>';
+        document.getElementById('grid').innerHTML = selectGridBase32;
     }
 }
 
@@ -266,6 +444,21 @@ function searchDecodeGgeocode(data)
         layerPolygonCurrent.clearLayers();
         loadGeojson(uri,style,onEachFeature);
         document.getElementById('textsearchbar').value = '';
+    }
+}
+
+function searchDecodeListGgeocode(data)
+{
+    let input = document.getElementById('listtextsearchbar').value;
+    let country = document.getElementById('country').value;
+
+    if(input !== null && input !== '')
+    {
+        var uri = uri_base + "/" + country.toUpperCase() + "-" + sortAndRemoveDuplicates(input.toUpperCase()) + ".json/list"
+
+        layerPolygonCurrent.clearLayers();
+        loadGeojson(uri,style,onEachFeature);
+        document.getElementById('listtextsearchbar').value = '';
     }
 }
 
@@ -302,6 +495,13 @@ function searchEncode(data)
         loadGeojson(uri,style,onEachFeature)
         document.getElementById('latlngtextbar').value = '';
     }
+}
+
+function sortAndRemoveDuplicates(value) {
+
+    let listValues = [...new Set(value.split(",").map(i => i.trim()))];
+
+    return listValues.sort().join(",");
 }
 
 function onEachFeature(feature,layer)
@@ -372,6 +572,18 @@ function onEachFeature(feature,layer)
     }
 }
 
+function onEachFeature2(feature,layer)
+{
+        onEachFeature(feature,layer);
+
+        if(!feature.properties.code_subcell && !feature.properties.osm_id)
+        {
+            let listBar = document.getElementById('listtextsearchbar');
+
+            listBar.value = sortAndRemoveDuplicates((listBar.value ? listBar.value + ',': '') + feature.properties.code)
+        }
+}
+
 function style(feature)
 {
     if (feature.properties.osm_id)
@@ -392,7 +604,7 @@ function loadGeojson(uri,style,onEachFeature)
     {
         let geojsonCurrent = L.geoJSON(data.features,{
             style: style,
-            onEachFeature: onEachFeature,
+            onEachFeature: onEachFeature2,
         }).addTo(layerPolygonCurrent);
 
         let fitbd = document.getElementById('fitbounds')
@@ -440,6 +652,8 @@ clear.addTo(map);
 fitBounds.addTo(map);
 fitCenter.addTo(map);
 toggleTooltip.addTo(map);
+country.addTo(map);
+searchDecodeList.addTo(map);
 //zoomAll.addTo(map);
 
 var uri = window.location.href;
@@ -480,3 +694,5 @@ a.appendChild(clear.getContainer());
 a.appendChild(fitBounds.getContainer());
 a.appendChild(fitCenter.getContainer());
 a.appendChild(toggleTooltip.getContainer());
+a.appendChild(country.getContainer());
+a.appendChild(searchDecodeList.getContainer());

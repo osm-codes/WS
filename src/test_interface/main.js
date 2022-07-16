@@ -399,7 +399,7 @@ function clearAll()
 function toggleCountry()
 {
     document.getElementById('listtextsearchbar').value = '';
-    
+
     clearAllLayers();
 
     let countryValue = document.getElementById('country').value;

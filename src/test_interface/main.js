@@ -61,7 +61,7 @@ var layers = L.control.layers(baseLayers, overlays,{position:'topright'});
 var escala = L.control.scale({position:'bottomright',imperial: false});
 
 var selectLevelBase32CO = '\
-<option value="100000">0 (1)(262,14km)</option>\
+<option value="150000">0 (1)(262,14km)</option>\
 <option value="25000">2.5 (2)(46,34km)</option>\
 <option value="5000">5 (3)(8,192km)</option>\
 <option value="750">7.5 (4)(1450m)</option>\
@@ -109,18 +109,18 @@ var selectLevelBase16hCO = '<option value="150000">0 (2)(262,14km)</option>\
 <option value="0">18 (11)(1m)</option>';
 
 var selectLevelBase32BR = '\
-<option value="500000">0 (1)(1048km)</option>\
-<option value="50000">2.5 (2)(185,36km)</option>\
-<option value="10000">5 (3)(32,76km)</option>\
-<option value="5000">7.5 (4)(5,79km)</option>\
-<option value="500">10 (5)(1024m)</option>\
+<option value="600000">0 (1)(1048km)</option>\
+<option value="100000">2.5 (2)(185,36km)</option>\
+<option value="20000">5 (3)(32,76km)</option>\
+<option value="3500">7.5 (4)(5,79km)</option>\
+<option value="600">10 (5)(1024m)</option>\
 <option value="100">12.5 (6)(181m)</option>\
-<option value="10">15 (7)(32m)</option>\
-<option value="4">17.5 (8)(5,7cm)</option>\
+<option value="20">15 (7)(32m)</option>\
+<option value="3">17.5 (8)(5,7m)</option>\
 <option value="0">20 (9)(1m)</option>';
 
 var selectLevelBase16hBR = '\
-<option value="500000">0 (2)(1048,57km)</option>\
+<option value="600000">0 (2)(1048,57km)</option>\
 <option value="400000">0.5 (3)(741,45km)</option>\
 <option value="300000">1 (3)(524,28km)</option>\
 <option value="200000">1.5 (3)(370,72km)</option>\
@@ -145,7 +145,7 @@ var selectLevelBase16hBR = '\
 <option value="300">11 (8)(512m)</option>\
 <option value="225">11.5 (8)(362m)</option>\
 <option value="150">12 (8)(256m)</option>\
-<option value="100">13.5 (9)(181m)</option>\
+<option value="100">12.5 (9)(181m)</option>\
 <option value="75">13 (9)(128m)</option>\
 <option value="50">13.5 (9)(90,5m)</option>\
 <option value="40">14 (9)(64m)</option>\
@@ -226,7 +226,7 @@ searchDecodeList.onAdd = function (map) {
     L.DomEvent.disableScrollPropagation(this.search);
     L.DomEvent.disableClickPropagation(this.search);
     L.DomEvent.on(this.button, 'click', searchDecodeListGgeocode, this.container);
-    L.DomEvent.on(this.search, 'keyup', function(data){if(data.keyCode === 13){searchDecodeListGgeocode(data);}}, this.container);
+    //L.DomEvent.on(this.search, 'keyup', function(data){if(data.keyCode === 13){searchDecodeListGgeocode(data);}}, this.container);
 
     return this.container; };
 
@@ -398,6 +398,10 @@ function clearAll()
 
 function toggleCountry()
 {
+    document.getElementById('listtextsearchbar').value = '';
+    
+    clearAllLayers();
+
     let countryValue = document.getElementById('country').value;
 
     if(countryValue == 'CO')
@@ -477,7 +481,7 @@ function searchDecodeGgeocode(data)
 
 function searchDecodeListGgeocode(data)
 {
-    clearAllLayers();
+//     clearAllLayers();
 
     let input = document.getElementById('listtextsearchbar').value;
     let country = document.getElementById('country').value;
@@ -529,9 +533,9 @@ function searchEncode(data)
 
 function sortAndRemoveDuplicates(value) {
 
-    let listValues = [...new Set(value.split(",").map(i => i.trim()))];
+    let listValues = [...new Set(value.trim().split(/[\n,]+/).map(i => i.trim().substring(0,7)))];
 
-    return listValues.sort().join(",");
+    return listValues.splice(32).sort().join(",");
 }
 
 function onEachFeature(feature,layer)

@@ -68,7 +68,7 @@ var selectLevelBase32CO = '\
 <option value="150">10 (5)(256m)</option>\
 <option value="25">12.5 (6)(45m)</option>\
 <option value="5">15 (7)(8m)</option>\
-<option value="0">17.5 (8)(140cm)</option>';
+<option value="0">17.5 (8)(1,4m)</option>';
 
 var selectLevelBase16hCO = '<option value="150000">0 (2)(262,14km)</option>\
 <option value="100000">0.5 (3)(185,54km)</option>\
@@ -244,8 +244,8 @@ searchEncode.onAdd = function (map) {
 
     L.DomEvent.disableScrollPropagation(this.container);
     L.DomEvent.disableClickPropagation(this.container);
-    L.DomEvent.on(this.button, 'click', searchEncode, this.container);
-    L.DomEvent.on(this.search, 'keyup', function(data){if(data.keyCode === 13){searchEncode(data);}}, this.container);
+    L.DomEvent.on(this.button, 'click', searchEncodeGgeocode, this.container);
+    L.DomEvent.on(this.search, 'keyup', function(data){if(data.keyCode === 13){searchEncodeGgeocode(data);}}, this.container);
 
     return this.container; };
 
@@ -510,7 +510,7 @@ function searchDecodeJurisdiction(data)
     }
 }
 
-function searchEncode(data)
+function searchEncodeGgeocode(data)
 {
     let input = document.getElementById('latlngtextbar').value
 

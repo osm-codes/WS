@@ -45,7 +45,7 @@ var map = L.map('map',{
     zoom:   mapDefaultCO.zoom,
     zoomControl: false,
     renderer: L.svg(),
-    layers: [grayscale, layerPolygonCurrent] });
+    layers: [grayscale, layerPolygonCurrent, layerPolygonAll] });
 
 var toggleTooltipStatus = true;
 
@@ -164,8 +164,8 @@ var selectLevelBase16hBR = '\
 
 var selectBases = '<option value="base32">base32</option><option value="base16h">base16h</option>';
 var selectCountrys = '<option value="BR">Brasil</option><option value="CO" selected>Colombia</option>';
-var selectGridBase32 = '<option></option><option value="grid32">grid32</option>';
-var selectGridBase16h = '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option>';
+var selectGridBase32 = '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>';
+var selectGridBase16h = '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>';
 
 var searchJurisdiction = L.control({position: 'topleft'});
 searchJurisdiction.onAdd = function (map) {
@@ -485,7 +485,7 @@ function searchDecodeGgeocode(data)
         var uri = uri_base + "/geo:osmcodes:" + input.toUpperCase() + ".json"
 
         layerPolygonCurrent.clearLayers();
-        loadGeojson(uri,style,onEachFeature);
+        loadGeojson(uri,style,onEachFeature,pointToLayer);
         document.getElementById('textsearchbar').value = '';
     }
 }
@@ -502,8 +502,10 @@ function searchDecodeListGgeocode(data)
         var uri = uri_base + "/geo:osmcodes:" + country.toUpperCase() + "~" + sortAndRemoveDuplicates(input.toUpperCase()) + ".json"
 
         layerPolygonCurrent.clearLayers();
-        loadGeojson(uri,style,onEachFeature);
+        loadGeojson(uri,style,onEachFeature,pointToLayer);
         document.getElementById('listtextsearchbar').value = '';
+
+        checkCountry(input);
     }
 }
 
@@ -517,8 +519,10 @@ function searchDecodeJurisdiction(data)
         var uri = uri_base + "/geo:iso_ext:" + input + ".json" + (jcover.checked ? '/cover' : '')
 
         layerPolygonCurrent.clearLayers();
-        loadGeojson(uri,style,onEachFeature);
+        loadGeojson(uri,style,onEachFeature,pointToLayer);
         document.getElementById('textsearchjurisdiction').value = '';
+
+        checkCountry(input);
     }
 }
 
@@ -538,7 +542,7 @@ function searchEncodeGgeocode(data)
         layerMarkerCurrent.clearLayers();
         L.marker(input.split(/[;,]/,2)).addTo(layerMarkerCurrent).bindPopup(popupContent);
         L.marker(input.split(/[;,]/,2)).addTo(layerMarkerAll).bindPopup(popupContent);
-        loadGeojson(uri,style,onEachFeature)
+        loadGeojson(uri,(grid.value.match(/^grid(3|5|9|17|33)$/) ? stylegrid : style),onEachFeature,pointToLayer)
         document.getElementById('latlngtextbar').value = '';
     }
 }
@@ -616,6 +620,7 @@ function onEachFeature(feature,layer)
             layer.bindTooltip(feature.properties.code,{permanent:toggleTooltipStatus,direction:'center',className:'tooltip' + feature.properties.base});
         }
     }
+    layer.on({click: whenClicked});
 }
 
 function onEachFeature2(feature,layer)
@@ -630,6 +635,18 @@ function onEachFeature2(feature,layer)
         }
 }
 
+function stylegrid(feature)
+{
+    if (feature.properties.code_subcell)
+    {
+        return {color: 'pink'};
+    }
+    else
+    {
+        return {color: 'pink', fillColor: 'none'};
+    }
+}
+
 function style(feature)
 {
     if (feature.properties.osm_id)
@@ -642,7 +659,31 @@ function style(feature)
     }
 }
 
-function loadGeojson(uri,style,onEachFeature)
+function pointToLayer(feature,latlng)
+{
+//     return L.marker(latlng,{
+//         icon: nameIcon,
+//         title: "(" + feature.prop + ") " + feature.prop + " - " + feature.prop,
+//         alt: "xyz"
+//     });
+    return L.circleMarker(latlng,{
+        radius: 3,
+//         fillColor: '#fff',
+//         color: '#fff',
+        weight: 1,
+        opacity: 0.8,
+        fillOpacity: 0.6,
+    });
+}
+
+function whenClicked(e)
+{
+    console.log(e);
+    var label = e.sourceTarget.feature.properties.label;
+
+}
+
+function loadGeojson(uri,style,onEachFeature,pointToLayer)
 {
     fetch(uri)
     .then(response => {return response.json()})
@@ -651,6 +692,7 @@ function loadGeojson(uri,style,onEachFeature)
         let geojsonCurrent = L.geoJSON(data.features,{
             style: style,
             onEachFeature: onEachFeature2,
+            pointToLayer: pointToLayer,
         }).addTo(layerPolygonCurrent);
 
         let fitbd = document.getElementById('fitbounds')
@@ -660,6 +702,7 @@ function loadGeojson(uri,style,onEachFeature)
         let geojsonAll = L.geoJSON(data.features,{
             style: style,
             onEachFeature: onEachFeature,
+            pointToLayer: pointToLayer,
         }).addTo(layerPolygonAll);
     })
     .catch(err => {})
@@ -679,7 +722,7 @@ function onMapClick(e)
     L.marker(e.latlng).addTo(layerMarkerCurrent).bindPopup(popupContent);
     L.marker(e.latlng).addTo(layerMarkerAll).bindPopup(popupContent);
 
-    loadGeojson(uri,style,onEachFeature)
+    loadGeojson(uri,(grid.value.match(/^grid(3|5|9|17|33)$/) ? stylegrid : style),onEachFeature,pointToLayer)
 }
 
 function showZoomLevel()
@@ -687,9 +730,11 @@ function showZoomLevel()
     document.getElementById('zoom').innerHTML = map.getZoom();
 }
 
+
 zoom.addTo(map);
 layers.addTo(map);
 escala.addTo(map);
+country.addTo(map);
 searchJurisdiction.addTo(map);
 searchDecode.addTo(map);
 searchEncode.addTo(map);
@@ -698,50 +743,75 @@ clear.addTo(map);
 fitBounds.addTo(map);
 fitCenter.addTo(map);
 toggleTooltip.addTo(map);
-country.addTo(map);
 searchDecodeList.addTo(map);
 //zoomAll.addTo(map);
 
 var uri = window.location.href;
 let pathname = window.location.pathname;
 
-console.log(pathname);
+function checkCountry(string)
+{
+    var regexbr = /^(\/)?BR.*/i;
+    var regexco = /^(\/)?CO.*/i;
+    if(regexbr.test(string))
+    {
+        document.getElementById('country').value='BR';
+        toggleCountry();
+    }
+    if(regexco.test(string))
+    {
+        document.getElementById('country').value='CO';
+        toggleCountry();
+    }
+}
+
+function checkBase()
+{
+    var regex = /\+/;
+    if(regex.test(pathname))
+    {
+        document.getElementById('base').value = 'base16h';
+    }
+    else
+    {
+        document.getElementById('base').value = 'base32';
+    }
+
+    toggleLevelBase();
+}
 
 if(pathname !== "/view/")
 {
     if (pathname.match(/(\/base16h)?\/grid/))
     {
-        loadGeojson(uri.replace(/((\/base16h)?\/grid)/, ".json$1"),style,onEachFeature);
+        loadGeojson(uri.replace(/((\/base16h)?\/grid)/, ".json$1"),style,onEachFeature,pointToLayer);
     }
     else if (pathname.match(/\/[A-Z]{2}~[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)*$/i))
     {
-        loadGeojson(uri.replace(/\/([A-Z]{2}~[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)*)$/i, "/geo:osmcodes:$1.json"),style,onEachFeature);
+        loadGeojson(uri.replace(/\/([A-Z]{2}~[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)*)$/i, "/geo:osmcodes:$1.json"),style,onEachFeature,pointToLayer);
     }
     else if (pathname.match(/\/[A-Z]{2}\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?$/i))
     {
-        loadGeojson(uri.replace(/\/([A-Z]{2}\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)$/i, "/geo:osmcodes:$1.json"),style,onEachFeature);
+        loadGeojson(uri.replace(/\/([A-Z]{2}\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)$/i, "/geo:osmcodes:$1.json"),style,onEachFeature,pointToLayer);
     }
     else if (pathname.match(/\/CO-\d+$/i))
     {
-        loadGeojson(uri.replace(/\/CO-(\d+)$/i, "/geo:co-divipola:$1.json"),style,onEachFeature);
+        loadGeojson(uri.replace(/\/CO-(\d+)$/i, "/geo:co-divipola:$1.json"),style,onEachFeature,pointToLayer);
     }
     else if (pathname.match(/\/BR-\d+$/i))
     {
-        loadGeojson(uri.replace(/\/BR-(\d+)$/i, "/geo:br-geocodigo:$1.json"),style,onEachFeature);
+        loadGeojson(uri.replace(/\/BR-(\d+)$/i, "/geo:br-geocodigo:$1.json"),style,onEachFeature,pointToLayer);
     }
     else
     {
-        loadGeojson(uri + '.json',style,onEachFeature);
+        loadGeojson(uri + '.json',style,onEachFeature,pointToLayer);
     }
-    var regex = /\+/;
-    if(regex.test(pathname))
-    {
-        document.getElementById('base').value = 'base16h';
-        toggleLevelBase();
-    }
+    checkCountry(pathname);
+    checkBase(pathname);
 }
 
 var a = document.getElementById('custom-map-controls');
+a.appendChild(country.getContainer());
 a.appendChild(searchJurisdiction.getContainer());
 a.appendChild(searchDecode.getContainer());
 a.appendChild(searchEncode.getContainer());
@@ -750,5 +820,4 @@ a.appendChild(clear.getContainer());
 a.appendChild(fitBounds.getContainer());
 a.appendChild(fitCenter.getContainer());
 a.appendChild(toggleTooltip.getContainer());
-a.appendChild(country.getContainer());
 a.appendChild(searchDecodeList.getContainer());

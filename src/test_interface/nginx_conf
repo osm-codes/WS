@@ -99,12 +99,12 @@ server { ## OSM.CODES
 
         # encode
         ## base32
-        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?.json(/grid32)?$" {
+        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?.json(/grid(32|33))?$" {
           ### com grid
-          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+).json/grid32$"
-                  "/rpc/osmcode_encode?uri=$1%3B$2&grid=32" break;
-          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*).json/grid32$"
-                  "/rpc/osmcode_encode?uri=$1&grid=32" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+).json/grid(\d+)$"
+                  "/rpc/osmcode_encode?uri=$1%3B$2&grid=$3" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*).json/grid(\d+)$"
+                  "/rpc/osmcode_encode?uri=$1&grid=$2" break;
 
           ### sem grid
           rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+).json$"
@@ -116,11 +116,11 @@ server { ## OSM.CODES
         }
 
         ## base16h
-        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?.json/base16h(/grid(2|4|8|16))?$" {
+        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?.json/base16h(/grid(2|4|8|16|3|5|9|17))?$" {
           ### com grid
-          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+).json/base16h/grid(2|4|8|16)$"
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+).json/base16h/grid(\d+)$"
                   "/rpc/osmcode_encode?uri=$1%3B$2&grid=$3&p_base=16" break;
-          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*).json/base16h/grid(2|4|8|16)$"
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*).json/base16h/grid(\d+)$"
                   "/rpc/osmcode_encode?uri=$1&grid=$2&p_base=16" break;
 
           ### sem grid

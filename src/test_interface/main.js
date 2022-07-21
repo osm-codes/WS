@@ -174,6 +174,15 @@ searchJurisdiction.onAdd = function (map) {
     this.search    = L.DomUtil.create('input', '', this.container);
     this.button    = L.DomUtil.create('button','leaflet-control-button',this.container);
 
+    this.label     = L.DomUtil.create('label', '', this.container);
+    this.checkbox  = L.DomUtil.create('input', '', this.container);
+
+    this.label.for= 'jcover';
+    this.label.innerHTML= 'with cover: ';
+    this.checkbox.id = 'jcover';
+    this.checkbox.type = 'checkbox';
+    this.checkbox.checked = false;
+
     this.search.type = 'text';
     this.search.placeholder = 'e.g.: CO-ANT-Medellin';
     this.search.id = 'textsearchjurisdiction';
@@ -184,6 +193,8 @@ searchJurisdiction.onAdd = function (map) {
     L.DomEvent.disableClickPropagation(this.button);
     L.DomEvent.disableScrollPropagation(this.search);
     L.DomEvent.disableClickPropagation(this.search);
+    L.DomEvent.disableScrollPropagation(this.checkbox);
+    L.DomEvent.disableClickPropagation(this.checkbox);
     L.DomEvent.on(this.button, 'click', searchDecodeJurisdiction, this.container);
     L.DomEvent.on(this.search, 'keyup', function(data){if(data.keyCode === 13){searchDecodeJurisdiction(data);}}, this.container);
 
@@ -471,7 +482,7 @@ function searchDecodeGgeocode(data)
 
     if(input !== null && input !== '')
     {
-        var uri = uri_base + "/" + input.toUpperCase() + ".json"
+        var uri = uri_base + "/geo:osmcodes:" + input.toUpperCase() + ".json"
 
         layerPolygonCurrent.clearLayers();
         loadGeojson(uri,style,onEachFeature);
@@ -488,7 +499,7 @@ function searchDecodeListGgeocode(data)
 
     if(input !== null && input !== '')
     {
-        var uri = uri_base + "/" + country.toUpperCase() + "-" + sortAndRemoveDuplicates(input.toUpperCase()) + ".json/list"
+        var uri = uri_base + "/geo:osmcodes:" + country.toUpperCase() + "~" + sortAndRemoveDuplicates(input.toUpperCase()) + ".json"
 
         layerPolygonCurrent.clearLayers();
         loadGeojson(uri,style,onEachFeature);
@@ -499,10 +510,11 @@ function searchDecodeListGgeocode(data)
 function searchDecodeJurisdiction(data)
 {
     let input = document.getElementById('textsearchjurisdiction').value
+    let jcover = document.getElementById('jcover')
 
     if(input !== null && input !== '')
     {
-        var uri = uri_base + "/geo:iso_ext:" + input + ".json"
+        var uri = uri_base + "/geo:iso_ext:" + input + ".json" + (jcover.checked ? '/cover' : '')
 
         layerPolygonCurrent.clearLayers();
         loadGeojson(uri,style,onEachFeature);
@@ -693,23 +705,29 @@ searchDecodeList.addTo(map);
 var uri = window.location.href;
 let pathname = window.location.pathname;
 
+console.log(pathname);
+
 if(pathname !== "/view/")
 {
-    if (pathname.match(/\/base16h/))
+    if (pathname.match(/(\/base16h)?\/grid/))
     {
-        loadGeojson(uri.replace(/\/base16h/, ".json/base16h"),style,onEachFeature);
+        loadGeojson(uri.replace(/((\/base16h)?\/grid)/, ".json$1"),style,onEachFeature);
     }
-    else if (pathname.match(/\/base16h\/grid/))
+    else if (pathname.match(/\/[A-Z]{2}~[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)*$/i))
     {
-        loadGeojson(uri.replace(/\/base16h\/grid/, ".json/base16h/grid"),style,onEachFeature);
+        loadGeojson(uri.replace(/\/([A-Z]{2}~[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)*)$/i, "/geo:osmcodes:$1.json"),style,onEachFeature);
     }
-    else if (pathname.match(/\/grid/))
+    else if (pathname.match(/\/[A-Z]{2}\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?$/i))
     {
-        loadGeojson(uri.replace(/\/grid/, ".json/grid"),style,onEachFeature);
+        loadGeojson(uri.replace(/\/([A-Z]{2}\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)$/i, "/geo:osmcodes:$1.json"),style,onEachFeature);
     }
-    else if (pathname.match(/\/list/))
+    else if (pathname.match(/\/CO-\d+$/i))
     {
-        loadGeojson(uri.replace(/\/list/, ".json/list"),style,onEachFeature2);
+        loadGeojson(uri.replace(/\/CO-(\d+)$/i, "/geo:co-divipola:$1.json"),style,onEachFeature);
+    }
+    else if (pathname.match(/\/BR-\d+$/i))
+    {
+        loadGeojson(uri.replace(/\/BR-(\d+)$/i, "/geo:br-geocodigo:$1.json"),style,onEachFeature);
     }
     else
     {

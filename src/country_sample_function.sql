@@ -1,6 +1,14 @@
+
+CREATE VIEW optim.vw_lixo_summary_jurisdiction AS
+  SELECT j.isolabel_ext as isolabel, t.* 
+  FROM (
+      select jurisd_base_id, count(*) n from optim.jurisdiction  group by 1 having count(*)>1
+  ) t INNER JOIN optim.jurisdiction j ON j.isolevel=1 AND j.jurisd_base_id=t.jurisd_base_id
+  ORDER BY 1
+;
+
 ----------------
 -- AMOSTRAGEM BR
-
 
 CREATE or replace FUNCTION osmc_country_sample(p_c text default 'BR') RETURNS table(
   citype text, -- label of group or type of geometry

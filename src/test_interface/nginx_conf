@@ -198,8 +198,8 @@ server { ## OSM.CODES
         }
 
         ### decode list absoluto 32
-        location ~* "^/([A-Z]{2})-([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+){0,}/list$" {
-          rewrite "(?i)^/([A-Z]{2})-(([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+){0,})/list$" /view/ break;
+        location ~* "^/([A-Z]{2})~([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+){0,}$" {
+          rewrite "(?i)^/([A-Z]{2})~(([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+){0,})$" /view/ break;
         }
 
         location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?(/base16h)?(/grid(2|4|8|16|32))?$" {
@@ -212,8 +212,8 @@ server { ## OSM.CODES
         }
 
         ## divipola/ibgegeocodigo
-        location ~* "^/(CO|BR)(-[0-9]+)$" {
-          rewrite "(?i)^/(CO|BR)(-[0-9]+)$" /view/ break;
+        location ~* "^/(CO|BR)(-[0-9]+)(~[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)?$" {
+          rewrite "(?i)^/(CO|BR)(-[0-9]+)(~[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)?$" /view/ break;
         }
 
         ### (urn|geo):lex

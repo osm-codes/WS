@@ -19,8 +19,16 @@ var baseLayers = {
     'Satellite': satellite,
     'Satellite and street': satellitestreet };
 
-var layerPolygonCurrent = new L.geoJSON();
-var layerPolygonAll = new L.geoJSON();
+var layerPolygonCurrent = new L.geoJSON(null, {
+            style: style,
+            onEachFeature: onEachFeature,
+            pointToLayer: pointToLayer,
+        });
+var layerPolygonAll = new L.geoJSON(null,{
+            style: style,
+            onEachFeature: onEachFeature,
+            pointToLayer: pointToLayer,
+        });
 var layerMarkerCurrent = new L.featureGroup();
 var layerMarkerAll = new L.featureGroup();
 
@@ -309,7 +317,6 @@ level.onAdd = function (map) {
 
     return this.container; };
 
-
 var clear = L.control({position: 'topleft'});
 clear.onAdd = function (map) {
     this.container = L.DomUtil.create('div');
@@ -399,7 +406,7 @@ fitBounds.addTo(map);
 fitCenter.addTo(map);
 toggleTooltip.addTo(map);
 searchDecodeList.addTo(map);
-//zoomAll.addTo(map);
+zoomAll.addTo(map);
 
 var a = document.getElementById('custom-map-controls');
 a.appendChild(country.getContainer());
@@ -412,6 +419,7 @@ a.appendChild(fitBounds.getContainer());
 a.appendChild(fitCenter.getContainer());
 a.appendChild(toggleTooltip.getContainer());
 a.appendChild(searchDecodeList.getContainer());
+a.appendChild(zoomAll.getContainer());
 
 function clearAllLayers()
 {
@@ -511,8 +519,7 @@ function searchDecodeGgeocode(data)
     {
         var uri = uri_base + "/geo:osmcodes:" + input.toUpperCase() + ".json"
 
-        layerPolygonCurrent.clearLayers();
-        loadGeojson(uri,style,onEachFeature,pointToLayer,loadGeojsonFitCenter);
+        loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter);
         document.getElementById('textsearchbar').value = '';
     }
 }
@@ -527,8 +534,7 @@ function searchDecodeListGgeocode(data)
     {
         var uri = uri_base + "/geo:osmcodes:" + country.toUpperCase() + "~" + sortAndRemoveDuplicates(input.toUpperCase()) + ".json"
 
-        layerPolygonCurrent.clearLayers();
-        loadGeojson(uri,style,onEachFeature,pointToLayer,loadGeojsonFitCenter);
+        loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter);
         document.getElementById('listtextsearchbar').value = '';
 
         checkCountry(input);
@@ -544,8 +550,7 @@ function searchDecodeJurisdiction(data)
     {
         var uri = uri_base + "/geo:iso_ext:" + input + ".json" + (jcover.checked ? '/cover' : '')
 
-        layerPolygonCurrent.clearLayers();
-        loadGeojson(uri,style,onEachFeature,pointToLayer,loadGeojsonFitCenter);
+        loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter);
         document.getElementById('textsearchjurisdiction').value = '';
 
         checkCountry(input);
@@ -568,7 +573,7 @@ function searchEncodeGgeocode(data)
         layerMarkerCurrent.clearLayers();
         L.marker(input.split(/[;,]/,2)).addTo(layerMarkerCurrent).bindPopup(popupContent);
         L.marker(input.split(/[;,]/,2)).addTo(layerMarkerAll).bindPopup(popupContent);
-        loadGeojson(uri,(grid.value.match(/^grid(3|5|9|17|33)$/) ? stylegrid : style),onEachFeature,pointToLayer,loadGeojsonFitCenter)
+        loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter)
         document.getElementById('latlngtextbar').value = '';
     }
 }
@@ -646,66 +651,59 @@ function onEachFeature(feature,layer)
             layer.bindTooltip(feature.properties.code,{permanent:toggleTooltipStatus,direction:'center',className:'tooltip' + feature.properties.base});
         }
     }
-    layer.on({click: whenClicked});
-}
 
-function onEachFeature2(feature,layer)
-{
-        onEachFeature(feature,layer);
-
-        if(!feature.properties.code_subcell && !feature.properties.osm_id)
-        {
-            let listBar = document.getElementById('listtextsearchbar');
-
-            listBar.value = sortAndRemoveDuplicates((listBar.value ? listBar.value + ',': '') + feature.properties.code)
-        }
-}
-
-function stylegrid(feature)
-{
-    if (feature.properties.code_subcell)
+    if(!feature.properties.code_subcell && !feature.properties.osm_id)
     {
-        return {color: 'deeppink'};
+        let listBar = document.getElementById('listtextsearchbar');
+
+        listBar.value = sortAndRemoveDuplicates((listBar.value ? listBar.value + ',': '') + feature.properties.code)
     }
-    else
-    {
-        return {color: 'deeppink', fillColor: 'none'};
-    }
+
+    layer.on({click: onFeatureClick});
 }
 
 function style(feature)
 {
-    if (feature.properties.osm_id)
+    let grid = document.getElementById('grid')
+
+    if(grid.value.match(/^grid(3|5|9|17|33)$/))
     {
-        return {color: 'red', fillColor: 'none', fillOpacity: 0.1};
+        if (feature.properties.code_subcell)
+        {
+            return {color: 'deeppink'};
+        }
+        else
+        {
+            return {color: 'deeppink', fillColor: 'none'};
+        }
     }
     else
     {
-        return {color: 'black', fillColor: 'black', fillOpacity: 0.1};
+        if (feature.properties.osm_id)
+        {
+            return {color: 'red', fillColor: 'none', fillOpacity: 0.1};
+        }
+        else
+        {
+            return {color: 'black', fillColor: 'black', fillOpacity: 0.1};
+        }
     }
 }
 
 function pointToLayer(feature,latlng)
 {
-//     return L.marker(latlng,{
-//         icon: nameIcon,
-//         title: "(" + feature.prop + ") " + feature.prop + " - " + feature.prop,
-//         alt: "xyz"
-//     });
     return L.circleMarker(latlng,{
         radius: 3,
-//         fillColor: '#fff',
-//         color: '#fff',
         weight: 1,
         opacity: 0.8,
         fillOpacity: 0.6,
     });
 }
 
-function whenClicked(e)
+function onFeatureClick(feature)
 {
-    //console.log(e);
-    //var label = e.sourceTarget.feature.properties.label;
+    //console.log(feature);
+    //var label = feature.sourceTarget.feature.properties.label;
 }
 
 function loadGeojsonFitCenterlayerCurrent(featureGroup)
@@ -717,33 +715,23 @@ function loadGeojsonFitCenter(featureGroup)
 {
     let fitbd = document.getElementById('fitbounds')
     let fitce = document.getElementById('fitcenter')
-    fitbd.checked ? map.fitBounds(featureGroup.getBounds()) : (fitce.checked ? map.setView(geojsonCurrent.getBounds().getCenter()) : '')
+    fitbd.checked ? map.fitBounds(featureGroup.getBounds()) : (fitce.checked ? map.setView(featureGroup.getBounds().getCenter()) : '')
 }
 
-function loadGeojson(uri,style,onEachFeature,pointToLayer,afterLoad)
+function loadGeojson(uri,arrayLayer,afterLoad)
 {
     fetch(uri)
     .then(response => {return response.json()})
     .then(data =>
     {
-        layerPolygonCurrent.clearLayers();
+        arrayLayer[0].clearLayers();
 
-        let geojsonCurrent = L.geoJSON(data.features,{
-            style: style,
-            onEachFeature: onEachFeature2,
-            pointToLayer: pointToLayer,
-        });
-
-        geojsonCurrent.addTo(layerPolygonCurrent);
-        geojsonCurrent.addTo(layerPolygonAll);
-
-        if (map.hasLayer(layerPolygonAll))
+        for (i=0; i < arrayLayer.length; i++)
         {
-            map.removeLayer(layerPolygonAll);
-            map.addLayer(layerPolygonAll);
+            arrayLayer[i].addData(data.features);
         }
 
-        afterLoad(layerPolygonCurrent);
+        afterLoad(arrayLayer[0]);
     })
     .catch(err => {})
 }
@@ -761,7 +749,7 @@ function onMapClick(e)
     L.marker(e.latlng).addTo(layerMarkerCurrent).bindPopup(popupContent);
     L.marker(e.latlng).addTo(layerMarkerAll).bindPopup(popupContent);
 
-    loadGeojson(uri,(grid.value.match(/^grid(3|5|9|17|33)$/) ? stylegrid : style),onEachFeature,pointToLayer,loadGeojsonFitCenter)
+    loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter)
 }
 
 function showZoomLevel()
@@ -807,32 +795,34 @@ if(pathname !== "/view/")
 {
     if (pathname.match(/(\/base16h)?\/grid/))
     {
-        loadGeojson(uri.replace(/((\/base16h)?\/grid)/, ".json$1"),style,onEachFeature,pointToLayer,loadGeojsonFitCenter);
+        var uriApi = uri.replace(/((\/base16h)?\/grid)/, ".json$1");
     }
     else if (pathname.match(/\/[A-Z]{2}~[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)*$/i))
     {
-        loadGeojson(uri.replace(/\/([A-Z]{2}~[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)*)$/i, "/geo:osmcodes:$1.json"),style,onEachFeature,pointToLayer,loadGeojsonFitCenterlayerCurrent);
+        var uriApi = uri.replace(/\/([A-Z]{2}~[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)*)$/i, "/geo:osmcodes:$1.json");
     }
     else if (pathname.match(/\/[A-Z]{2}\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?$/i))
     {
-        loadGeojson(uri.replace(/\/([A-Z]{2}\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)$/i, "/geo:osmcodes:$1.json"),style,onEachFeature,pointToLayer,loadGeojsonFitCenterlayerCurrent);
+        var uriApi = uri.replace(/\/([A-Z]{2}\+[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)$/i, "/geo:osmcodes:$1.json");
     }
     else if (pathname.match(/\/CO-\d+$/i))
     {
-        loadGeojson(uri.replace(/\/CO-(\d+)$/i, "/geo:co-divipola:$1.json"),style,onEachFeature,pointToLayer,loadGeojsonFitCenterlayerCurrent);
+        var uriApi = uri.replace(/\/CO-(\d+)$/i, "/geo:co-divipola:$1.json");
     }
     else if (pathname.match(/^\/(CO|BR)-\d+(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+$/i))
     {
-        loadGeojson(uri.replace(/\/((CO|BR)-\d+(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)$/i, "/geo:osmcodes:$1.json"),style,onEachFeature,pointToLayer,loadGeojsonFitCenterlayerCurrent);
+        var uriApi = uri.replace(/\/((CO|BR)-\d+(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)$/i, "/geo:osmcodes:$1.json");
     }
     else if (pathname.match(/\/BR-\d+$/i))
     {
-        loadGeojson(uri.replace(/\/BR-(\d+)$/i, "/geo:br-geocodigo:$1.json"),style,onEachFeature,pointToLayer,loadGeojsonFitCenterlayerCurrent);
+        var uriApi = uri.replace(/\/BR-(\d+)$/i, "/geo:br-geocodigo:$1.json");
     }
     else if (pathname.match(/^\/[A-Z]{2}(-[A-Z]{1,3}-[A-Z]+)(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+$/i))
     {
-        loadGeojson(uri.replace(/\/([A-Z]{2}(-[A-Z]{1,3}-[A-Z]+)(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)$/i, "/geo:osmcodes:$1.json"),style,onEachFeature,pointToLayer,loadGeojsonFitCenterlayerCurrent);
+        var uriApi = uri.replace(/\/([A-Z]{2}(-[A-Z]{1,3}-[A-Z]+)(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)$/i, "/geo:osmcodes:$1.json");
     }
+    loadGeojson(uriApi,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenterlayerCurrent);
+
     checkCountry(pathname);
     checkBase(pathname);
 }

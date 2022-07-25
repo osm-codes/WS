@@ -821,6 +821,10 @@ if(pathname !== "/view/")
     {
         var uriApi = uri.replace(/\/([A-Z]{2}(-[A-Z]{1,3}-[A-Z]+)(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)$/i, "/geo:osmcodes:$1.json");
     }
+    else
+    {
+        var uriApi = uri + '.json';
+    }
     loadGeojson(uriApi,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenterlayerCurrent);
 
     checkCountry(pathname);

@@ -640,16 +640,21 @@ function onEachFeature(feature,layer)
 
         if(feature.properties.code_subcell)
         {
-            layer.bindTooltip(feature.properties.code_subcell,{permanent:toggleTooltipStatus,direction:'center',className:'tooltip' + feature.properties.base});
+            var layerTooltip = feature.properties.code_subcell;
         }
         else if(feature.properties.short_code)
         {
-            layer.bindTooltip(feature.properties.short_code,{permanent:toggleTooltipStatus,direction:'center',className:'tooltip' + feature.properties.base});
+            var layerTooltip = '~' + feature.properties.short_code.split(/[~]/)[1];
+        }
+        else if(feature.properties.index)
+        {
+            var layerTooltip = '~' + feature.properties.index
         }
         else
         {
-            layer.bindTooltip(feature.properties.code,{permanent:toggleTooltipStatus,direction:'center',className:'tooltip' + feature.properties.base});
+            var layerTooltip = feature.properties.code;
         }
+        layer.bindTooltip(layerTooltip,{permanent:toggleTooltipStatus,direction:'center',className:'tooltip' + feature.properties.base});
     }
 
     if(!feature.properties.code_subcell && !feature.properties.osm_id)

@@ -644,11 +644,11 @@ function onEachFeature(feature,layer)
         }
         else if(feature.properties.short_code)
         {
-            var layerTooltip = '~' + feature.properties.short_code.split(/[~]/)[1];
+            var layerTooltip = '.' + feature.properties.short_code.split(/[~]/)[1];
         }
         else if(feature.properties.index)
         {
-            var layerTooltip = '~' + feature.properties.index
+            var layerTooltip = '.' + feature.properties.index
         }
         else
         {

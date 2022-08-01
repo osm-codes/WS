@@ -548,7 +548,7 @@ function searchDecodeJurisdiction(data)
 
     if(input !== null && input !== '')
     {
-        var uri = uri_base + "/geo:iso_ext:" + input + ".json" + (jcover.checked ? '/cover' : '')
+        var uri = uri_base + "/geo:iso_ext:" + input + ".json" + (jcover.checked ? '/cover' : '') + (document.getElementById('base').value == 'base16h' ? '/base16h' : '')
 
         loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter);
         document.getElementById('textsearchjurisdiction').value = '';

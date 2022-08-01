@@ -164,12 +164,15 @@ server { ## OSM.CODES
         }
 
         # geo:iso_ext
-        location ~* "^/(geo:iso_ext:)?([A-Z]{2}(-[A-Z]+)?(-[A-Z]+)?).json(/cover)?$" {
+        location ~* "^/(geo:iso_ext:)?([A-Z]{2}(-[A-Z]+)?(-[A-Z]+)?).json(/cover(/base16h)?)?$" {
           rewrite "(?i)^/(geo:iso_ext:)?([A-Z]{2}(-[A-Z]+)?(-[A-Z]+)?).json$"
                   /rpc/jurisdiction_geojson_from_isolabel?p_code=$2 break;
 
           rewrite "(?i)^/(geo:iso_ext:)?([A-Z]{2}(-[A-Z]+)?(-[A-Z]+)?).json/cover$"
                   /rpc/jurisdiction_l0cover?p_iso=$2 break;
+
+          rewrite "(?i)^/(geo:iso_ext:)?([A-Z]{2}(-[A-Z]+)?(-[A-Z]+)?).json/cover/base16h$"
+                  /rpc/jurisdiction_l0cover?p_iso=$2&p_base=16 break;
 
           proxy_pass http://127.0.0.1:3103;
         }

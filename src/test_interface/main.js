@@ -48,6 +48,11 @@ var mapDefaultBR = {
     zoom: 4,
     current_zoom: 4 };
 
+var mapDefaultUY = {
+    center: [-32.981,-55.921],
+    zoom: 7,
+    current_zoom: 7 };
+
 var map = L.map('map',{
     center: mapDefaultCO.center,
     zoom:   mapDefaultCO.zoom,
@@ -171,7 +176,7 @@ var selectLevelBase16hBR = '\
 <option value="0">20 (11)(1m)</option>';
 
 var selectBases = '<option value="base32">base32</option><option value="base16h">base16h</option>';
-var selectCountrys = '<option value="BR">Brasil</option><option value="CO" selected>Colombia</option>';
+var selectCountrys = '<option value="BR">Brasil</option><option value="CO" selected>Colombia</option><option value="UY">Uruguai</option>';
 var selectGridBase32 = '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>';
 var selectGridBase16h = '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>';
 
@@ -458,7 +463,11 @@ function toggleCountry()
     {
         map.setView(mapDefaultBR.center, mapDefaultBR.zoom);
     }
-
+    if(countryValue == 'UY')
+    {
+        map.setView(mapDefaultUY.center, mapDefaultUY.zoom);
+        document.getElementById('base').value = 'base16h'
+    }
     toggleLevelBase();
 }
 
@@ -469,7 +478,7 @@ function toggleLevelBase()
     if(document.getElementById('base').value == 'base16h')
     {
 
-        if(countryValue == 'CO')
+        if(countryValue == 'CO' || countryValue == 'UY')
         {
             document.getElementById('level_size').innerHTML = selectLevelBase16hCO;
         }
@@ -482,7 +491,7 @@ function toggleLevelBase()
     }
     else
     {
-        if(countryValue == 'CO')
+        if(countryValue == 'CO' || countryValue == 'UY')
         {
             document.getElementById('level_size').innerHTML = selectLevelBase32CO;
         }
@@ -766,6 +775,7 @@ function checkCountry(string)
 {
     var regexbr = /^(\/)?BR.*/i;
     var regexco = /^(\/)?CO.*/i;
+    var regexco = /^(\/)?UY.*/i;
     if(regexbr.test(string))
     {
         document.getElementById('country').value='BR';
@@ -774,6 +784,11 @@ function checkCountry(string)
     if(regexco.test(string))
     {
         document.getElementById('country').value='CO';
+        toggleCountry();
+    }
+    if(regexuy.test(string))
+    {
+        document.getElementById('country').value='UY';
         toggleCountry();
     }
 }
@@ -814,9 +829,9 @@ if(pathname !== "/view/")
     {
         var uriApi = uri.replace(/\/CO-(\d+)$/i, "/geo:co-divipola:$1.json");
     }
-    else if (pathname.match(/^\/(CO|BR)-\d+(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+$/i))
+    else if (pathname.match(/^\/([A-Z]{2})-\d+(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+$/i))
     {
-        var uriApi = uri.replace(/\/((CO|BR)-\d+(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)$/i, "/geo:osmcodes:$1.json");
+        var uriApi = uri.replace(/\/(([A-Z]{2})-\d+(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)$/i, "/geo:osmcodes:$1.json");
     }
     else if (pathname.match(/\/BR-\d+$/i))
     {

@@ -121,6 +121,44 @@ var selectLevelBase16hCO = '<option value="150000">0 (2)(262,14km)</option>\
 <option value="0.7">17.5 (11)(1,4m)</option>\
 <option value="0">18 (11)(1m)</option>';
 
+var selectLevelBase16hUY = '<option value="150000">0 (1)(262,14km)</option>\
+<option value="100000">0.5 (2)(185,54km)</option>\
+<option value="75000">1 (2)(131,07km)</option>\
+<option value="50000">1.5 (2)(92,68km)</option>\
+<option value="40000">2 (2)(65,54km)</option>\
+<option value="25000">2.5 (3)(46,34km)</option>\
+<option value="20000">3 (3)(32,78km)</option>\
+<option value="15000">3.5 (3)(23,17km)</option>\
+<option value="10000">4 (3)(16,38km)</option>\
+<option value="6000">4.5 (4)(11,58km)</option>\
+<option value="5000">5 (4)(8192m)</option>\
+<option value="3500">5.5 (4)(5792,6m)</option>\
+<option value="2500">6 (4)(4096m)</option>\
+<option value="1500">6.5 (5)(2896,3m)</option>\
+<option value="1250">7 (5)(2048m)</option>\
+<option value="750">7.5 (5)(1448,2m)</option>\
+<option value="600">8 (5)(1024m)</option>\
+<option value="450">8.5 (6)(724,1m)</option>\
+<option value="300">9 (6)(512m)</option>\
+<option value="225">9.5 (6)(362m)</option>\
+<option value="150">10 (6)(256m)</option>\
+<option value="100">10.5 (7)(181m)</option>\
+<option value="75">11 (7)(128m)</option>\
+<option value="50">11.5 (7)(90,5m)</option>\
+<option value="40">12 (7)(64m)</option>\
+<option value="25">12.5 (8)(45,3m)</option>\
+<option value="20">13 (8)(32m)</option>\
+<option value="15">13.5 (8)(22,6m)</option>\
+<option value="8">14 (8)(16m)</option>\
+<option value="7">14.5 (9)(11,3m)</option>\
+<option value="5">15 (9)(8m)</option>\
+<option value="3">15.5 (9)(5,7m)</option>\
+<option value="2">16 (9)(4m)</option>\
+<option value="1.4">16.5 (10)(2,8)</option>\
+<option value="1">17 (10)(2m)</option>\
+<option value="0.7">17.5 (10)(1,4m)</option>\
+<option value="0">18 (10)(1m)</option>';
+
 var selectLevelBase32BR = '\
 <option value="600000">0 (1)(1048km)</option>\
 <option value="100000">2.5 (2)(185,36km)</option>\
@@ -478,7 +516,7 @@ function toggleLevelBase()
     if(document.getElementById('base').value == 'base16h')
     {
 
-        if(countryValue == 'CO' || countryValue == 'UY')
+        if(countryValue == 'CO')
         {
             document.getElementById('level_size').innerHTML = selectLevelBase16hCO;
         }
@@ -486,7 +524,10 @@ function toggleLevelBase()
         {
             document.getElementById('level_size').innerHTML = selectLevelBase16hBR;
         }
-
+        if(countryValue == 'UY')
+        {
+            document.getElementById('level_size').innerHTML = selectLevelBase16hUY;
+        }
         document.getElementById('grid').innerHTML = selectGridBase16h;
     }
     else

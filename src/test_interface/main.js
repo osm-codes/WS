@@ -44,12 +44,17 @@ var mapDefaultCO = {
     current_zoom: 6 };
 
 var mapDefaultBR = {
-    center: [-15.7967,-47.8802],
+    center: [-15.796,-47.880],
     zoom: 4,
     current_zoom: 4 };
 
 var mapDefaultUY = {
     center: [-32.981,-55.921],
+    zoom: 7,
+    current_zoom: 7 };
+
+var mapDefaultEC = {
+    center: [-1.175,-78.464],
     zoom: 7,
     current_zoom: 7 };
 
@@ -214,7 +219,7 @@ var selectLevelBase16hBR = '\
 <option value="0">20 (11)(1m)</option>';
 
 var selectBases = '<option value="base32">base32</option><option value="base16h">base16h</option>';
-var selectCountrys = '<option value="BR">Brasil</option><option value="CO" selected>Colombia</option><option value="UY">Uruguai</option>';
+var selectCountrys = '<option value="BR">Brasil</option><option value="CO" selected>Colombia</option><option value="EC">Equador</option><option value="UY">Uruguai</option>';
 var selectGridBase32 = '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>';
 var selectGridBase16h = '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>';
 
@@ -493,15 +498,19 @@ function toggleCountry()
 
     let countryValue = document.getElementById('country').value;
 
-    if(countryValue == 'CO')
-    {
-        map.setView(mapDefaultCO.center, mapDefaultCO.zoom);
-    }
-    else if (countryValue == 'BR')
+    if (countryValue == 'BR')
     {
         map.setView(mapDefaultBR.center, mapDefaultBR.zoom);
     }
-    if(countryValue == 'UY')
+    else if(countryValue == 'CO')
+    {
+        map.setView(mapDefaultCO.center, mapDefaultCO.zoom);
+    }
+    else if(countryValue == 'EC')
+    {
+        map.setView(mapDefaultEC.center, mapDefaultEC.zoom);
+    }
+    else if(countryValue == 'UY')
     {
         map.setView(mapDefaultUY.center, mapDefaultUY.zoom);
         document.getElementById('base').value = 'base16h'
@@ -516,7 +525,7 @@ function toggleLevelBase()
     if(document.getElementById('base').value == 'base16h')
     {
 
-        if(countryValue == 'CO')
+        if(countryValue == 'CO' || countryValue == 'EC')
         {
             document.getElementById('level_size').innerHTML = selectLevelBase16hCO;
         }
@@ -532,7 +541,7 @@ function toggleLevelBase()
     }
     else
     {
-        if(countryValue == 'CO' || countryValue == 'UY')
+        if(countryValue == 'CO' || countryValue == 'UY' || countryValue == 'EC')
         {
             document.getElementById('level_size').innerHTML = selectLevelBase32CO;
         }
@@ -816,18 +825,24 @@ function checkCountry(string)
 {
     var regexbr = /^(\/)?BR.*/i;
     var regexco = /^(\/)?CO.*/i;
+    var regexco = /^(\/)?EC.*/i;
     var regexco = /^(\/)?UY.*/i;
     if(regexbr.test(string))
     {
         document.getElementById('country').value='BR';
         toggleCountry();
     }
-    if(regexco.test(string))
+    else if(regexco.test(string))
     {
         document.getElementById('country').value='CO';
         toggleCountry();
     }
-    if(regexuy.test(string))
+    else if(regexec.test(string))
+    {
+        document.getElementById('country').value='EC';
+        toggleCountry();
+    }
+    else if(regexuy.test(string))
     {
         document.getElementById('country').value='UY';
         toggleCountry();

@@ -882,6 +882,10 @@ if(pathname !== "/view/")
     {
         var uriApi = uri.replace(/\/([A-Z]{2}(-[A-Z]{1,3}-[A-Z]+)(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)$/i, "/geo:osmcodes:$1.json");
     }
+    else if (pathname.match(/^\/[A-Z]{2}-[A-Z]{1,3}-[A-Z]+$/i))
+    {
+        var uriApi = uri + '.json/cover';
+    }
     else
     {
         var uriApi = uri + '.json';

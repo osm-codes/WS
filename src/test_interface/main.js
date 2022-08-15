@@ -78,8 +78,7 @@ var zoom   = L.control.zoom({position:'topright'});
 var layers = L.control.layers(baseLayers, overlays,{position:'topright'});
 var escala = L.control.scale({position:'bottomright',imperial: false});
 
-var selectLevelBase32CO = '\
-<option value="150000">0 (1)(262,14km)</option>\
+var selectLevelBase32CO = '<option value="150000">0 (1)(262,14km)</option>\
 <option value="25000">2.5 (2)(46,34km)</option>\
 <option value="5000">5 (3)(8,192km)</option>\
 <option value="750">7.5 (4)(1450m)</option>\
@@ -125,6 +124,52 @@ var selectLevelBase16hCO = '<option value="150000">0 (2)(262,14km)</option>\
 <option value="1">17 (11)(2m)</option>\
 <option value="0.7">17.5 (11)(1,4m)</option>\
 <option value="0">18 (11)(1m)</option>';
+
+var selectLevelBase16hEC = '<option value="100000">0 (2)(185,54km)</option>\
+<option value="75000">0.5 (3)(131,07km)</option>\
+<option value="50000">1 (3)(92,68km)</option>\
+<option value="40000">1.5 (3)(65,54km)</option>\
+<option value="25000">2 (3)(46,34km)</option>\
+<option value="20000">2.5 (4) (32,78km)</option>\
+<option value="15000">3 (4)(23,17km)</option>\
+<option value="10000">3.5 (4)(16,38km)</option>\
+<option value="6000">4 (4)(11,58km)</option>\
+<option value="5000">4.5 (5)(8192m)</option>\
+<option value="3500">5 (5)(5792,6m)</option>\
+<option value="2500">5.5 (5)(4096m)</option>\
+<option value="1500">6 (5)(2896,3m)</option>\
+<option value="1250">6.5 (6)(2048m)</option>\
+<option value="750">7 (6)(1448,2m)</option>\
+<option value="600">7.5 (6)(1024m)</option>\
+<option value="450">8 (6)(724,1m)</option>\
+<option value="300">8.5 (7)(512m)</option>\
+<option value="225">9 (7)(362m)</option>\
+<option value="150">9.5 (7)(256m)</option>\
+<option value="100">10 (7)(181m)</option>\
+<option value="75">10.5 (8)(128m)</option>\
+<option value="50">11 (8)(90,5m)</option>\
+<option value="40">11.5 (8)(64m)</option>\
+<option value="25">12 (8)(45,3m)</option>\
+<option value="20">12.5 (9)(32m)</option>\
+<option value="15">13 (9)(22,6m)</option>\
+<option value="8">13.5 (9)(16m)</option>\
+<option value="7">14 (9)(11,3m)</option>\
+<option value="5">14.5 (10)(8m)</option>\
+<option value="3">15 (10)(5,7m)</option>\
+<option value="2">15.5 (10)(4m)</option>\
+<option value="1.4">16 (10)(2,8)</option>\
+<option value="1">16.5 (11)(2m)</option>\
+<option value="0.7">17 (11)(1,4m)</option>\
+<option value="0">17.5 (11)(1m)</option>';
+
+var selectLevelBase32EC = '<option value="100000">0 (1)(185,54km)</option>\
+<option value="20000">2.5 (2) (32,78km)</option>\
+<option value="3500">5 (3)(5792,6m)</option>\
+<option value="600">7.5 (4)(1024m)</option>\
+<option value="100">10 (5)(181m)</option>\
+<option value="20">12.5 (6)(32m)</option>\
+<option value="3">15 (7)(5,7m)</option>\
+<option value="0">17.5 (8)(1m)</option>';
 
 var selectLevelBase16hUY = '<option value="150000">0 (1)(262,14km)</option>\
 <option value="100000">0.5 (2)(185,54km)</option>\
@@ -525,7 +570,7 @@ function toggleLevelBase()
     if(document.getElementById('base').value == 'base16h')
     {
 
-        if(countryValue == 'CO' || countryValue == 'EC')
+        if(countryValue == 'CO')
         {
             document.getElementById('level_size').innerHTML = selectLevelBase16hCO;
         }
@@ -537,11 +582,15 @@ function toggleLevelBase()
         {
             document.getElementById('level_size').innerHTML = selectLevelBase16hUY;
         }
+        if(countryValue == 'EC')
+        {
+            document.getElementById('level_size').innerHTML = selectLevelBase16hEC;
+        }
         document.getElementById('grid').innerHTML = selectGridBase16h;
     }
     else
     {
-        if(countryValue == 'CO' || countryValue == 'UY' || countryValue == 'EC')
+        if(countryValue == 'CO' || countryValue == 'UY')
         {
             document.getElementById('level_size').innerHTML = selectLevelBase32CO;
         }
@@ -549,7 +598,10 @@ function toggleLevelBase()
         {
             document.getElementById('level_size').innerHTML = selectLevelBase32BR;
         }
-
+        if(countryValue == 'EC')
+        {
+            document.getElementById('level_size').innerHTML = selectLevelBase32EC;
+        }
         document.getElementById('grid').innerHTML = selectGridBase32;
     }
 }

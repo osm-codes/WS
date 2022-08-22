@@ -643,7 +643,7 @@ function searchDecodeListGgeocode(data)
     console.log(input);
     if(input !== null && input !== '')
     {
-        var uri = uri_base + "/geo:osmcodes:" + country.toUpperCase() + "~" + sortAndRemoveDuplicates(input.toUpperCase()) + ".json"
+        var uri = uri_base + "/geo:osmcodes:" + country.toUpperCase() + (document.getElementById('base').value == 'base16h' ? '+' : '~') + sortAndRemoveDuplicates(input.toUpperCase()) + ".json"
 
         loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter);
         document.getElementById('listtextsearchbar').value = '';
@@ -877,8 +877,8 @@ function checkCountry(string)
 {
     var regexbr = /^(\/)?BR.*/i;
     var regexco = /^(\/)?CO.*/i;
-    var regexco = /^(\/)?EC.*/i;
-    var regexco = /^(\/)?UY.*/i;
+    var regexec = /^(\/)?EC.*/i;
+    var regexuy = /^(\/)?UY.*/i;
     if(regexbr.test(string))
     {
         document.getElementById('country').value='BR';

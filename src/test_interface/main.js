@@ -38,29 +38,337 @@ var overlays = {
     'Current marker': layerMarkerCurrent,
     'All markers': layerMarkerAll };
 
-var mapDefaultCO = {
-    center: [3.5,-72.3],
-    zoom: 6,
-    current_zoom: 6 };
 
-var mapDefaultBR = {
-    center: [-15.796,-47.880],
-    zoom: 4,
-    current_zoom: 4 };
+var selectCountrys = '<option value="BR">Brasil</option><option value="CO" selected>Colombia</option><option value="EC">Equador</option><option value="UY">Uruguai</option>';
+var selectGridBase32 = '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>';
+var selectGridBase16h = '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>';
 
-var mapDefaultUY = {
-    center: [-32.981,-55.921],
-    zoom: 7,
-    current_zoom: 7 };
+var countries = {
+    BR:
+    {
+        center: [-15.796,-47.880],
+        zoom: 4,
+        current_zoom: 4,
+        defaultBase: 'base32',
+        isocode: 'BR',
+        jurisdictionPlaceholder: 'BR-SP-SaoPaulo',
+        selectBases: '<option value="base32">base32</option><option value="base16h">base16h</option>',
+        bases:
+        {
+            base32:
+            {
+                symbol: '~',
+                placeholderDecode: 'BR~42',
+                placeholderEncode: '-15.796,-47.880;u=100',
+                placeholderList: '3,5,7,A',
+                selectGrid: selectGridBase32,
+                selectLevel: '<option value="600000">0 (1d) (1048km)</option>\
+<option value="100000">2.5 (2d) (185,36km)</option>\
+<option value="20000">5 (3d) (32,76km)</option>\
+<option value="3500">7.5 (4d) (5,79km)</option>\
+<option value="600">10 (5d) (1,024km)</option>\
+<option value="100">12.5 (6d) (181m)</option>\
+<option value="20">15 (7d) (32m)</option>\
+<option value="3">17.5 (8d) (5,7m)</option>\
+<option value="0">20 (9d) (1m)</option>'
+            },
+            base16h:
+            {
+                symbol: '+',
+                placeholderDecode: 'BR+3F',
+                placeholderEncode: '-15.796,-47.880;u=100',
+                placeholderList: '3,5,7,B',
+                selectGrid: selectGridBase16h,
+                selectLevel: '<option value="600000">0 (1d) (1048,57km)</option>\
+<option value="400000">0.5 (2d) (741,45km)</option>\
+<option value="300000">1 (2d) (524,28km)</option>\
+<option value="200000">1.5 (2d) (370,72km)</option>\
+<option value="150000">2 (2d) (262,14km)</option>\
+<option value="100000">2.5 (3d) (185,54km)</option>\
+<option value="75000">3 (3d) (131,07km)</option>\
+<option value="50000">3.5 (3d) (92,68km)</option>\
+<option value="40000">4 (3d) (65,54km)</option>\
+<option value="25000">4.5 (4d) (46,34km)</option>\
+<option value="20000">5 (4d) (32,78km)</option>\
+<option value="15000">5.5 (4d) (23,17km)</option>\
+<option value="10000">6 (4d) (16,38km)</option>\
+<option value="6000">6.5 (5d) (11,58km)</option>\
+<option value="5000">7 (5d) (8,192km)</option>\
+<option value="3500">7.5 (5d) (5,7926km)</option>\
+<option value="2500">8 (5d) (4,096km)</option>\
+<option value="1500">8.5 (6d) (2,8963km)</option>\
+<option value="1250">9 (6d) (2,048km)</option>\
+<option value="750">9.5 (6d) (1,4482km)</option>\
+<option value="600">10 (6d) (1,024km)</option>\
+<option value="450">10.5 (7d) (724,1m)</option>\
+<option value="300">11 (7d) (512m)</option>\
+<option value="225">11.5 (7d) (362m)</option>\
+<option value="150">12 (7d) (256m)</option>\
+<option value="100">12.5 (8d) (181m)</option>\
+<option value="75">13 (8d) (128m)</option>\
+<option value="50">13.5 (8d) (90,5m)</option>\
+<option value="40">14 (8d) (64m)</option>\
+<option value="25">14.5 (9d) (45,3m)</option>\
+<option value="20">15 (9d) (32m)</option>\
+<option value="15">15.5 (9d) (22,6m)</option>\
+<option value="8">16 (9d) (16m)</option>\
+<option value="7">16.5 (10d) (11,3m)</option>\
+<option value="5">17 (10d) (8m)</option>\
+<option value="3">17.5 (10d) (5,7m)</option>\
+<option value="2">18 (10d) (4m)</option>\
+<option value="1.4">18.5 (11d) (2,8)</option>\
+<option value="1">19 (11d) (2m)</option>\
+<option value="0.7">19.5 (11d) (1,4m)</option>\
+<option value="0">20 (11d) (1m)</option>'
+            }
+        }
+    },
+    CO:
+    {
+        center: [3.5,-72.3],
+        zoom: 6,
+        current_zoom: 6,
+        defaultBase: 'base32',
+        isocode: 'CO',
+        jurisdictionPlaceholder: 'CO-ANT-Itagui',
+        selectBases: '<option value="base32">base32</option><option value="base16h">base16h</option>',
+        bases:
+        {
+            base32:
+            {
+                symbol: '~',
+                placeholderDecode: 'CO~3D5',
+                placeholderEncode: '3.5,-72.3;u=100',
+                placeholderList: '3D5,3D4,2',
+                selectGrid: selectGridBase32,
+                selectLevel: '<option value="150000">0 (1d) (262,14km)</option>\
+<option value="25000">2.5 (2d) (46,34km)</option>\
+<option value="5000">5 (3d) (8,192km)</option>\
+<option value="750">7.5 (4d) (1,45km)</option>\
+<option value="150">10 (5d) (256m)</option>\
+<option value="25">12.5 (6d) (45m)</option>\
+<option value="5">15 (7d) (8m)</option>\
+<option value="0">17.5 (8d) (1,4m)</option>'
+            },
+            base16h:
+            {
+                symbol: '+',
+                placeholderDecode: '0A2',
+                placeholderEncode: '3.5,-72.3;u=100',
+                placeholderList: '0A,0B,0C',
+                selectGrid: selectGridBase16h,
+                selectLevel: '<option value="150000">0 (2d) (262,14km)</option>\
+<option value="100000">0.5 (3d) (185,54km)</option>\
+<option value="75000">1 (3d) (131,07km)</option>\
+<option value="50000">1.5 (3d) (92,68km)</option>\
+<option value="40000">2 (3d) (65,54km)</option>\
+<option value="25000">2.5 (4d) (46,34km)</option>\
+<option value="20000">3 (4d) (32,78km)</option>\
+<option value="15000">3.5 (4d) (23,17km)</option>\
+<option value="10000">4 (4d) (16,38km)</option>\
+<option value="6000">4.5 (5d) (11,58km)</option>\
+<option value="5000">5 (5d) (8,192km)</option>\
+<option value="3500">5.5 (5d) (5,7926km)</option>\
+<option value="2500">6 (5d) (4,096km)</option>\
+<option value="1500">6.5 (6d) (2,8963km)</option>\
+<option value="1250">7 (6d) (2,048km)</option>\
+<option value="750">7.5 (6d) (1,4482km)</option>\
+<option value="600">8 (6d) (1,024km)</option>\
+<option value="450">8.5 (7d) (724,1m)</option>\
+<option value="300">9 (7d) (512m)</option>\
+<option value="225">9.5 (7d) (362m)</option>\
+<option value="150">10 (7d) (256m)</option>\
+<option value="100">10.5 (8d) (181m)</option>\
+<option value="75">11 (8d) (128m)</option>\
+<option value="50">11.5 (8d) (90,5m)</option>\
+<option value="40">12 (8d) (64m)</option>\
+<option value="25">12.5 (9d) (45,3m)</option>\
+<option value="20">13 (9d) (32m)</option>\
+<option value="15">13.5 (9d) (22,6m)</option>\
+<option value="8">14 (9d) (16m)</option>\
+<option value="7">14.5 (10d) (11,3m)</option>\
+<option value="5">15 (10d) (8m)</option>\
+<option value="3">15.5 (10d) (5,7m)</option>\
+<option value="2">16 (10d) (4m)</option>\
+<option value="1.4">16.5 (11d) (2,8)</option>\
+<option value="1">17 (11d) (2m)</option>\
+<option value="0.7">17.5 (11d) (1,4m)</option>\
+<option value="0">18 (11d) (1m)</option>'
+            }
+        }
+    },
+    EC:
+    {
+        center: [-1.175,-78.464],
+        zoom: 7,
+        current_zoom: 7,
+        defaultBase: 'base32',
+        isocode: 'EC',
+        jurisdictionPlaceholder: 'EC-L-Loja',
+        selectBases: '<option value="base32">base32</option><option value="base16h">base16h</option>',
+        bases:
+        {
+            base32:
+            {
+                symbol: '~',
+                placeholderDecode: 'EC~5P',
+                placeholderEncode: '-1.175,-78.464;u=100',
+                placeholderList: '5P,FL,J9',
+                selectGrid: selectGridBase32,
+                selectLevel: '<option value="100000">0 (1d) (185,54km)</option>\
+<option value="20000">2.5 (2) (32,78km)</option>\
+<option value="3500">5 (3d) (5,7926km)</option>\
+<option value="600">7.5 (4d) (1,024km)</option>\
+<option value="100">10 (5d) (181m)</option>\
+<option value="20">12.5 (6d) (32m)</option>\
+<option value="3">15 (7d) (5,7m)</option>\
+<option value="0">17.5 (8d) (1m)</option>'
+            },
+            base16h:
+            {
+                symbol: '+',
+                placeholderDecode: 'EC+0E',
+                placeholderEncode: '-1.175,-78.464;u=100',
+                placeholderList: '0E,0A,05',
+                selectGrid: selectGridBase16h,
+                selectLevel: '<option value="100000">0 (2d) (185,54km)</option>\
+<option value="75000">0.5 (3d) (131,07km)</option>\
+<option value="50000">1 (3d) (92,68km)</option>\
+<option value="40000">1.5 (3d) (65,54km)</option>\
+<option value="25000">2 (3d) (46,34km)</option>\
+<option value="20000">2.5 (4) (32,78km)</option>\
+<option value="15000">3 (4d) (23,17km)</option>\
+<option value="10000">3.5 (4d) (16,38km)</option>\
+<option value="6000">4 (4d) (11,58km)</option>\
+<option value="5000">4.5 (5d) (8,192km)</option>\
+<option value="3500">5 (5d) (5,7926km)</option>\
+<option value="2500">5.5 (5d) (4,096km)</option>\
+<option value="1500">6 (5d) (2,8963km)</option>\
+<option value="1250">6.5 (6d) (2,048km)</option>\
+<option value="750">7 (6d) (1,4482km)</option>\
+<option value="600">7.5 (6d) (1,024km)</option>\
+<option value="450">8 (6d) (724,1m)</option>\
+<option value="300">8.5 (7d) (512m)</option>\
+<option value="225">9 (7d) (362m)</option>\
+<option value="150">9.5 (7d) (256m)</option>\
+<option value="100">10 (7d) (181m)</option>\
+<option value="75">10.5 (8d) (128m)</option>\
+<option value="50">11 (8d) (90,5m)</option>\
+<option value="40">11.5 (8d) (64m)</option>\
+<option value="25">12 (8d) (45,3m)</option>\
+<option value="20">12.5 (9d) (32m)</option>\
+<option value="15">13 (9d) (22,6m)</option>\
+<option value="8">13.5 (9d) (16m)</option>\
+<option value="7">14 (9d) (11,3m)</option>\
+<option value="5">14.5 (10d) (8m)</option>\
+<option value="3">15 (10d) (5,7m)</option>\
+<option value="2">15.5 (10d) (4m)</option>\
+<option value="1.4">16 (10d) (2,8)</option>\
+<option value="1">16.5 (11d) (2m)</option>\
+<option value="0.7">17 (11d) (1,4m)</option>\
+<option value="0">17.5 (11d) (1m)</option>',
+            }
+        }
+    },
+    UY:
+    {
+        center: [-32.981,-55.921],
+        zoom: 7,
+        current_zoom: 7,
+        defaultBase: 'base16',
+        isocode: 'UY',
+        jurisdictionPlaceholder: 'UY-CA-LasPiedras',
+        selectBases: '<option value="base16">base16</option><option value="base16h">base16h</option>',
+        bases:
+        {
+            base32:
+            {
+                symbol: '~',
+                placeholderDecode: 'UY~3',
+                placeholderEncode: '-32.981,-55.921;u=100',
+                placeholderList: '3,2C,4F',
+                selectGrid: selectGridBase32,
+                selectLevel: '<option value="150000">0 (1d) (262,14km)</option>\
+<option value="25000">2.5 (2d) (46,34km)</option>\
+<option value="5000">5 (3d) (8,192km)</option>\
+<option value="750">7.5 (4d) (1,45km)</option>\
+<option value="150">10 (5d) (256m)</option>\
+<option value="25">12.5 (6d) (45m)</option>\
+<option value="5">15 (7d) (8m)</option>\
+<option value="0">17.5 (8d) (1,4m)</option>'
+            },
+            base16h:
+            {
+                symbol: '+',
+                placeholderDecode: 'UY+2',
+                placeholderEncode: '-32.981,-55.921;u=100',
+                placeholderList: '2G,3A,01',
+                selectGrid: selectGridBase16h,
+                selectLevel: '<option value="150000">0 (1d) (262,14km)</option>\
+<option value="100000">0.5 (2d) (185,54km)</option>\
+<option value="75000">1 (2d) (131,07km)</option>\
+<option value="50000">1.5 (2d) (92,68km)</option>\
+<option value="40000">2 (2d) (65,54km)</option>\
+<option value="25000">2.5 (3d) (46,34km)</option>\
+<option value="20000">3 (3d) (32,78km)</option>\
+<option value="15000">3.5 (3d) (23,17km)</option>\
+<option value="10000">4 (3d) (16,38km)</option>\
+<option value="6000">4.5 (4d) (11,58km)</option>\
+<option value="5000">5 (4d) (8,192km)</option>\
+<option value="3500">5.5 (4d) (5,7926km)</option>\
+<option value="2500">6 (4d) (4,096km)</option>\
+<option value="1500">6.5 (5d) (2,8963km)</option>\
+<option value="1250">7 (5d) (2,048km)</option>\
+<option value="750">7.5 (5d) (1,4482km)</option>\
+<option value="600">8 (5d) (1,024km)</option>\
+<option value="450">8.5 (6d) (724,1m)</option>\
+<option value="300">9 (6d) (512m)</option>\
+<option value="225">9.5 (6d) (362m)</option>\
+<option value="150">10 (6d) (256m)</option>\
+<option value="100">10.5 (7d) (181m)</option>\
+<option value="75">11 (7d) (128m)</option>\
+<option value="50">11.5 (7d) (90,5m)</option>\
+<option value="40">12 (7d) (64m)</option>\
+<option value="25">12.5 (8d) (45,3m)</option>\
+<option value="20">13 (8d) (32m)</option>\
+<option value="15">13.5 (8d) (22,6m)</option>\
+<option value="8">14 (8d) (16m)</option>\
+<option value="7">14.5 (9d) (11,3m)</option>\
+<option value="5">15 (9d) (8m)</option>\
+<option value="3">15.5 (9d) (5,7m)</option>\
+<option value="2">16 (9d) (4m)</option>\
+<option value="1.4">16.5 (10d) (2,8)</option>\
+<option value="1">17 (10d) (2m)</option>\
+<option value="0.7">17.5 (10d) (1,4m)</option>\
+<option value="0">18 (10d) (1m)</option>',
+            },
+            base16:
+            {
+                symbol: '~',
+                placeholderDecode: 'UY~2',
+                placeholderEncode: '-32.981,-55.921;u=100',
+                placeholderList: '3B,3A,01',
+                selectGrid: selectGridBase16h,
+                selectLevel: '<option value="150000">0 (1d) (262,14km)</option>\
+<option value="40000">2 (2d) (65,54km)</option>\
+<option value="10000">4 (3d) (16,38km)</option>\
+<option value="2500">6 (4d) (4,096km)</option>\
+<option value="600">8 (5d) (1,024km)</option>\
+<option value="150">10 (6d) (256m)</option>\
+<option value="40">12 (7d) (64m)</option>\
+<option value="8">14 (8d) (16m)</option>\
+<option value="2">16 (9d) (4m)</option>\
+<option value="0">18 (10d) (1m)</option>'
+            }
+        }
+    }
+};
 
-var mapDefaultEC = {
-    center: [-1.175,-78.464],
-    zoom: 7,
-    current_zoom: 7 };
+var defaultMap = countries['CO'];
 
 var map = L.map('map',{
-    center: mapDefaultCO.center,
-    zoom:   mapDefaultCO.zoom,
+    center: defaultMap.center,
+    zoom:   defaultMap.zoom,
     zoomControl: false,
     renderer: L.svg(),
     layers: [grayscale, layerPolygonCurrent, layerPolygonAll] });
@@ -69,7 +377,7 @@ var toggleTooltipStatus = true;
 
 map.attributionControl.setPrefix(false);
 map.addControl(new L.Control.Fullscreen({position:'topright'})); /* https://github.com/Leaflet/Leaflet.fullscreen */
-map.on('zoom', function(e){mapDefaultCO.current_zoom = map.getZoom();});
+map.on('zoom', function(e){defaultMap.current_zoom = map.getZoom();});
 map.on('click', onMapClick);
 map.on('zoomend', showZoomLevel);
 showZoomLevel();
@@ -77,196 +385,6 @@ showZoomLevel();
 var zoom   = L.control.zoom({position:'topright'});
 var layers = L.control.layers(baseLayers, overlays,{position:'topright'});
 var escala = L.control.scale({position:'bottomright',imperial: false});
-
-var selectLevelBase32CO = '<option value="150000">0 (1)(262,14km)</option>\
-<option value="25000">2.5 (2)(46,34km)</option>\
-<option value="5000">5 (3)(8,192km)</option>\
-<option value="750">7.5 (4)(1450m)</option>\
-<option value="150">10 (5)(256m)</option>\
-<option value="25">12.5 (6)(45m)</option>\
-<option value="5">15 (7)(8m)</option>\
-<option value="0">17.5 (8)(1,4m)</option>';
-
-var selectLevelBase16hCO = '<option value="150000">0 (2)(262,14km)</option>\
-<option value="100000">0.5 (3)(185,54km)</option>\
-<option value="75000">1 (3)(131,07km)</option>\
-<option value="50000">1.5 (3)(92,68km)</option>\
-<option value="40000">2 (3)(65,54km)</option>\
-<option value="25000">2.5 (4)(46,34km)</option>\
-<option value="20000">3 (4)(32,78km)</option>\
-<option value="15000">3.5 (4)(23,17km)</option>\
-<option value="10000">4 (4)(16,38km)</option>\
-<option value="6000">4.5 (5)(11,58km)</option>\
-<option value="5000">5 (5)(8192m)</option>\
-<option value="3500">5.5 (5)(5792,6m)</option>\
-<option value="2500">6 (5)(4096m)</option>\
-<option value="1500">6.5 (6)(2896,3m)</option>\
-<option value="1250">7 (6)(2048m)</option>\
-<option value="750">7.5 (6)(1448,2m)</option>\
-<option value="600">8 (6)(1024m)</option>\
-<option value="450">8.5 (7)(724,1m)</option>\
-<option value="300">9 (7)(512m)</option>\
-<option value="225">9.5 (7)(362m)</option>\
-<option value="150">10 (7)(256m)</option>\
-<option value="100">10.5 (8)(181m)</option>\
-<option value="75">11 (8)(128m)</option>\
-<option value="50">11.5 (8)(90,5m)</option>\
-<option value="40">12 (8)(64m)</option>\
-<option value="25">12.5 (9)(45,3m)</option>\
-<option value="20">13 (9)(32m)</option>\
-<option value="15">13.5 (9)(22,6m)</option>\
-<option value="8">14 (9)(16m)</option>\
-<option value="7">14.5 (10)(11,3m)</option>\
-<option value="5">15 (10)(8m)</option>\
-<option value="3">15.5 (10)(5,7m)</option>\
-<option value="2">16 (10)(4m)</option>\
-<option value="1.4">16.5 (11)(2,8)</option>\
-<option value="1">17 (11)(2m)</option>\
-<option value="0.7">17.5 (11)(1,4m)</option>\
-<option value="0">18 (11)(1m)</option>';
-
-var selectLevelBase16hEC = '<option value="100000">0 (2)(185,54km)</option>\
-<option value="75000">0.5 (3)(131,07km)</option>\
-<option value="50000">1 (3)(92,68km)</option>\
-<option value="40000">1.5 (3)(65,54km)</option>\
-<option value="25000">2 (3)(46,34km)</option>\
-<option value="20000">2.5 (4) (32,78km)</option>\
-<option value="15000">3 (4)(23,17km)</option>\
-<option value="10000">3.5 (4)(16,38km)</option>\
-<option value="6000">4 (4)(11,58km)</option>\
-<option value="5000">4.5 (5)(8192m)</option>\
-<option value="3500">5 (5)(5792,6m)</option>\
-<option value="2500">5.5 (5)(4096m)</option>\
-<option value="1500">6 (5)(2896,3m)</option>\
-<option value="1250">6.5 (6)(2048m)</option>\
-<option value="750">7 (6)(1448,2m)</option>\
-<option value="600">7.5 (6)(1024m)</option>\
-<option value="450">8 (6)(724,1m)</option>\
-<option value="300">8.5 (7)(512m)</option>\
-<option value="225">9 (7)(362m)</option>\
-<option value="150">9.5 (7)(256m)</option>\
-<option value="100">10 (7)(181m)</option>\
-<option value="75">10.5 (8)(128m)</option>\
-<option value="50">11 (8)(90,5m)</option>\
-<option value="40">11.5 (8)(64m)</option>\
-<option value="25">12 (8)(45,3m)</option>\
-<option value="20">12.5 (9)(32m)</option>\
-<option value="15">13 (9)(22,6m)</option>\
-<option value="8">13.5 (9)(16m)</option>\
-<option value="7">14 (9)(11,3m)</option>\
-<option value="5">14.5 (10)(8m)</option>\
-<option value="3">15 (10)(5,7m)</option>\
-<option value="2">15.5 (10)(4m)</option>\
-<option value="1.4">16 (10)(2,8)</option>\
-<option value="1">16.5 (11)(2m)</option>\
-<option value="0.7">17 (11)(1,4m)</option>\
-<option value="0">17.5 (11)(1m)</option>';
-
-var selectLevelBase32EC = '<option value="100000">0 (1)(185,54km)</option>\
-<option value="20000">2.5 (2) (32,78km)</option>\
-<option value="3500">5 (3)(5792,6m)</option>\
-<option value="600">7.5 (4)(1024m)</option>\
-<option value="100">10 (5)(181m)</option>\
-<option value="20">12.5 (6)(32m)</option>\
-<option value="3">15 (7)(5,7m)</option>\
-<option value="0">17.5 (8)(1m)</option>';
-
-var selectLevelBase16hUY = '<option value="150000">0 (1)(262,14km)</option>\
-<option value="100000">0.5 (2)(185,54km)</option>\
-<option value="75000">1 (2)(131,07km)</option>\
-<option value="50000">1.5 (2)(92,68km)</option>\
-<option value="40000">2 (2)(65,54km)</option>\
-<option value="25000">2.5 (3)(46,34km)</option>\
-<option value="20000">3 (3)(32,78km)</option>\
-<option value="15000">3.5 (3)(23,17km)</option>\
-<option value="10000">4 (3)(16,38km)</option>\
-<option value="6000">4.5 (4)(11,58km)</option>\
-<option value="5000">5 (4)(8192m)</option>\
-<option value="3500">5.5 (4)(5792,6m)</option>\
-<option value="2500">6 (4)(4096m)</option>\
-<option value="1500">6.5 (5)(2896,3m)</option>\
-<option value="1250">7 (5)(2048m)</option>\
-<option value="750">7.5 (5)(1448,2m)</option>\
-<option value="600">8 (5)(1024m)</option>\
-<option value="450">8.5 (6)(724,1m)</option>\
-<option value="300">9 (6)(512m)</option>\
-<option value="225">9.5 (6)(362m)</option>\
-<option value="150">10 (6)(256m)</option>\
-<option value="100">10.5 (7)(181m)</option>\
-<option value="75">11 (7)(128m)</option>\
-<option value="50">11.5 (7)(90,5m)</option>\
-<option value="40">12 (7)(64m)</option>\
-<option value="25">12.5 (8)(45,3m)</option>\
-<option value="20">13 (8)(32m)</option>\
-<option value="15">13.5 (8)(22,6m)</option>\
-<option value="8">14 (8)(16m)</option>\
-<option value="7">14.5 (9)(11,3m)</option>\
-<option value="5">15 (9)(8m)</option>\
-<option value="3">15.5 (9)(5,7m)</option>\
-<option value="2">16 (9)(4m)</option>\
-<option value="1.4">16.5 (10)(2,8)</option>\
-<option value="1">17 (10)(2m)</option>\
-<option value="0.7">17.5 (10)(1,4m)</option>\
-<option value="0">18 (10)(1m)</option>';
-
-var selectLevelBase32BR = '\
-<option value="600000">0 (1)(1048km)</option>\
-<option value="100000">2.5 (2)(185,36km)</option>\
-<option value="20000">5 (3)(32,76km)</option>\
-<option value="3500">7.5 (4)(5,79km)</option>\
-<option value="600">10 (5)(1024m)</option>\
-<option value="100">12.5 (6)(181m)</option>\
-<option value="20">15 (7)(32m)</option>\
-<option value="3">17.5 (8)(5,7m)</option>\
-<option value="0">20 (9)(1m)</option>';
-
-var selectLevelBase16hBR = '\
-<option value="600000">0 (1)(1048,57km)</option>\
-<option value="400000">0.5 (2)(741,45km)</option>\
-<option value="300000">1 (2)(524,28km)</option>\
-<option value="200000">1.5 (2)(370,72km)</option>\
-<option value="150000">2 (2)(262,14km)</option>\
-<option value="100000">2.5 (3)(185,54km)</option>\
-<option value="75000">3 (3)(131,07km)</option>\
-<option value="50000">3.5 (3)(92,68km)</option>\
-<option value="40000">4 (3)(65,54km)</option>\
-<option value="25000">4.5 (4)(46,34km)</option>\
-<option value="20000">5 (4)(32,78km)</option>\
-<option value="15000">5.5 (4)(23,17km)</option>\
-<option value="10000">6 (4)(16,38km)</option>\
-<option value="6000">6.5 (5)(11,58km)</option>\
-<option value="5000">7 (5)(8192m)</option>\
-<option value="3500">7.5 (5)(5792,6m)</option>\
-<option value="2500">8 (5)(4096m)</option>\
-<option value="1500">8.5 (6)(2896,3m)</option>\
-<option value="1250">9 (6)(2048m)</option>\
-<option value="750">9.5 (6)(1448,2m)</option>\
-<option value="600">10 (6)(1024m)</option>\
-<option value="450">10.5 (7)(724,1m)</option>\
-<option value="300">11 (7)(512m)</option>\
-<option value="225">11.5 (7)(362m)</option>\
-<option value="150">12 (7)(256m)</option>\
-<option value="100">12.5 (8)(181m)</option>\
-<option value="75">13 (8)(128m)</option>\
-<option value="50">13.5 (8)(90,5m)</option>\
-<option value="40">14 (8)(64m)</option>\
-<option value="25">14.5 (9)(45,3m)</option>\
-<option value="20">15 (9)(32m)</option>\
-<option value="15">15.5 (9)(22,6m)</option>\
-<option value="8">16 (9)(16m)</option>\
-<option value="7">16.5 (10)(11,3m)</option>\
-<option value="5">17 (10)(8m)</option>\
-<option value="3">17.5 (10)(5,7m)</option>\
-<option value="2">18 (10)(4m)</option>\
-<option value="1.4">18.5 (11)(2,8)</option>\
-<option value="1">19 (11)(2m)</option>\
-<option value="0.7">19.5 (11)(1,4m)</option>\
-<option value="0">20 (11)(1m)</option>';
-
-var selectBases = '<option value="base32">base32</option><option value="base16h">base16h</option>';
-var selectCountrys = '<option value="BR">Brasil</option><option value="CO" selected>Colombia</option><option value="EC">Equador</option><option value="UY">Uruguai</option>';
-var selectGridBase32 = '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>';
-var selectGridBase16h = '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>';
 
 var searchJurisdiction = L.control({position: 'topleft'});
 searchJurisdiction.onAdd = function (map) {
@@ -285,7 +403,7 @@ searchJurisdiction.onAdd = function (map) {
     this.checkbox.checked = false;
 
     this.search.type = 'text';
-    this.search.placeholder = 'e.g.: CO-ANT-Medellin';
+    this.search.placeholder = 'e.g.: ' + defaultMap.jurisdictionPlaceholder;
     this.search.id = 'textsearchjurisdiction';
     this.button.type = 'button';
     this.button.innerHTML= "Jurisdiction";
@@ -308,7 +426,7 @@ searchDecode.onAdd = function (map) {
     this.button    = L.DomUtil.create('button','leaflet-control-button',this.container);
 
     this.search.type = 'text';
-    this.search.placeholder = 'geocode, e.g.: CO~3D5';
+    this.search.placeholder = 'geocode, e.g.: ' + defaultMap.bases[defaultMap.defaultBase].placeholderDecode;
     this.search.id = 'textsearchbar';
     this.button.type = 'button';
     this.button.innerHTML= "Decode";
@@ -328,7 +446,7 @@ searchDecodeList.onAdd = function (map) {
     this.search    = L.DomUtil.create('textarea', '', this.container);
     this.button    = L.DomUtil.create('button','leaflet-control-button',this.container);
 
-    this.search.placeholder = 'list geocodes, e.g.: 3D5,3D4,2';
+    this.search.placeholder = 'list geocodes, e.g.: ' + defaultMap.bases[defaultMap.defaultBase].placeholderList;
     this.search.id = 'listtextsearchbar';
     this.button.type = 'button';
     this.button.innerHTML= "Decode";
@@ -349,7 +467,7 @@ searchEncode.onAdd = function (map) {
     this.button    = L.DomUtil.create('button','leaflet-control-button',this.container);
 
     this.search.type = 'text';
-    this.search.placeholder = 'lat,lng, e.g.: 3.5,-72.3;u=1';
+    this.search.placeholder = 'lat,lng, e.g.: ' + defaultMap.bases[defaultMap.defaultBase].placeholderEncode;
     this.search.id = 'latlngtextbar';
     this.button.type = 'button';
     this.button.innerHTML= "Encode";
@@ -382,7 +500,6 @@ country.onAdd = function (map) {
 var level = L.control({position: 'topleft'});
 level.onAdd = function (map) {
     this.container     = L.DomUtil.create('div');
-    this.select_base   = L.DomUtil.create('select', '', this.container);
     this.label_level   = L.DomUtil.create('label', '', this.container);
     this.select_level  = L.DomUtil.create('select', '', this.container);
     this.label_grid    = L.DomUtil.create('label', '', this.container);
@@ -392,17 +509,27 @@ level.onAdd = function (map) {
     this.label_grid.innerHTML = ' with grid: ';
     this.select_grid.id = 'grid';
     this.select_grid.name = 'grid';
-    this.select_grid.innerHTML = selectGridBase32
+    this.select_grid.innerHTML = defaultMap.selectGridBase32
 
     this.label_level.for = 'level';
-    this.label_level.innerHTML = ' Level: ';
+    this.label_level.innerHTML = 'Level: ';
     this.select_level.id = 'level_size';
     this.select_level.name = 'level';
-    this.select_level.innerHTML = selectLevelBase32CO;
+    this.select_level.innerHTML = defaultMap.selectLevelBase32;
+
+    L.DomEvent.disableScrollPropagation(this.container);
+    L.DomEvent.disableClickPropagation(this.container);
+
+    return this.container; };
+
+var baseLevel = L.control({position: 'topleft'});
+baseLevel.onAdd = function (map) {
+    this.container     = L.DomUtil.create('div');
+    this.select_base   = L.DomUtil.create('select', '', this.container);
 
     this.select_base.id = 'base';
     this.select_base.name = 'base';
-    this.select_base.innerHTML = selectBases;
+    this.select_base.innerHTML = defaultMap.selectBases;
 
     L.DomEvent.disableScrollPropagation(this.container);
     L.DomEvent.disableClickPropagation(this.container);
@@ -493,6 +620,7 @@ country.addTo(map);
 searchJurisdiction.addTo(map);
 searchDecode.addTo(map);
 searchEncode.addTo(map);
+baseLevel.addTo(map);
 level.addTo(map);
 clear.addTo(map);
 fitBounds.addTo(map);
@@ -506,6 +634,7 @@ a.appendChild(country.getContainer());
 a.appendChild(searchJurisdiction.getContainer());
 a.appendChild(searchDecode.getContainer());
 a.appendChild(searchEncode.getContainer());
+a.appendChild(baseLevel.getContainer());
 a.appendChild(level.getContainer());
 a.appendChild(clear.getContainer());
 a.appendChild(fitBounds.getContainer());
@@ -526,12 +655,13 @@ function clearAll()
 {
     clearAllLayers();
 
-    map.setView(mapDefaultCO.center, mapDefaultCO.zoom);
+    map.setView(defaultMap.center, defaultMap.zoom);
 
     document.getElementById('listtextsearchbar').value = '';
-    document.querySelector('#base').value = 'base32';
-    document.querySelector('#country').value = 'CO';
+    document.querySelector('#base').value = defaultMap.defaultBase;
+    document.querySelector('#country').value = defaultMap.isocode;
     document.querySelector('#grid').value = '';
+    document.getElementById('base').innerHTML = defaultMap.selectBases;
     toggleLevelBase()
 }
 
@@ -543,67 +673,26 @@ function toggleCountry()
 
     let countryValue = document.getElementById('country').value;
 
-    if (countryValue == 'BR')
-    {
-        map.setView(mapDefaultBR.center, mapDefaultBR.zoom);
-    }
-    else if(countryValue == 'CO')
-    {
-        map.setView(mapDefaultCO.center, mapDefaultCO.zoom);
-    }
-    else if(countryValue == 'EC')
-    {
-        map.setView(mapDefaultEC.center, mapDefaultEC.zoom);
-    }
-    else if(countryValue == 'UY')
-    {
-        map.setView(mapDefaultUY.center, mapDefaultUY.zoom);
-        document.getElementById('base').value = 'base16h'
-    }
+    map.setView(countries[countryValue].center, countries[countryValue].zoom);
+    document.getElementById('base').innerHTML = countries[countryValue].selectBases;
+    document.getElementById('base').value = countries[countryValue].defaultBase;
+
+    document.getElementById('textsearchjurisdiction').placeholder = 'e.g.: ' + countries[countryValue].jurisdictionPlaceholder;
+
     toggleLevelBase();
 }
 
 function toggleLevelBase()
 {
     let countryValue = document.getElementById('country').value;
+    let baseValue = document.getElementById('base').value;
 
-    if(document.getElementById('base').value == 'base16h')
-    {
+    document.getElementById('level_size').innerHTML = countries[countryValue].bases[baseValue].selectLevel;
+    document.getElementById('grid').innerHTML = countries[countryValue].bases[baseValue].selectGrid;
 
-        if(countryValue == 'CO')
-        {
-            document.getElementById('level_size').innerHTML = selectLevelBase16hCO;
-        }
-        else if (countryValue == 'BR')
-        {
-            document.getElementById('level_size').innerHTML = selectLevelBase16hBR;
-        }
-        if(countryValue == 'UY')
-        {
-            document.getElementById('level_size').innerHTML = selectLevelBase16hUY;
-        }
-        if(countryValue == 'EC')
-        {
-            document.getElementById('level_size').innerHTML = selectLevelBase16hEC;
-        }
-        document.getElementById('grid').innerHTML = selectGridBase16h;
-    }
-    else
-    {
-        if(countryValue == 'CO' || countryValue == 'UY')
-        {
-            document.getElementById('level_size').innerHTML = selectLevelBase32CO;
-        }
-        else if (countryValue == 'BR')
-        {
-            document.getElementById('level_size').innerHTML = selectLevelBase32BR;
-        }
-        if(countryValue == 'EC')
-        {
-            document.getElementById('level_size').innerHTML = selectLevelBase32EC;
-        }
-        document.getElementById('grid').innerHTML = selectGridBase32;
-    }
+    document.getElementById('textsearchbar').placeholder = 'geocode, e.g.: ' + countries[countryValue].bases[baseValue].placeholderDecode;
+    document.getElementById('listtextsearchbar').placeholder = 'list geocodes, e.g.: ' + countries[countryValue].bases[baseValue].placeholderList;
+    document.getElementById('latlngtextbar').placeholder = 'lat,lng e.g.: ' + countries[countryValue].bases[baseValue].placeholderEncode;
 }
 
 function toggleTooltipLayers()
@@ -691,7 +780,7 @@ function searchEncodeGgeocode(data)
 
 function sortAndRemoveDuplicates(value) {
 
-    let listValues = [...new Set(value.trim().split(/[\n,]+/).map(i => i.trim().substring(0,7)))];
+    let listValues = [...new Set(value.trim().split(/[\n,]+/).map(i => i.trim().substring(0,11)))];
 
     return listValues.sort().join(",");
 }
@@ -875,29 +964,17 @@ function showZoomLevel()
 
 function checkCountry(string)
 {
-    var regexbr = /^(\/)?BR.*/i;
-    var regexco = /^(\/)?CO.*/i;
-    var regexec = /^(\/)?EC.*/i;
-    var regexuy = /^(\/)?UY.*/i;
-    if(regexbr.test(string))
+    for(var key in countries)
     {
-        document.getElementById('country').value='BR';
-        toggleCountry();
-    }
-    else if(regexco.test(string))
-    {
-        document.getElementById('country').value='CO';
-        toggleCountry();
-    }
-    else if(regexec.test(string))
-    {
-        document.getElementById('country').value='EC';
-        toggleCountry();
-    }
-    else if(regexuy.test(string))
-    {
-        document.getElementById('country').value='UY';
-        toggleCountry();
+        let isocode = countries[key].isocode;
+        let regex = new RegExp("^/?" + isocode + ".*","i");
+
+        if(regex.test(string))
+        {
+            document.getElementById('country').value = isocode;
+            toggleCountry();
+            break;
+        }
     }
 }
 

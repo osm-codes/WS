@@ -39,9 +39,7 @@ var overlays = {
     'All markers': layerMarkerAll };
 
 
-var selectCountrys = '<option value="BR">Brasil</option><option value="CO" selected>Colombia</option><option value="EC">Equador</option><option value="UY">Uruguai</option>';
-var selectGridBase32 = '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>';
-var selectGridBase16h = '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>';
+var selectCountries = '<option value="BR">Brasil</option><option value="CO" selected>Colombia</option><option value="EC">Equador</option><option value="UY">Uruguai</option>';
 
 var countries = {
     BR:
@@ -50,6 +48,8 @@ var countries = {
         zoom: 4,
         current_zoom: 4,
         defaultBase: 'base32',
+        scientificBase: 'base16h',
+        postalcodeBase: 'base32',
         isocode: 'BR',
         jurisdictionPlaceholder: 'BR-SP-SaoPaulo',
         selectBases: '<option value="base32">base32</option><option value="base16h">base16h</option>',
@@ -59,9 +59,9 @@ var countries = {
             {
                 symbol: '~',
                 placeholderDecode: 'BR~42',
-                placeholderEncode: '-15.796,-47.880;u=100',
+                placeholderEncode: '-15.7,-47.8;u=10',
                 placeholderList: '3,5,7,A',
-                selectGrid: selectGridBase32,
+                selectGrid: '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>',
                 selectLevel: '<option value="600000">0 (1d) (1048km)</option>\
 <option value="100000">2.5 (2d) (185,36km)</option>\
 <option value="20000">5 (3d) (32,76km)</option>\
@@ -76,9 +76,9 @@ var countries = {
             {
                 symbol: '+',
                 placeholderDecode: 'BR+3F',
-                placeholderEncode: '-15.796,-47.880;u=100',
+                placeholderEncode: '-15.7,-47.8;u=10',
                 placeholderList: '3,5,7,B',
-                selectGrid: selectGridBase16h,
+                selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
                 selectLevel: '<option value="600000">0 (1d) (1048,57km)</option>\
 <option value="400000">0.5 (2d) (741,45km)</option>\
 <option value="300000">1 (2d) (524,28km)</option>\
@@ -129,6 +129,8 @@ var countries = {
         zoom: 6,
         current_zoom: 6,
         defaultBase: 'base32',
+        scientificBase: 'base16h',
+        postalcodeBase: 'base32',
         isocode: 'CO',
         jurisdictionPlaceholder: 'CO-ANT-Itagui',
         selectBases: '<option value="base32">base32</option><option value="base16h">base16h</option>',
@@ -138,9 +140,9 @@ var countries = {
             {
                 symbol: '~',
                 placeholderDecode: 'CO~3D5',
-                placeholderEncode: '3.5,-72.3;u=100',
+                placeholderEncode: '3.5,-72.3;u=10',
                 placeholderList: '3D5,3D4,2',
-                selectGrid: selectGridBase32,
+                selectGrid: '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>',
                 selectLevel: '<option value="150000">0 (1d) (262,14km)</option>\
 <option value="25000">2.5 (2d) (46,34km)</option>\
 <option value="5000">5 (3d) (8,192km)</option>\
@@ -154,9 +156,9 @@ var countries = {
             {
                 symbol: '+',
                 placeholderDecode: '0A2',
-                placeholderEncode: '3.5,-72.3;u=100',
+                placeholderEncode: '3.5,-72.3;u=10',
                 placeholderList: '0A,0B,0C',
-                selectGrid: selectGridBase16h,
+                selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
                 selectLevel: '<option value="150000">0 (2d) (262,14km)</option>\
 <option value="100000">0.5 (3d) (185,54km)</option>\
 <option value="75000">1 (3d) (131,07km)</option>\
@@ -199,10 +201,12 @@ var countries = {
     },
     EC:
     {
-        center: [-1.175,-78.464],
-        zoom: 7,
-        current_zoom: 7,
+        center: [-0.944,-83.895],
+        zoom: 6,
+        current_zoom: 6,
         defaultBase: 'base32',
+        scientificBase: 'base16h',
+        postalcodeBase: 'base32',
         isocode: 'EC',
         jurisdictionPlaceholder: 'EC-L-Loja',
         selectBases: '<option value="base32">base32</option><option value="base16h">base16h</option>',
@@ -212,9 +216,9 @@ var countries = {
             {
                 symbol: '~',
                 placeholderDecode: 'EC~5P',
-                placeholderEncode: '-1.175,-78.464;u=100',
+                placeholderEncode: '-1.1,-78.4;u=10',
                 placeholderList: '5P,FL,J9',
-                selectGrid: selectGridBase32,
+                selectGrid: '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>',
                 selectLevel: '<option value="100000">0 (1d) (185,54km)</option>\
 <option value="20000">2.5 (2) (32,78km)</option>\
 <option value="3500">5 (3d) (5,7926km)</option>\
@@ -228,9 +232,9 @@ var countries = {
             {
                 symbol: '+',
                 placeholderDecode: 'EC+0E',
-                placeholderEncode: '-1.175,-78.464;u=100',
+                placeholderEncode: '-1.1,-78.4;u=10',
                 placeholderList: '0E,0A,05',
-                selectGrid: selectGridBase16h,
+                selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
                 selectLevel: '<option value="100000">0 (2d) (185,54km)</option>\
 <option value="75000">0.5 (3d) (131,07km)</option>\
 <option value="50000">1 (3d) (92,68km)</option>\
@@ -276,6 +280,8 @@ var countries = {
         zoom: 7,
         current_zoom: 7,
         defaultBase: 'base16',
+        scientificBase: 'base16h',
+        postalcodeBase: 'base16',
         isocode: 'UY',
         jurisdictionPlaceholder: 'UY-CA-LasPiedras',
         selectBases: '<option value="base16">base16</option><option value="base16h">base16h</option>',
@@ -285,9 +291,9 @@ var countries = {
             {
                 symbol: '~',
                 placeholderDecode: 'UY~3',
-                placeholderEncode: '-32.981,-55.921;u=100',
+                placeholderEncode: '-32.9,-55.9;u=10',
                 placeholderList: '3,2C,4F',
-                selectGrid: selectGridBase32,
+                selectGrid: '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>',
                 selectLevel: '<option value="150000">0 (1d) (262,14km)</option>\
 <option value="25000">2.5 (2d) (46,34km)</option>\
 <option value="5000">5 (3d) (8,192km)</option>\
@@ -301,9 +307,9 @@ var countries = {
             {
                 symbol: '+',
                 placeholderDecode: 'UY+2',
-                placeholderEncode: '-32.981,-55.921;u=100',
+                placeholderEncode: '-32.9,-55.9;u=10',
                 placeholderList: '2G,3A,01',
-                selectGrid: selectGridBase16h,
+                selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
                 selectLevel: '<option value="150000">0 (1d) (262,14km)</option>\
 <option value="100000">0.5 (2d) (185,54km)</option>\
 <option value="75000">1 (2d) (131,07km)</option>\
@@ -346,9 +352,9 @@ var countries = {
             {
                 symbol: '~',
                 placeholderDecode: 'UY~2',
-                placeholderEncode: '-32.981,-55.921;u=100',
+                placeholderEncode: '-32.9,-55.9;u=10',
                 placeholderList: '3B,3A,01',
-                selectGrid: selectGridBase16h,
+                selectGrid: '<option></option><option value="grid16">grid16</option><option value="grid17">grid16 (points)</option>',
                 selectLevel: '<option value="150000">0 (1d) (262,14km)</option>\
 <option value="40000">2 (2d) (65,54km)</option>\
 <option value="10000">4 (3d) (16,38km)</option>\
@@ -489,7 +495,7 @@ country.onAdd = function (map) {
     this.label_country.innerHTML = 'Country: ';
     this.select_country.id = 'country';
     this.select_country.name = 'country';
-    this.select_country.innerHTML = selectCountrys;
+    this.select_country.innerHTML = selectCountries;
 
     L.DomEvent.disableScrollPropagation(this.container);
     L.DomEvent.disableClickPropagation(this.container);
@@ -509,13 +515,13 @@ level.onAdd = function (map) {
     this.label_grid.innerHTML = ' with grid: ';
     this.select_grid.id = 'grid';
     this.select_grid.name = 'grid';
-    this.select_grid.innerHTML = defaultMap.selectGridBase32
+    this.select_grid.innerHTML = defaultMap.bases[defaultMap.defaultBase].selectGrid
 
     this.label_level.for = 'level';
     this.label_level.innerHTML = 'Level: ';
     this.select_level.id = 'level_size';
     this.select_level.name = 'level';
-    this.select_level.innerHTML = defaultMap.selectLevelBase32;
+    this.select_level.innerHTML = defaultMap.bases[defaultMap.defaultBase].selectLevel;
 
     L.DomEvent.disableScrollPropagation(this.container);
     L.DomEvent.disableClickPropagation(this.container);
@@ -692,7 +698,7 @@ function toggleLevelBase()
 
     document.getElementById('textsearchbar').placeholder = 'geocode, e.g.: ' + countries[countryValue].bases[baseValue].placeholderDecode;
     document.getElementById('listtextsearchbar').placeholder = 'list geocodes, e.g.: ' + countries[countryValue].bases[baseValue].placeholderList;
-    document.getElementById('latlngtextbar').placeholder = 'lat,lng e.g.: ' + countries[countryValue].bases[baseValue].placeholderEncode;
+    document.getElementById('latlngtextbar').placeholder = 'lat,lng, e.g.: ' + countries[countryValue].bases[baseValue].placeholderEncode;
 }
 
 function toggleTooltipLayers()
@@ -727,12 +733,13 @@ function searchDecodeGgeocode(data)
 function searchDecodeListGgeocode(data)
 {
     let input = document.getElementById('listtextsearchbar').value;
-    let country = document.getElementById('country').value;
+    let countryValue = document.getElementById('country').value;
+    let baseValue = document.getElementById('base').value;
 
     console.log(input);
     if(input !== null && input !== '')
     {
-        var uri = uri_base + "/geo:osmcodes:" + country.toUpperCase() + (document.getElementById('base').value == 'base16h' ? '+' : '~') + sortAndRemoveDuplicates(input.toUpperCase()) + ".json"
+        var uri = uri_base + "/geo:osmcodes:" + countryValue.toUpperCase() + countries[countryValue].bases[baseValue].symbol + sortAndRemoveDuplicates(input.toUpperCase()) + ".json"
 
         loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter);
         document.getElementById('listtextsearchbar').value = '';
@@ -966,12 +973,11 @@ function checkCountry(string)
 {
     for(var key in countries)
     {
-        let isocode = countries[key].isocode;
-        let regex = new RegExp("^/?" + isocode + ".*","i");
+        let regex = new RegExp("^/?" + key + ".*","i");
 
         if(regex.test(string))
         {
-            document.getElementById('country').value = isocode;
+            document.getElementById('country').value = key;
             toggleCountry();
             break;
         }
@@ -981,19 +987,28 @@ function checkCountry(string)
 var uri = window.location.href;
 let pathname = window.location.pathname;
 
-function checkBase()
+function checkBase(string)
 {
-    var regex = /\+/;
-    if(regex.test(pathname))
+    for(var key in countries)
     {
-        document.getElementById('base').value = 'base16h';
-    }
-    else
-    {
-        document.getElementById('base').value = 'base32';
-    }
+        let regex = new RegExp("^/?" + key + ".*","i");
 
-    toggleLevelBase();
+        if(regex.test(string))
+        {
+            let regex2 = /\+/;
+
+            if(regex2.test(string))
+            {
+                document.getElementById('base').value = countries[key].scientificBase;
+            }
+            else
+            {
+                document.getElementById('base').value = countries[key].postalcodeBase;
+            }
+            toggleLevelBase();
+            break;
+        }
+    }
 }
 
 if(pathname !== "/view/")

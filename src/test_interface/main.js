@@ -1013,7 +1013,11 @@ function checkBase(string)
 
 if(pathname !== "/view/")
 {
-    if (pathname.match(/(\/base16h)?\/grid/))
+    if (pathname.match(/\/base16\/grid/))
+    {
+        var uriApi = uri.replace(/(\/base16\/grid)/, ".json$1");
+    }
+    else if (pathname.match(/(\/base16h)?\/grid/))
     {
         var uriApi = uri.replace(/((\/base16h)?\/grid)/, ".json$1");
     }

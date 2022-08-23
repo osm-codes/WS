@@ -237,8 +237,8 @@ server { ## OSM.CODES
           rewrite "(?i)^/([A-Z]{2})~(([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+){0,})$" /view/ break;
         }
 
-        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?(/base16h)?(/grid(2|4|8|16|32))?$" {
-          rewrite  "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?(/base16h)?(/grid(2|4|8|16|32))?$" /view/ break;
+        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?(/base16h?)?(/grid(2|4|8|16|32))?$" {
+          rewrite  "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?(/base16h?)?(/grid(2|4|8|16|32))?$" /view/ break;
         }
 
         location ~* "^/(geo:iso_ext:)?([A-Z]{2}([\-][A-Z]+)?([\-][A-Z]+)?)$" {

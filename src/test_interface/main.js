@@ -279,12 +279,12 @@ var countries = {
         center: [-32.981,-55.921],
         zoom: 7,
         current_zoom: 7,
-        defaultBase: 'base16',
+        defaultBase: 'base32',
         scientificBase: 'base16h',
-        postalcodeBase: 'base16',
+        postalcodeBase: 'base32',
         isocode: 'UY',
         jurisdictionPlaceholder: 'UY-CA-LasPiedras',
-        selectBases: '<option value="base16">base16</option><option value="base16h">base16h</option>',
+        selectBases: '<option value="base32">base32</option><option value="base16h">base16h</option>',
         bases:
         {
             base32:

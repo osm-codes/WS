@@ -294,14 +294,13 @@ var countries = {
                 placeholderEncode: '-32.9,-55.9;u=10',
                 placeholderList: '3,2C,4F',
                 selectGrid: '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>',
-                selectLevel: '<option value="150000">0 (1d) (262,14km)</option>\
-<option value="25000">2.5 (2d) (46,34km)</option>\
-<option value="5000">5 (3d) (8,192km)</option>\
-<option value="750">7.5 (4d) (1,45km)</option>\
-<option value="150">10 (5d) (256m)</option>\
-<option value="25">12.5 (6d) (45m)</option>\
-<option value="5">15 (7d) (8m)</option>\
-<option value="0">17.5 (8d) (1,4m)</option>'
+                selectLevel: '<option value="150000">0 (1d) (131,072km)</option>\
+<option value="25000">2.5 (2d) (23,1705km)</option>\
+<option value="5000">5 (3d) (4,096km)</option>\
+<option value="750">7.5 (4d) (724,1m)</option>\
+<option value="150">10 (5d) (128m)</option>\
+<option value="25">12.5 (6d) 22,6m)</option>\
+<option value="5">15 (7d) (4m)</option>',
             },
             base16h:
             {
@@ -310,43 +309,41 @@ var countries = {
                 placeholderEncode: '-32.9,-55.9;u=10',
                 placeholderList: '2G,3A,01',
                 selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
-                selectLevel: '<option value="150000">0 (1d) (262,14km)</option>\
-<option value="100000">0.5 (2d) (185,54km)</option>\
-<option value="75000">1 (2d) (131,07km)</option>\
-<option value="50000">1.5 (2d) (92,68km)</option>\
-<option value="40000">2 (2d) (65,54km)</option>\
-<option value="25000">2.5 (3d) (46,34km)</option>\
-<option value="20000">3 (3d) (32,78km)</option>\
-<option value="15000">3.5 (3d) (23,17km)</option>\
-<option value="10000">4 (3d) (16,38km)</option>\
-<option value="6000">4.5 (4d) (11,58km)</option>\
-<option value="5000">5 (4d) (8,192km)</option>\
-<option value="3500">5.5 (4d) (5,7926km)</option>\
-<option value="2500">6 (4d) (4,096km)</option>\
-<option value="1500">6.5 (5d) (2,8963km)</option>\
-<option value="1250">7 (5d) (2,048km)</option>\
-<option value="750">7.5 (5d) (1,4482km)</option>\
-<option value="600">8 (5d) (1,024km)</option>\
-<option value="450">8.5 (6d) (724,1m)</option>\
-<option value="300">9 (6d) (512m)</option>\
-<option value="225">9.5 (6d) (362m)</option>\
-<option value="150">10 (6d) (256m)</option>\
-<option value="100">10.5 (7d) (181m)</option>\
-<option value="75">11 (7d) (128m)</option>\
-<option value="50">11.5 (7d) (90,5m)</option>\
-<option value="40">12 (7d) (64m)</option>\
-<option value="25">12.5 (8d) (45,3m)</option>\
-<option value="20">13 (8d) (32m)</option>\
-<option value="15">13.5 (8d) (22,6m)</option>\
-<option value="8">14 (8d) (16m)</option>\
-<option value="7">14.5 (9d) (11,3m)</option>\
-<option value="5">15 (9d) (8m)</option>\
-<option value="3">15.5 (9d) (5,7m)</option>\
-<option value="2">16 (9d) (4m)</option>\
-<option value="1.4">16.5 (10d) (2,8)</option>\
-<option value="1">17 (10d) (2m)</option>\
-<option value="0.7">17.5 (10d) (1,4m)</option>\
-<option value="0">18 (10d) (1m)</option>',
+                selectLevel: '<option value="75000">0 (1d) (131,07km)</option>\
+<option value="50000">0.5 (2d) (92,68km)</option>\
+<option value="40000">1 (2d) (65,54km)</option>\
+<option value="25000">1.5 (2d) (46,34km)</option>\
+<option value="20000">2 (2d) (32,78km)</option>\
+<option value="15000">2.5 (3d) (23,17km)</option>\
+<option value="10000">3 (3d) (16,38km)</option>\
+<option value="6000">3.5 (3d) (11,58km)</option>\
+<option value="5000">4 (3d) (8,192km)</option>\
+<option value="3500">4.5 (4d) (5,7926km)</option>\
+<option value="2500">5 (4d) (4,096km)</option>\
+<option value="1500">5.5 (4d) (2,8963km)</option>\
+<option value="1250">6 (4d) (2,048km)</option>\
+<option value="750">6.5 (5d) (1,4482km)</option>\
+<option value="600">7 (5d) (1,024km)</option>\
+<option value="450">7.5 (5d) (724,1m)</option>\
+<option value="300">8 (5d) (512m)</option>\
+<option value="225">8.5 (6d) (362m)</option>\
+<option value="150">9 (6d) (256m)</option>\
+<option value="100">9.5 (6d) (181m)</option>\
+<option value="75">10 (6d) (128m)</option>\
+<option value="50">10.5 (7d) (90,5m)</option>\
+<option value="40">11 (7d) (64m)</option>\
+<option value="25">11.5 (7d) (45,3m)</option>\
+<option value="20">12 (7d) (32m)</option>\
+<option value="15">12.5 (8d) (22,6m)</option>\
+<option value="8">13 (8d) (16m)</option>\
+<option value="7">13.5 (8d) (11,3m)</option>\
+<option value="5">14 (8d) (8m)</option>\
+<option value="3">14.5 (9d) (5,7m)</option>\
+<option value="2">15 (9d) (4m)</option>\
+<option value="1.4">15.5 (9d) (2,8)</option>\
+<option value="1">16 (9d) (2m)</option>\
+<option value="0.7">16.5 (10d) (1,4m)</option>\
+<option value="0">17 (10d) (1m)</option>',
             },
             base16:
             {

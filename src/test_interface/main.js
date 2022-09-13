@@ -821,23 +821,29 @@ function onEachFeature(feature,layer)
         value_side =(feature.properties.side<1000)? Math.round(feature.properties.side*100.0)/100 : Math.round(feature.properties.side*100.0/1000)/100;
 
         var popupContent = "";
-        popupContent += "Code: " + feature.properties.code + "<br>";
-        popupContent += "Area: " + value_area + " " + sufix_area + "<br>";
-        popupContent += "Side: " + value_side + " " + sufix_side + "<br>";
 
         if(feature.properties.short_code )
         {
-            popupContent += "Short code: " + feature.properties.short_code + "<br>";
+            popupContent += "Postal code: " + feature.properties.short_code.split(/[~]/)[1] + "<br>";
+            popupContent += "Area: " + value_area + " " + sufix_area + "<br>";
+            popupContent += "Side: " + value_side + " " + sufix_side + "<br>";
+            popupContent += "Jurisdiction: " + feature.properties.short_code.split(/[~]/)[0] + "<br>";
         }
-
-        if(feature.properties.prefix )
+        else
         {
-            popupContent += "Prefix: " + feature.properties.prefix + "<br>";
-        }
+            popupContent += "Code: " + feature.properties.code + "<br>";
+            popupContent += "Area: " + value_area + " " + sufix_area + "<br>";
+            popupContent += "Side: " + value_side + " " + sufix_side + "<br>";
 
-        if(feature.properties.code_subcell )
-        {
-            popupContent += "Code_subcell: " + feature.properties.code_subcell + "<br>";
+            if(feature.properties.prefix )
+            {
+                popupContent += "Prefix: " + feature.properties.prefix + "<br>";
+            }
+
+            if(feature.properties.code_subcell )
+            {
+                popupContent += "Code_subcell: " + feature.properties.code_subcell + "<br>";
+            }
         }
 
         layer.bindPopup(popupContent);
@@ -858,6 +864,7 @@ function onEachFeature(feature,layer)
         {
             var layerTooltip = feature.properties.code;
         }
+        
         layer.bindTooltip(layerTooltip,{permanent:toggleTooltipStatus,direction:'center',className:'tooltip' + feature.properties.base});
     }
 

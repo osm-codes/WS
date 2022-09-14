@@ -295,12 +295,12 @@ var countries = {
                 placeholderList: '3,2C,4F',
                 selectGrid: '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>',
                 selectLevel: '<option value="150000">0 (1d) (131,072km)</option>\
-<option value="25000">2.5 (2d) (23,1705km)</option>\
-<option value="5000">5 (3d) (4,096km)</option>\
-<option value="750">7.5 (4d) (724,1m)</option>\
+<option value="15000">2.5 (2d) (23,1705km)</option>\
+<option value="2500">5 (3d) (4,096km)</option>\
+<option value="450">7.5 (4d) (724,1m)</option>\
 <option value="150">10 (5d) (128m)</option>\
-<option value="25">12.5 (6d) 22,6m)</option>\
-<option value="5">15 (7d) (4m)</option>',
+<option value="15">12.5 (6d) 22,6m)</option>\
+<option value="2">15 (7d) (4m)</option>',
             },
             base16h:
             {
@@ -828,6 +828,10 @@ function onEachFeature(feature,layer)
             popupContent += "Area: " + value_area + " " + sufix_area + "<br>";
             popupContent += "Side: " + value_side + " " + sufix_side + "<br>";
             popupContent += "Jurisdiction: " + feature.properties.short_code.split(/[~]/)[0] + "<br>";
+            if(feature.properties.jurisd_local_id )
+            {
+                popupContent += "Jurisdiction code: " + feature.properties.jurisd_local_id + "<br>";
+            }
         }
         else
         {
@@ -948,6 +952,26 @@ function loadGeojson(uri,arrayLayer,afterLoad)
         }
 
         afterLoad(arrayLayer[0]);
+        
+//         console.log(Object.keys(data.features).length)
+
+        if(data.features.length = 1)
+        {
+            console.log(data.features[0])
+            console.log(data.features)
+
+            if(data.features[0].properties.short_code)
+            {
+                console.log(data.features[0].properties.short_code)
+
+                //var nextURL = window.location.protocol + "//" + window.location.host + "/" + window.location.pathname + window.location.search
+                var nextURL = window.location.protocol + "//" + window.location.host + "/" + data.features[0].properties.short_code + window.location.search
+                const nextTitle = 'OSM.codes: ' + data.features[0].properties.short_code;
+                const nextState = { additionalInformation: 'to canonical.' };
+
+                window.history.pushState(nextState, nextTitle, nextURL);
+            }
+        }
     })
     .catch(err => {})
 }

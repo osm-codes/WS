@@ -866,6 +866,9 @@ function loadGeojsonFitCenter(featureGroup)
     let fitbd = document.getElementById('fitbounds')
     let fitce = document.getElementById('fitcenter')
     fitbd.checked ? map.fitBounds(featureGroup.getBounds()) : (fitce.checked ? map.setView(featureGroup.getBounds().getCenter()) : '')
+    
+    let zoom = map.getZoom();
+    fitbd.checked ? map.setView(featureGroup.getBounds().getCenter(),zoom-(zoom < 10 ? 1: (zoom < 20 ? 2: (zoom < 24 ? 3: 4)))) : '';
 }
 
 function loadGeojson(uri,arrayLayer,afterLoad)

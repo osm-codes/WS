@@ -31,6 +31,18 @@ var layerPolygonAll = new L.geoJSON(null,{
             pointToLayer: pointToLayer,
         });
 
+var layerJurisdAll = new L.geoJSON(null,{
+            style: style,
+            onEachFeature: onEachFeature,
+            pointToLayer: pointToLayer,
+        });
+
+var layerCoverAll = new L.geoJSON(null,{
+            style: style,
+            onEachFeature: onEachFeature,
+            pointToLayer: pointToLayer,
+        });
+
 var layerMarkerCurrent = new L.featureGroup();
 var layerMarkerAll = new L.featureGroup();
 
@@ -38,7 +50,10 @@ var overlays = {
     'Current polygon': layerPolygonCurrent,
     'All polygon': layerPolygonAll,
     'Current marker': layerMarkerCurrent,
-    'All markers': layerMarkerAll };
+    'All markers': layerMarkerAll,
+    'Covers': layerCoverAll,
+    'Jurisdictions': layerJurisdAll,
+};
 
 var levelSize = [1048576,741455.2,524288,370727.6,262144,185363.8,131072,92681.9,65536,46341,32768,23170.5,16384,11585.2,8192,5792.6,4096,2896.3,2048,1448.2,1024,724.1,512,362,256,181,128,90.5,64,45.3,32,22.6,16,11.3,8,5.7,4,2.8,2,1.4,1];
 
@@ -239,7 +254,7 @@ var map = L.map('map',{
     zoom:   defaultMap.zoom,
     zoomControl: false,
     renderer: L.svg(),
-    layers: [grayscale, layerPolygonCurrent, layerPolygonAll] });
+    layers: [grayscale, layerPolygonCurrent, layerPolygonAll, layerCoverAll, layerJurisdAll] });
 
 var toggleTooltipStatus = true;
 
@@ -517,6 +532,8 @@ function clearAllLayers()
     layerPolygonAll.clearLayers();
     layerMarkerCurrent.clearLayers();
     layerMarkerAll.clearLayers();
+    layerCoverAll.clearLayers();
+    layerJurisdAll.clearLayers();
 }
 
 function clearAll()
@@ -675,14 +692,14 @@ function searchDecodeJurisdiction(data)
     {
         let uri = uri_base + "/geo:iso_ext:" + input + ".json" + (jcover.checked ? '/cover' : '') + (document.getElementById('base').value == 'base16h' ? '/base16h' : (document.getElementById('base').value == 'base16h1c' ? '/base16h1c' : ''));
 
-        loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter);
-        document.getElementById('textsearchjurisdiction').value = '';
+        if(jcover.checked)
+        {
+            loadGeojson(uri,[layerCoverAll],loadGeojsonFitCenter);
+            document.getElementById('textsearchjurisdiction').value = '';
+        }
 
-//         if(jcover.checked)
-//         {
-//             let uri = uri_base + "/geo:iso_ext:" + input + ".json";
-//             loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter);
-//         }
+        uri = uri_base + "/geo:iso_ext:" + input + ".json";
+        loadGeojson(uri,[layerJurisdAll],loadGeojsonFitCenter);
 
         checkCountry(input);
     }
@@ -871,6 +888,25 @@ function loadGeojsonFitCenter(featureGroup)
     fitbd.checked ? map.setView(featureGroup.getBounds().getCenter(),zoom-(zoom < 10 ? 1: (zoom < 20 ? 2: (zoom < 24 ? 3: 4)))) : '';
 }
 
+// https://gis.stackexchange.com/questions/137061/changing-layer-order-in-leaflet
+function fixZOrder(dataLayers) {
+
+    // only similar approach is to remove and re-add back to the map
+    // use the order in the dataLayers object to define the z-order
+    Object.keys(dataLayers).forEach(function (key) {
+
+        // check if the layer has been added to the map, if it hasn't then do nothing
+        // we only need to sort the layers that have visible data
+        // Note: this is similar but faster than trying to use map.hasLayer()
+        var layerGroup = dataLayers[key];
+        if (layerGroup._layers
+            && Object.keys(layerGroup._layers).length > 0
+            && layerGroup._layers[Object.keys(layerGroup._layers)[0]]._path
+            && layerGroup._layers[Object.keys(layerGroup._layers)[0]]._path.parentNode)
+            layerGroup.bringToFront();
+    });
+}
+
 function loadGeojson(uri,arrayLayer,afterLoad)
 {
     fetch(uri)
@@ -886,8 +922,6 @@ function loadGeojson(uri,arrayLayer,afterLoad)
 
         afterLoad(arrayLayer[0]);
         
-//         console.log(Object.keys(data.features).length)
-
         if(data.features.length = 1)
         {
             console.log(data.features[0])
@@ -905,6 +939,8 @@ function loadGeojson(uri,arrayLayer,afterLoad)
                 window.history.pushState(nextState, nextTitle, nextURL);
             }
         }
+
+        fixZOrder(overlays);
     })
     .catch(err => {})
 }
@@ -924,6 +960,13 @@ function onMapClick(e)
 
     loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter)
 }
+
+function toggleCoverLayer() {
+    !this.checked ? map.removeLayer(layerCoverAll) : map.addLayer(layerCoverAll) ;
+    fixZOrder(overlays);
+}
+
+document.getElementById ("jcover").addEventListener ("click", toggleCoverLayer, false);
 
 function showZoomLevel()
 {

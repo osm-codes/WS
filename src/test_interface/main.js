@@ -856,6 +856,9 @@ function onFeatureClick(feature)
 function loadGeojsonFitCenterlayerCurrent(featureGroup)
 {
     map.fitBounds(featureGroup.getBounds());
+    let zoom = map.getZoom();
+    map.setView(featureGroup.getBounds().getCenter(),zoom-(zoom < 10 ? 1: (zoom < 20 ? 2: (zoom < 24 ? 3: 4))));
+    console.log(map.getZoom())
 }
 
 function loadGeojsonFitCenter(featureGroup)

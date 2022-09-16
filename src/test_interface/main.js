@@ -57,7 +57,9 @@ var overlays = {
 
 var levelSize = [1048576,741455.2,524288,370727.6,262144,185363.8,131072,92681.9,65536,46341,32768,23170.5,16384,11585.2,8192,5792.6,4096,2896.3,2048,1448.2,1024,724.1,512,362,256,181,128,90.5,64,45.3,32,22.6,16,11.3,8,5.7,4,2.8,2,1.4,1];
 
-var levelValues =  [600000,400000,300000,200000,150000,100000,75000,50000,40000,25000,20000,15000,10000,6000,5000,3500,2500,1500,1250,750,600,450,300,225,150,100,75,50,40,25,20,15,8,7,5,3,2,1.4,1,0.7,0];
+// var levelValues =  [600000,400000,300000,200000,150000,100000,75000,50000,40000,25000,20000,15000,10000,6000,5000,3500,2500,1500,1250,750,600,450,300,225,150,100,75,50,40,25,20,15,8,7,5,3,2,1.4,1,0.7,0];
+
+var levelValues =  [600000,400000,300000,200000,150000,100000,75000,50000,40000,25000,20000,15000,10000,6000,5000,3500,2500,1500,1250,750,600,450,300,225,150,100,75,50,40,25,20,15,8,7,5,3,2,1,1,0,0];
 
 var countries = {
     BR:
@@ -722,7 +724,7 @@ function searchEncodeGgeocode(data)
         L.marker(input.split(/[;,]/,2)).addTo(layerMarkerCurrent).bindPopup(popupContent);
         L.marker(input.split(/[;,]/,2)).addTo(layerMarkerAll).bindPopup(popupContent);
         loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter)
-        document.getElementById('latlngtextbar').value = '';
+//         document.getElementById('latlngtextbar').value = '';
     }
 }
 
@@ -768,10 +770,10 @@ function onEachFeature(feature,layer)
 
         if(feature.properties.short_code )
         {
-            popupContent += "Postal code: " + feature.properties.short_code.split(/[~]/)[1] + "<br>";
+            popupContent += "Postal code: <big><code>" + feature.properties.short_code.split(/[~]/)[1] + "</code></big><br>";
             popupContent += "Area: " + value_area + " " + sufix_area + "<br>";
             popupContent += "Side: " + value_side + " " + sufix_side + "<br>";
-            popupContent += "Jurisdiction: " + feature.properties.short_code.split(/[~]/)[0] + "<br>";
+            popupContent += "Jurisdiction: <code>" + feature.properties.short_code.split(/[~]/)[0] + "</code><br>";
             if(feature.properties.jurisd_local_id )
             {
                 popupContent += "Jurisdiction code: " + feature.properties.jurisd_local_id + "<br>";
@@ -779,7 +781,7 @@ function onEachFeature(feature,layer)
         }
         else
         {
-            popupContent += "Code: " + feature.properties.code + "<br>";
+            popupContent += "Code: <big><code>" + feature.properties.code + "</code></big><br>";
             popupContent += "Area: " + value_area + " " + sufix_area + "<br>";
             popupContent += "Side: " + value_side + " " + sufix_side + "<br>";
 
@@ -952,6 +954,8 @@ function onMapClick(e)
     let base = document.getElementById('base')
     var uri = uri_base + "/geo:" + e.latlng['lat'] + "," + e.latlng['lng'] + ";u=" + level + ".json" + (base.value != 'base32' ? '/' + base.value : '') + (grid.value ? '/' + grid.value : '')
     var popupContent = "latlng: " + e.latlng['lat'] + "," + e.latlng['lng'];
+
+    document.getElementById('latlngtextbar').value = e.latlng['lat'] + "," + e.latlng['lng'] + ";u=" + level;
 
     layerMarkerCurrent.clearLayers();
 

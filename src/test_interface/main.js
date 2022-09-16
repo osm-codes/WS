@@ -39,11 +39,14 @@ var overlays = {
     'All markers': layerMarkerAll };
 
 
-var selectCountries = '<option value="BR">Brasil</option><option value="CO" selected>Colombia</option><option value="EC">Equador</option><option value="UY">Uruguai</option>';
+var levelValues = [600000,400000,300000,200000,150000,100000,75000,50000,40000,25000,20000,15000,10000,6000,5000,3500,2500,1500,1250,750,600,450,300,225,150,100,75,50,40,25,20,15,8,7,5,3,2,1.4,1,0.7,0];
+
+var levelSize = ['1048,57km','741,45km','524,28km','370,72km','262,14km','185,54km','131,07km','92,68km','65,54km','46,34km','32,78km','23,17km','16,38km','11,58km','8,19km','5,79km','4,1km','2,9km','2,05km','1,45km','1,02km','724,1m','512m','362m','256m','181m','128m','90,5m','64m','45,3m','32m','22,6m','16m','11,3m','8m','5,7m','4m','2,8','2m','1,4m','1m'];
 
 var countries = {
     BR:
     {
+        name: 'Brasil',
         center: [-15.796,-47.880],
         zoom: 4,
         current_zoom: 4,
@@ -52,79 +55,47 @@ var countries = {
         postalcodeBase: 'base32',
         isocode: 'BR',
         jurisdictionPlaceholder: 'BR-SP-SaoPaulo',
-        selectBases: '<option value="base32">base32</option><option value="base16h">base16h</option>',
+        selectedBases: ['base32','base16h1c'],
         bases:
         {
             base32:
             {
+                iniLevel: 0,
+                modLevel: 5,
+                iniDigit: 1,
                 symbol: '~',
                 placeholderDecode: 'BR~42',
                 placeholderEncode: '-15.7,-47.8;u=10',
                 placeholderList: '3,5,7,A',
                 selectGrid: '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>',
-                selectLevel: '<option value="600000">0 (1d) (1048km)</option>\
-<option value="100000">2.5 (2d) (185,36km)</option>\
-<option value="20000">5 (3d) (32,76km)</option>\
-<option value="3500">7.5 (4d) (5,79km)</option>\
-<option value="600">10 (5d) (1,024km)</option>\
-<option value="100">12.5 (6d) (181m)</option>\
-<option value="20">15 (7d) (32m)</option>\
-<option value="3">17.5 (8d) (5,7m)</option>\
-<option value="0">20 (9d) (1m)</option>'
             },
             base16h:
             {
+                iniLevel: 0,
+                modLevel: 1,
+                iniDigit: 2,
                 symbol: '+',
                 placeholderDecode: 'BR+3F',
                 placeholderEncode: '-15.7,-47.8;u=10',
                 placeholderList: '3,5,7,B',
                 selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
-                selectLevel: '<option value="600000">0 (1d) (1048,57km)</option>\
-<option value="400000">0.5 (2d) (741,45km)</option>\
-<option value="300000">1 (2d) (524,28km)</option>\
-<option value="200000">1.5 (2d) (370,72km)</option>\
-<option value="150000">2 (2d) (262,14km)</option>\
-<option value="100000">2.5 (3d) (185,54km)</option>\
-<option value="75000">3 (3d) (131,07km)</option>\
-<option value="50000">3.5 (3d) (92,68km)</option>\
-<option value="40000">4 (3d) (65,54km)</option>\
-<option value="25000">4.5 (4d) (46,34km)</option>\
-<option value="20000">5 (4d) (32,78km)</option>\
-<option value="15000">5.5 (4d) (23,17km)</option>\
-<option value="10000">6 (4d) (16,38km)</option>\
-<option value="6000">6.5 (5d) (11,58km)</option>\
-<option value="5000">7 (5d) (8,192km)</option>\
-<option value="3500">7.5 (5d) (5,7926km)</option>\
-<option value="2500">8 (5d) (4,096km)</option>\
-<option value="1500">8.5 (6d) (2,8963km)</option>\
-<option value="1250">9 (6d) (2,048km)</option>\
-<option value="750">9.5 (6d) (1,4482km)</option>\
-<option value="600">10 (6d) (1,024km)</option>\
-<option value="450">10.5 (7d) (724,1m)</option>\
-<option value="300">11 (7d) (512m)</option>\
-<option value="225">11.5 (7d) (362m)</option>\
-<option value="150">12 (7d) (256m)</option>\
-<option value="100">12.5 (8d) (181m)</option>\
-<option value="75">13 (8d) (128m)</option>\
-<option value="50">13.5 (8d) (90,5m)</option>\
-<option value="40">14 (8d) (64m)</option>\
-<option value="25">14.5 (9d) (45,3m)</option>\
-<option value="20">15 (9d) (32m)</option>\
-<option value="15">15.5 (9d) (22,6m)</option>\
-<option value="8">16 (9d) (16m)</option>\
-<option value="7">16.5 (10d) (11,3m)</option>\
-<option value="5">17 (10d) (8m)</option>\
-<option value="3">17.5 (10d) (5,7m)</option>\
-<option value="2">18 (10d) (4m)</option>\
-<option value="1.4">18.5 (11d) (2,8)</option>\
-<option value="1">19 (11d) (2m)</option>\
-<option value="0.7">19.5 (11d) (1,4m)</option>\
-<option value="0">20 (11d) (1m)</option>'
+            },
+            base16h1c:
+            {
+                iniLevel: 0,
+                modLevel: 1,
+                iniDigit: 1,
+                symbol: '+',
+                placeholderDecode: 'BR+hF',
+                placeholderEncode: '-15.7,-47.8;u=10',
+                placeholderList: 'h,7,B',
+                selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
             }
         }
     },
     CO:
     {
+        name: 'Colombia',
         center: [3.5,-72.3],
         zoom: 6,
         current_zoom: 6,
@@ -133,74 +104,36 @@ var countries = {
         postalcodeBase: 'base32',
         isocode: 'CO',
         jurisdictionPlaceholder: 'CO-ANT-Itagui',
-        selectBases: '<option value="base32">base32</option><option value="base16h">base16h</option>',
+        selectedBases: ['base32','base16h'],
         bases:
         {
             base32:
             {
+                iniLevel: 4,
+                modLevel: 5,
+                iniDigit: 1,
                 symbol: '~',
                 placeholderDecode: 'CO~3D5',
                 placeholderEncode: '3.5,-72.3;u=10',
                 placeholderList: '3D5,3D4,2',
                 selectGrid: '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>',
-                selectLevel: '<option value="150000">0 (1d) (262,14km)</option>\
-<option value="25000">2.5 (2d) (46,34km)</option>\
-<option value="5000">5 (3d) (8,192km)</option>\
-<option value="750">7.5 (4d) (1,45km)</option>\
-<option value="150">10 (5d) (256m)</option>\
-<option value="25">12.5 (6d) (45m)</option>\
-<option value="5">15 (7d) (8m)</option>\
-<option value="0">17.5 (8d) (1,4m)</option>'
             },
             base16h:
             {
+                iniLevel: 4,
+                modLevel: 1,
+                iniDigit: 2,
                 symbol: '+',
-                placeholderDecode: '0A2',
+                placeholderDecode: 'CO+0A2',
                 placeholderEncode: '3.5,-72.3;u=10',
                 placeholderList: '0A,0B,0C',
                 selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
-                selectLevel: '<option value="150000">0 (2d) (262,14km)</option>\
-<option value="100000">0.5 (3d) (185,54km)</option>\
-<option value="75000">1 (3d) (131,07km)</option>\
-<option value="50000">1.5 (3d) (92,68km)</option>\
-<option value="40000">2 (3d) (65,54km)</option>\
-<option value="25000">2.5 (4d) (46,34km)</option>\
-<option value="20000">3 (4d) (32,78km)</option>\
-<option value="15000">3.5 (4d) (23,17km)</option>\
-<option value="10000">4 (4d) (16,38km)</option>\
-<option value="6000">4.5 (5d) (11,58km)</option>\
-<option value="5000">5 (5d) (8,192km)</option>\
-<option value="3500">5.5 (5d) (5,7926km)</option>\
-<option value="2500">6 (5d) (4,096km)</option>\
-<option value="1500">6.5 (6d) (2,8963km)</option>\
-<option value="1250">7 (6d) (2,048km)</option>\
-<option value="750">7.5 (6d) (1,4482km)</option>\
-<option value="600">8 (6d) (1,024km)</option>\
-<option value="450">8.5 (7d) (724,1m)</option>\
-<option value="300">9 (7d) (512m)</option>\
-<option value="225">9.5 (7d) (362m)</option>\
-<option value="150">10 (7d) (256m)</option>\
-<option value="100">10.5 (8d) (181m)</option>\
-<option value="75">11 (8d) (128m)</option>\
-<option value="50">11.5 (8d) (90,5m)</option>\
-<option value="40">12 (8d) (64m)</option>\
-<option value="25">12.5 (9d) (45,3m)</option>\
-<option value="20">13 (9d) (32m)</option>\
-<option value="15">13.5 (9d) (22,6m)</option>\
-<option value="8">14 (9d) (16m)</option>\
-<option value="7">14.5 (10d) (11,3m)</option>\
-<option value="5">15 (10d) (8m)</option>\
-<option value="3">15.5 (10d) (5,7m)</option>\
-<option value="2">16 (10d) (4m)</option>\
-<option value="1.4">16.5 (11d) (2,8)</option>\
-<option value="1">17 (11d) (2m)</option>\
-<option value="0.7">17.5 (11d) (1,4m)</option>\
-<option value="0">18 (11d) (1m)</option>'
             }
         }
     },
     EC:
     {
+        name: 'Equador',
         center: [-0.944,-83.895],
         zoom: 6,
         current_zoom: 6,
@@ -209,73 +142,36 @@ var countries = {
         postalcodeBase: 'base32',
         isocode: 'EC',
         jurisdictionPlaceholder: 'EC-L-Loja',
-        selectBases: '<option value="base32">base32</option><option value="base16h">base16h</option>',
+        selectedBases: ['base32','base16h'],
         bases:
         {
             base32:
             {
+                iniLevel: 5,
+                modLevel: 5,
+                iniDigit: 1,
                 symbol: '~',
                 placeholderDecode: 'EC~5P',
                 placeholderEncode: '-1.1,-78.4;u=10',
                 placeholderList: '5P,FL,J9',
                 selectGrid: '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>',
-                selectLevel: '<option value="100000">0 (1d) (185,54km)</option>\
-<option value="20000">2.5 (2) (32,78km)</option>\
-<option value="3500">5 (3d) (5,7926km)</option>\
-<option value="600">7.5 (4d) (1,024km)</option>\
-<option value="100">10 (5d) (181m)</option>\
-<option value="20">12.5 (6d) (32m)</option>\
-<option value="3">15 (7d) (5,7m)</option>\
-<option value="0">17.5 (8d) (1m)</option>'
             },
             base16h:
             {
+                iniLevel: 5,
+                modLevel: 1,
+                iniDigit: 2,
                 symbol: '+',
                 placeholderDecode: 'EC+0E',
                 placeholderEncode: '-1.1,-78.4;u=10',
                 placeholderList: '0E,0A,05',
                 selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
-                selectLevel: '<option value="100000">0 (2d) (185,54km)</option>\
-<option value="75000">0.5 (3d) (131,07km)</option>\
-<option value="50000">1 (3d) (92,68km)</option>\
-<option value="40000">1.5 (3d) (65,54km)</option>\
-<option value="25000">2 (3d) (46,34km)</option>\
-<option value="20000">2.5 (4) (32,78km)</option>\
-<option value="15000">3 (4d) (23,17km)</option>\
-<option value="10000">3.5 (4d) (16,38km)</option>\
-<option value="6000">4 (4d) (11,58km)</option>\
-<option value="5000">4.5 (5d) (8,192km)</option>\
-<option value="3500">5 (5d) (5,7926km)</option>\
-<option value="2500">5.5 (5d) (4,096km)</option>\
-<option value="1500">6 (5d) (2,8963km)</option>\
-<option value="1250">6.5 (6d) (2,048km)</option>\
-<option value="750">7 (6d) (1,4482km)</option>\
-<option value="600">7.5 (6d) (1,024km)</option>\
-<option value="450">8 (6d) (724,1m)</option>\
-<option value="300">8.5 (7d) (512m)</option>\
-<option value="225">9 (7d) (362m)</option>\
-<option value="150">9.5 (7d) (256m)</option>\
-<option value="100">10 (7d) (181m)</option>\
-<option value="75">10.5 (8d) (128m)</option>\
-<option value="50">11 (8d) (90,5m)</option>\
-<option value="40">11.5 (8d) (64m)</option>\
-<option value="25">12 (8d) (45,3m)</option>\
-<option value="20">12.5 (9d) (32m)</option>\
-<option value="15">13 (9d) (22,6m)</option>\
-<option value="8">13.5 (9d) (16m)</option>\
-<option value="7">14 (9d) (11,3m)</option>\
-<option value="5">14.5 (10d) (8m)</option>\
-<option value="3">15 (10d) (5,7m)</option>\
-<option value="2">15.5 (10d) (4m)</option>\
-<option value="1.4">16 (10d) (2,8)</option>\
-<option value="1">16.5 (11d) (2m)</option>\
-<option value="0.7">17 (11d) (1,4m)</option>\
-<option value="0">17.5 (11d) (1m)</option>',
             }
         }
     },
     UY:
     {
+        name: 'Uruguai',
         center: [-32.981,-55.921],
         zoom: 7,
         current_zoom: 7,
@@ -284,84 +180,52 @@ var countries = {
         postalcodeBase: 'base32',
         isocode: 'UY',
         jurisdictionPlaceholder: 'UY-CA-LasPiedras',
-        selectBases: '<option value="base32">base32</option><option value="base16h">base16h</option>',
+        selectedBases: ['base32','base16h1c'],
         bases:
         {
             base32:
             {
+                iniLevel: 6,
+                modLevel: 5,
+                iniDigit: 1,
                 symbol: '~',
                 placeholderDecode: 'UY~3',
                 placeholderEncode: '-32.9,-55.9;u=10',
                 placeholderList: '3,2C,4F',
                 selectGrid: '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>',
-                selectLevel: '<option value="150000">0 (1d) (131,072km)</option>\
-<option value="15000">2.5 (2d) (23,1705km)</option>\
-<option value="2500">5 (3d) (4,096km)</option>\
-<option value="450">7.5 (4d) (724,1m)</option>\
-<option value="150">10 (5d) (128m)</option>\
-<option value="15">12.5 (6d) 22,6m)</option>\
-<option value="2">15 (7d) (4m)</option>',
             },
             base16h:
             {
+                iniLevel: 6,
+                modLevel: 1,
+                iniDigit: 2,
                 symbol: '+',
                 placeholderDecode: 'UY+2',
                 placeholderEncode: '-32.9,-55.9;u=10',
                 placeholderList: '2G,3A,01',
                 selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
-                selectLevel: '<option value="75000">0 (1d) (131,07km)</option>\
-<option value="50000">0.5 (2d) (92,68km)</option>\
-<option value="40000">1 (2d) (65,54km)</option>\
-<option value="25000">1.5 (2d) (46,34km)</option>\
-<option value="20000">2 (2d) (32,78km)</option>\
-<option value="15000">2.5 (3d) (23,17km)</option>\
-<option value="10000">3 (3d) (16,38km)</option>\
-<option value="6000">3.5 (3d) (11,58km)</option>\
-<option value="5000">4 (3d) (8,192km)</option>\
-<option value="3500">4.5 (4d) (5,7926km)</option>\
-<option value="2500">5 (4d) (4,096km)</option>\
-<option value="1500">5.5 (4d) (2,8963km)</option>\
-<option value="1250">6 (4d) (2,048km)</option>\
-<option value="750">6.5 (5d) (1,4482km)</option>\
-<option value="600">7 (5d) (1,024km)</option>\
-<option value="450">7.5 (5d) (724,1m)</option>\
-<option value="300">8 (5d) (512m)</option>\
-<option value="225">8.5 (6d) (362m)</option>\
-<option value="150">9 (6d) (256m)</option>\
-<option value="100">9.5 (6d) (181m)</option>\
-<option value="75">10 (6d) (128m)</option>\
-<option value="50">10.5 (7d) (90,5m)</option>\
-<option value="40">11 (7d) (64m)</option>\
-<option value="25">11.5 (7d) (45,3m)</option>\
-<option value="20">12 (7d) (32m)</option>\
-<option value="15">12.5 (8d) (22,6m)</option>\
-<option value="8">13 (8d) (16m)</option>\
-<option value="7">13.5 (8d) (11,3m)</option>\
-<option value="5">14 (8d) (8m)</option>\
-<option value="3">14.5 (9d) (5,7m)</option>\
-<option value="2">15 (9d) (4m)</option>\
-<option value="1.4">15.5 (9d) (2,8)</option>\
-<option value="1">16 (9d) (2m)</option>\
-<option value="0.7">16.5 (10d) (1,4m)</option>\
-<option value="0">17 (10d) (1m)</option>',
             },
             base16:
             {
-                symbol: '~',
+                iniLevel: 6,
+                modLevel: 4,
+                iniDigit: 2,
+                symbol: '+',
                 placeholderDecode: 'UY~2',
                 placeholderEncode: '-32.9,-55.9;u=10',
                 placeholderList: '3B,3A,01',
                 selectGrid: '<option></option><option value="grid16">grid16</option><option value="grid17">grid16 (points)</option>',
-                selectLevel: '<option value="150000">0 (1d) (262,14km)</option>\
-<option value="40000">2 (2d) (65,54km)</option>\
-<option value="10000">4 (3d) (16,38km)</option>\
-<option value="2500">6 (4d) (4,096km)</option>\
-<option value="600">8 (5d) (1,024km)</option>\
-<option value="150">10 (6d) (256m)</option>\
-<option value="40">12 (7d) (64m)</option>\
-<option value="8">14 (8d) (16m)</option>\
-<option value="2">16 (9d) (4m)</option>\
-<option value="0">18 (10d) (1m)</option>'
+            },
+            base16h1c:
+            {
+                iniLevel: 6,
+                modLevel: 1,
+                iniDigit: 2,
+                symbol: '+',
+                placeholderDecode: 'UY+gB',
+                placeholderEncode: '-32.9,-55.9;u=10',
+                placeholderList: '3B,g,hB',
+                selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
             }
         }
     }
@@ -492,7 +356,7 @@ country.onAdd = function (map) {
     this.label_country.innerHTML = 'Country: ';
     this.select_country.id = 'country';
     this.select_country.name = 'country';
-    this.select_country.innerHTML = selectCountries;
+    this.select_country.innerHTML = generateSelectCountries(countries);
 
     L.DomEvent.disableScrollPropagation(this.container);
     L.DomEvent.disableClickPropagation(this.container);
@@ -518,7 +382,7 @@ level.onAdd = function (map) {
     this.label_level.innerHTML = 'Level: ';
     this.select_level.id = 'level_size';
     this.select_level.name = 'level';
-    this.select_level.innerHTML = defaultMap.bases[defaultMap.defaultBase].selectLevel;
+    this.select_level.innerHTML = generateSelectLevel(defaultMap.bases[defaultMap.defaultBase]);
 
     L.DomEvent.disableScrollPropagation(this.container);
     L.DomEvent.disableClickPropagation(this.container);
@@ -532,7 +396,7 @@ baseLevel.onAdd = function (map) {
 
     this.select_base.id = 'base';
     this.select_base.name = 'base';
-    this.select_base.innerHTML = defaultMap.selectBases;
+    this.select_base.innerHTML = generateSelectBase(defaultMap.selectedBases);
 
     L.DomEvent.disableScrollPropagation(this.container);
     L.DomEvent.disableClickPropagation(this.container);
@@ -664,7 +528,7 @@ function clearAll()
     document.querySelector('#base').value = defaultMap.defaultBase;
     document.querySelector('#country').value = defaultMap.isocode;
     document.querySelector('#grid').value = '';
-    document.getElementById('base').innerHTML = defaultMap.selectBases;
+    document.getElementById('base').innerHTML = generateSelectBase(defaultMap.selectedBases);
     toggleLevelBase()
 }
 
@@ -677,7 +541,7 @@ function toggleCountry()
     let countryValue = document.getElementById('country').value;
 
     map.setView(countries[countryValue].center, countries[countryValue].zoom);
-    document.getElementById('base').innerHTML = countries[countryValue].selectBases;
+    document.getElementById('base').innerHTML = generateSelectBase(countries[countryValue].selectedBases);
     document.getElementById('base').value = countries[countryValue].defaultBase;
 
     document.getElementById('textsearchjurisdiction').placeholder = 'e.g.: ' + countries[countryValue].jurisdictionPlaceholder;
@@ -690,7 +554,7 @@ function toggleLevelBase()
     let countryValue = document.getElementById('country').value;
     let baseValue = document.getElementById('base').value;
 
-    document.getElementById('level_size').innerHTML = countries[countryValue].bases[baseValue].selectLevel;
+    document.getElementById('level_size').innerHTML = generateSelectLevel(countries[countryValue].bases[baseValue]);
     document.getElementById('grid').innerHTML = countries[countryValue].bases[baseValue].selectGrid;
 
     document.getElementById('textsearchbar').placeholder = 'geocode, e.g.: ' + countries[countryValue].bases[baseValue].placeholderDecode;
@@ -714,13 +578,51 @@ function toggleTooltipLayers()
     toggleTooltipStatus ? toggleTooltipStatus = false : toggleTooltipStatus = true;
 }
 
+function generateSelectBase(bases)
+{
+    let html = '';
+
+    for (let i = 0; i < bases.length; i++)
+    {
+        html += '<option value="' + bases[i] + '">' + bases[i] + '</option>'
+    }
+
+    return html
+}
+
+function generateSelectCountries(dict)
+{
+    let html = '';
+
+    for(var key in dict)
+    {
+        html += '<option value="' + key + (defaultMap.isocode == key ? '" selected>' : '">') + countries[key].name + '</option>'
+    }
+
+    defaultMap.isocode
+
+    return html
+}
+
+function generateSelectLevel(base)
+{
+    let html = '';
+
+    for (let i = base.iniLevel, j=0; i < levelValues.length; i+=base.modLevel, j++)
+    {
+        html += '<option value="' + levelValues[i] + '">' + (0.5*j*base.modLevel).toString() + ' (' + levelSize[i] + ')</option>'
+    }
+
+    return html
+}
+
 function searchDecodeGgeocode(data)
 {
     let input = document.getElementById('textsearchbar').value
 
     if(input !== null && input !== '')
     {
-        var uri = uri_base + "/geo:osmcodes:" + input.toUpperCase() + ".json"
+        var uri = uri_base + "/geo:osmcodes:" + input + ".json"
 
         loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter);
         document.getElementById('textsearchbar').value = '';
@@ -736,7 +638,7 @@ function searchDecodeListGgeocode(data)
     console.log(input);
     if(input !== null && input !== '')
     {
-        var uri = uri_base + "/geo:osmcodes:" + countryValue.toUpperCase() + countries[countryValue].bases[baseValue].symbol + sortAndRemoveDuplicates(input.toUpperCase()) + ".json"
+        var uri = uri_base + "/geo:osmcodes:" + countryValue.toUpperCase() + countries[countryValue].bases[baseValue].symbol + sortAndRemoveDuplicates(input) + ".json"
 
         loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter);
         document.getElementById('listtextsearchbar').value = '';
@@ -752,10 +654,16 @@ function searchDecodeJurisdiction(data)
 
     if(input !== null && input !== '')
     {
-        var uri = uri_base + "/geo:iso_ext:" + input + ".json" + (jcover.checked ? '/cover' : '') + (document.getElementById('base').value == 'base16h' ? '/base16h' : '')
+        let uri = uri_base + "/geo:iso_ext:" + input + ".json" + (jcover.checked ? '/cover' : '') + (document.getElementById('base').value == 'base16h' ? '/base16h' : (document.getElementById('base').value == 'base16h1c' ? '/base16h1c' : ''));
 
         loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter);
         document.getElementById('textsearchjurisdiction').value = '';
+
+//         if(jcover.checked)
+//         {
+//             let uri = uri_base + "/geo:iso_ext:" + input + ".json";
+//             loadGeojson(uri,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenter);
+//         }
 
         checkCountry(input);
     }
@@ -905,7 +813,7 @@ function style(feature)
         }
         else
         {
-            return {color: 'black', fillColor: 'black', fillOpacity: 0.1};
+            return {color: 'black', fillColor: 'deeppink', fillOpacity: 0.1};
         }
     }
 }

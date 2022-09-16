@@ -24,11 +24,13 @@ var layerPolygonCurrent = new L.geoJSON(null, {
             onEachFeature: onEachFeature,
             pointToLayer: pointToLayer,
         });
+
 var layerPolygonAll = new L.geoJSON(null,{
             style: style,
             onEachFeature: onEachFeature,
             pointToLayer: pointToLayer,
         });
+
 var layerMarkerCurrent = new L.featureGroup();
 var layerMarkerAll = new L.featureGroup();
 
@@ -38,10 +40,9 @@ var overlays = {
     'Current marker': layerMarkerCurrent,
     'All markers': layerMarkerAll };
 
+var levelSize = [1048576,741455.2,524288,370727.6,262144,185363.8,131072,92681.9,65536,46341,32768,23170.5,16384,11585.2,8192,5792.6,4096,2896.3,2048,1448.2,1024,724.1,512,362,256,181,128,90.5,64,45.3,32,22.6,16,11.3,8,5.7,4,2.8,2,1.4,1];
 
-var levelValues = [600000,400000,300000,200000,150000,100000,75000,50000,40000,25000,20000,15000,10000,6000,5000,3500,2500,1500,1250,750,600,450,300,225,150,100,75,50,40,25,20,15,8,7,5,3,2,1.4,1,0.7,0];
-
-var levelSize = ['1048,57km','741,45km','524,28km','370,72km','262,14km','185,54km','131,07km','92,68km','65,54km','46,34km','32,78km','23,17km','16,38km','11,58km','8,19km','5,79km','4,1km','2,9km','2,05km','1,45km','1,02km','724,1m','512m','362m','256m','181m','128m','90,5m','64m','45,3m','32m','22,6m','16m','11,3m','8m','5,7m','4m','2,8','2m','1,4m','1m'];
+var levelValues =  [600000,400000,300000,200000,150000,100000,75000,50000,40000,25000,20000,15000,10000,6000,5000,3500,2500,1500,1250,750,600,450,300,225,150,100,75,50,40,25,20,15,8,7,5,3,2,1.4,1,0.7,0];
 
 var countries = {
     BR:
@@ -67,7 +68,7 @@ var countries = {
                 placeholderDecode: 'BR~42',
                 placeholderEncode: '-15.7,-47.8;u=10',
                 placeholderList: '3,5,7,A',
-                selectGrid: '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>',
+                selectGrid: [32],
             },
             base16h:
             {
@@ -78,7 +79,7 @@ var countries = {
                 placeholderDecode: 'BR+3F',
                 placeholderEncode: '-15.7,-47.8;u=10',
                 placeholderList: '3,5,7,B',
-                selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
+                selectGrid: [2,4,8,16],
             },
             base16h1c:
             {
@@ -89,7 +90,7 @@ var countries = {
                 placeholderDecode: 'BR+hF',
                 placeholderEncode: '-15.7,-47.8;u=10',
                 placeholderList: 'h,7,B',
-                selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
+                selectGrid: [2,4,8,16],
             }
         }
     },
@@ -116,7 +117,7 @@ var countries = {
                 placeholderDecode: 'CO~3D5',
                 placeholderEncode: '3.5,-72.3;u=10',
                 placeholderList: '3D5,3D4,2',
-                selectGrid: '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>',
+                selectGrid: [32],
             },
             base16h:
             {
@@ -127,7 +128,7 @@ var countries = {
                 placeholderDecode: 'CO+0A2',
                 placeholderEncode: '3.5,-72.3;u=10',
                 placeholderList: '0A,0B,0C',
-                selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
+                selectGrid: [2,4,8,16],
             }
         }
     },
@@ -154,7 +155,7 @@ var countries = {
                 placeholderDecode: 'EC~5P',
                 placeholderEncode: '-1.1,-78.4;u=10',
                 placeholderList: '5P,FL,J9',
-                selectGrid: '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>',
+                selectGrid: [32],
             },
             base16h:
             {
@@ -165,7 +166,7 @@ var countries = {
                 placeholderDecode: 'EC+0E',
                 placeholderEncode: '-1.1,-78.4;u=10',
                 placeholderList: '0E,0A,05',
-                selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
+                selectGrid: [2,4,8,16],
             }
         }
     },
@@ -192,7 +193,7 @@ var countries = {
                 placeholderDecode: 'UY~3',
                 placeholderEncode: '-32.9,-55.9;u=10',
                 placeholderList: '3,2C,4F',
-                selectGrid: '<option></option><option value="grid32">grid32</option><option value="grid33">grid32 (points)</option>',
+                selectGrid: [32],
             },
             base16h:
             {
@@ -203,7 +204,7 @@ var countries = {
                 placeholderDecode: 'UY+2',
                 placeholderEncode: '-32.9,-55.9;u=10',
                 placeholderList: '2G,3A,01',
-                selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
+                selectGrid: [2,4,8,16],
             },
             base16:
             {
@@ -214,18 +215,18 @@ var countries = {
                 placeholderDecode: 'UY~2',
                 placeholderEncode: '-32.9,-55.9;u=10',
                 placeholderList: '3B,3A,01',
-                selectGrid: '<option></option><option value="grid16">grid16</option><option value="grid17">grid16 (points)</option>',
+                selectGrid: [16],
             },
             base16h1c:
             {
                 iniLevel: 6,
                 modLevel: 1,
-                iniDigit: 2,
+                iniDigit: 1,
                 symbol: '+',
                 placeholderDecode: 'UY+gB',
                 placeholderEncode: '-32.9,-55.9;u=10',
                 placeholderList: '3B,g,hB',
-                selectGrid: '<option></option><option value="grid2">grid2</option><option value="grid4">grid4</option><option value="grid8">grid8</option><option value="grid16">grid16</option><option value="grid3">grid2 (points)</option><option value="grid5">grid4 (points)</option><option value="grid9">grid8 (points)</option><option value="grid17">grid16 (points)</option>',
+                selectGrid: [2,4,8,16],
             }
         }
     }
@@ -376,13 +377,13 @@ level.onAdd = function (map) {
     this.label_grid.innerHTML = ' with grid: ';
     this.select_grid.id = 'grid';
     this.select_grid.name = 'grid';
-    this.select_grid.innerHTML = defaultMap.bases[defaultMap.defaultBase].selectGrid
+    this.select_grid.innerHTML = generateSelectGrid(defaultMap.bases[defaultMap.defaultBase].selectGrid)
 
     this.label_level.for = 'level';
     this.label_level.innerHTML = 'Level: ';
     this.select_level.id = 'level_size';
     this.select_level.name = 'level';
-    this.select_level.innerHTML = generateSelectLevel(defaultMap.bases[defaultMap.defaultBase]);
+    this.select_level.innerHTML = generateSelectLevel(defaultMap.bases[defaultMap.defaultBase],defaultMap.defaultBase);
 
     L.DomEvent.disableScrollPropagation(this.container);
     L.DomEvent.disableClickPropagation(this.container);
@@ -554,8 +555,8 @@ function toggleLevelBase()
     let countryValue = document.getElementById('country').value;
     let baseValue = document.getElementById('base').value;
 
-    document.getElementById('level_size').innerHTML = generateSelectLevel(countries[countryValue].bases[baseValue]);
-    document.getElementById('grid').innerHTML = countries[countryValue].bases[baseValue].selectGrid;
+    document.getElementById('level_size').innerHTML = generateSelectLevel(countries[countryValue].bases[baseValue],baseValue);
+    document.getElementById('grid').innerHTML = generateSelectGrid(countries[countryValue].bases[baseValue].selectGrid);
 
     document.getElementById('textsearchbar').placeholder = 'geocode, e.g.: ' + countries[countryValue].bases[baseValue].placeholderDecode;
     document.getElementById('listtextsearchbar').placeholder = 'list geocodes, e.g.: ' + countries[countryValue].bases[baseValue].placeholderList;
@@ -576,6 +577,20 @@ function toggleTooltipLayers()
     })
 
     toggleTooltipStatus ? toggleTooltipStatus = false : toggleTooltipStatus = true;
+}
+
+function generateSelectGrid(grids)
+{
+    let htmlA = '';
+    let htmlB = '';
+
+    for (let i = 0; i < grids.length; i++)
+    {
+        htmlA += '<option value="grid' +  grids[i]    + '">' + grids[i] +          '</option>'
+        htmlB += '<option value="grid' + (grids[i]+1) + '">' + grids[i] + ' (points)</option>'
+    }
+
+    return '<option></option>' + htmlA + htmlB
 }
 
 function generateSelectBase(bases)
@@ -604,13 +619,17 @@ function generateSelectCountries(dict)
     return html
 }
 
-function generateSelectLevel(base)
+function generateSelectLevel(base,baseValue)
 {
     let html = '';
 
+    let m=0;
+
     for (let i = base.iniLevel, j=0; i < levelValues.length; i+=base.modLevel, j++)
     {
-        html += '<option value="' + levelValues[i] + '">' + (0.5*j*base.modLevel).toString() + ' (' + levelSize[i] + ')</option>'
+        m = (j == 0 ? base.iniDigit : ((j%4)-1 == 0 ? m+1 : m) )
+
+        html += '<option value="' + levelValues[i] + '">L' + (0.5*j*base.modLevel).toString() + (baseValue == 'base32' ? ' (' + (base.iniDigit+j) + 'd) (' : ( (baseValue == 'base16h' || baseValue == 'base16h1c') ? ' (' + m + 'd) (' : ' (') ) + ((levelSize[i]<1000)? Math.round(levelSize[i]*100.0)/100 : Math.round(levelSize[i]*100.0/1000)/100) + ((levelSize[i]<1000)? 'm': 'km') + ')</option>'
     }
 
     return html

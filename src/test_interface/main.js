@@ -542,14 +542,17 @@ function clearAll()
 {
     clearAllLayers();
 
-    map.setView(defaultMap.center, defaultMap.zoom);
+    toggleCountry()
+//     map.setView(defaultMap.center, defaultMap.zoom);
 
-    document.getElementById('listtextsearchbar').value = '';
-    document.querySelector('#base').value = defaultMap.defaultBase;
-    document.querySelector('#country').value = defaultMap.isocode;
-    document.querySelector('#grid').value = '';
-    document.getElementById('base').innerHTML = generateSelectBase(defaultMap.selectedBases);
-    toggleLevelBase()
+//     document.getElementById('listtextsearchbar').value = '';
+//     document.querySelector('#base').value = defaultMap.defaultBase;
+//     document.querySelector('#country').value = defaultMap.isocode;
+//     document.querySelector('#grid').value = '';
+//     document.getElementById('latlngtextbar').value = '';
+//     document.getElementById('textsearchbar').value = '';
+//     document.getElementById('base').innerHTML = generateSelectBase(defaultMap.selectedBases);
+//     toggleLevelBase()
 }
 
 function toggleCountry()

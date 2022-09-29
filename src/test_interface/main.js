@@ -1024,47 +1024,55 @@ function checkBase(string)
 
 if(pathname !== "/view/")
 {
-    if (pathname.match(/\/base16\/grid/))
+    if (pathname.match(/^\/[A-Z]{2}-[A-Z]{1,3}-[A-Z]+$/i))
     {
-        var uriApi = uri.replace(/(\/base16\/grid)/, ".json$1");
-    }
-    else if (pathname.match(/(\/base16h)?\/grid/))
-    {
-        var uriApi = uri.replace(/((\/base16h)?\/grid)/, ".json$1");
-    }
-    else if (pathname.match(/\/[A-Z]{2}~[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)*$/i))
-    {
-        var uriApi = uri.replace(/\/([A-Z]{2}~[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)*)$/i, "/geo:osmcodes:$1.json");
-    }
-    else if (pathname.match(/\/[A-Z]{2}\+[0123456789ABCDEFGHJKLMNPQRSTVZ]([0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)?(,[0123456789ABCDEFGHJKLMNPQRSTVZ]([0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)?)*$/i))
-    {
-        var uriApi = uri.replace(/\/([A-Z]{2}\+[0123456789ABCDEFGHJKLMNPQRSTVZ]([0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)?(,[0123456789ABCDEFGHJKLMNPQRSTVZ]([0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)?)*)$/i, "/geo:osmcodes:$1.json");
-    }
-    else if (pathname.match(/\/CO-\d+$/i))
-    {
-        var uriApi = uri.replace(/\/CO-(\d+)$/i, "/geo:co-divipola:$1.json");
-    }
-    else if (pathname.match(/^\/([A-Z]{2})-\d+(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+$/i))
-    {
-        var uriApi = uri.replace(/\/(([A-Z]{2})-\d+(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)$/i, "/geo:osmcodes:$1.json");
-    }
-    else if (pathname.match(/\/BR-\d+$/i))
-    {
-        var uriApi = uri.replace(/\/BR-(\d+)$/i, "/geo:br-geocodigo:$1.json");
-    }
-    else if (pathname.match(/^\/[A-Z]{2}(-[A-Z]{1,3}-[A-Z]+)(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+$/i))
-    {
-        var uriApi = uri.replace(/\/([A-Z]{2}(-[A-Z]{1,3}-[A-Z]+)(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)$/i, "/geo:osmcodes:$1.json");
-    }
-    else if (pathname.match(/^\/[A-Z]{2}-[A-Z]{1,3}-[A-Z]+$/i))
-    {
-        var uriApi = uri + '.json/cover';
+        var uriApi = uri.replace(/\/([A-Z]{2}-[A-Z]{1,3}-[A-Z]+)$/i, "/geo:iso_ext:$1.json");
+        
+        document.getElementById('jcover').checked=true
+
+        loadGeojson(uriApi + '/cover',[layerCoverAll],loadGeojsonFitCenter);
+        loadGeojson(uriApi,[layerJurisdAll],loadGeojsonFitCenter);
     }
     else
     {
-        var uriApi = uri + '.json';
+        if (pathname.match(/\/base16\/grid/))
+        {
+            var uriApi = uri.replace(/(\/base16\/grid)/, ".json$1");
+        }
+        else if (pathname.match(/(\/base16h)?\/grid/))
+        {
+            var uriApi = uri.replace(/((\/base16h)?\/grid)/, ".json$1");
+        }
+        else if (pathname.match(/\/[A-Z]{2}~[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)*$/i))
+        {
+            var uriApi = uri.replace(/\/([A-Z]{2}~[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)*)$/i, "/geo:osmcodes:$1.json");
+        }
+        else if (pathname.match(/\/[A-Z]{2}\+[0123456789ABCDEFGHJKLMNPQRSTVZ]([0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)?(,[0123456789ABCDEFGHJKLMNPQRSTVZ]([0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)?)*$/i))
+        {
+            var uriApi = uri.replace(/\/([A-Z]{2}\+[0123456789ABCDEFGHJKLMNPQRSTVZ]([0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)?(,[0123456789ABCDEFGHJKLMNPQRSTVZ]([0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)?)*)$/i, "/geo:osmcodes:$1.json");
+        }
+        else if (pathname.match(/\/CO-\d+$/i))
+        {
+            var uriApi = uri.replace(/\/CO-(\d+)$/i, "/geo:co-divipola:$1.json");
+        }
+        else if (pathname.match(/^\/([A-Z]{2})-\d+(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+$/i))
+        {
+            var uriApi = uri.replace(/\/(([A-Z]{2})-\d+(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)$/i, "/geo:osmcodes:$1.json");
+        }
+        else if (pathname.match(/\/BR-\d+$/i))
+        {
+            var uriApi = uri.replace(/\/BR-(\d+)$/i, "/geo:br-geocodigo:$1.json");
+        }
+        else if (pathname.match(/^\/[A-Z]{2}(-[A-Z]{1,3}-[A-Z]+)(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+$/i))
+        {
+            var uriApi = uri.replace(/\/([A-Z]{2}(-[A-Z]{1,3}-[A-Z]+)(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)$/i, "/geo:osmcodes:$1.json");
+        }
+        else
+        {
+            var uriApi = uri + '.json';
+        }
+        loadGeojson(uriApi,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenterlayerCurrent);
     }
-    loadGeojson(uriApi,[layerPolygonCurrent,layerPolygonAll],loadGeojsonFitCenterlayerCurrent);
 
     checkCountry(pathname);
     checkBase(pathname);

@@ -943,6 +943,17 @@ function loadGeojson(uri,arrayLayer,afterLoad)
 
                 window.history.pushState(nextState, nextTitle, nextURL);
             }
+            if(data.features[0].properties.isolabel_ext)
+            {
+                console.log(data.features[0].properties.isolabel_ext)
+
+                //var nextURL = window.location.protocol + "//" + window.location.host + "/" + window.location.pathname + window.location.search
+                var nextURL = window.location.protocol + "//" + window.location.host + "/" + data.features[0].properties.isolabel_ext + window.location.search
+                const nextTitle = 'OSM.codes: ' + data.features[0].properties.isolabel_ext;
+                const nextState = { additionalInformation: 'to canonical.' };
+
+                window.history.pushState(nextState, nextTitle, nextURL);
+            }
         }
 
         fixZOrder(overlays);

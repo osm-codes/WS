@@ -23,9 +23,25 @@ flowchart TD
     S-->C1
     C1 -->|No| E1([<b>Can't use</b> GGeohash])
     C1 -->|Yes| C2
-    C2 -->|No| E2([<b>Wait</b> for agreements<br/>between countries])
-    C2 -->|Yes| A4
+    C2 -->|Yes| E2([<b>Wait</b> for agreements<br/>between countries])
+    C2 -->|No| A4
 ```
+
+<!--
+```mermaid
+flowchart TD
+    S([<b>Decisões soberanas</b> do país])
+    C1{Usar uma grade<br/> multifinalitária?}
+    C2{Usar um padrão<br/> internacional<br/> de grade?}
+    A4[[Outras escolhas OSMcodes:<br/>ex. projeção e alfabeto]]
+
+    S-- >C1
+    C1 -- >|Não| E1([<b>Qualquer</b>, não se restringe<br/>a OSMcodes ou DGGS])
+    C1 -- >|Sim| C2
+    C2 -- >|Sim| E2(["<b>Esperar 10 ou + anos</b> por consenso entre países,<br/> algo livre (<b>sem</b> patentes) e  100% aderente ao <b>DGGS</b>"])
+    C2 -- >|Não| A4
+```
+-->
 
 ## Jurisdiction resolution of a LatLon point
 

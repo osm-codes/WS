@@ -20,6 +20,9 @@ Using PostgREST with NGINX to run  PostgreSQL functions at SQL-schema `API`.
 
 endpoint | PostgreSQL function and constant parameters
 ---------|----------
+`api.osm.codes/jurisdiction_autocomplete/{countryCode}` | Any [ISO&nbsp;3166-1&nbsp;alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code.
+`api.osm.codes/jurisdiction_autocomplete/{countryCode}-{subdivisionCode}` | Any [ISO&nbsp;3166-1&nbsp;alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code and any [ISO&nbsp;3166-2](https://en.wikipedia.org/wiki/ISO_3166-2) subdivision code.
+`api.osm.codes/jurisdiction_autocomplete/{countryCode}-{subdivisionCode}/{language}` | Any [ISO&nbsp;3166-1&nbsp;alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code and any [ISO&nbsp;3166-2](https://en.wikipedia.org/wiki/ISO_3166-2) subdivision code. `{language}` can be: en, es, fr or pt. However, `name` is always returned in the official language of the country.
 ....|....
 
 endpoint | PostgreSQL VIEW and query examples

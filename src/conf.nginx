@@ -35,6 +35,27 @@ server {
     }
 } # \server
 
+server {
+    listen              80;
+    listen              443 ssl;
+    server_name api.osm.codes;
+    include /etc/nginx/ssl.conf;
+    root /var/www/api.osm.codes/;
+    access_log /var/log/nginx/api.osm.codes.access_log;
+
+        ## return jurisdiction to autocomplete
+        location /jurisdiction_autocomplete {
+
+                rewrite "(?i)^/jurisdiction_autocomplete/?$"
+                        /rpc/jurisdiction_autocomplete
+                        break;
+                rewrite "(?i)^/jurisdiction_autocomplete/(([A-Z]{2}(-[A-Z]{1,3})?)(/[A-Z]{2})?)$"
+                        /rpc/jurisdiction_autocomplete?p_code=$1
+                        break;
+
+                proxy_pass http://127.0.0.1:3103;
+        }
+} # \server
 
 server { ## OSM.CODES
         listen              80;
@@ -63,6 +84,25 @@ server { ## OSM.CODES
           proxy_pass http://127.0.0.1:3103;
         }
 
+
+        location ~ ^/?[RrWwNn]?[0-9]+$ {
+                rewrite
+                  ^/?[Rr]?([0-9]+)$
+                  https://www.openstreetmap.org/relation/$1
+                  permanent;
+                rewrite
+                  ^/?[Ww]?([0-9]+)$
+                  https://www.openstreetmap.org/way/$1
+                  permanent;
+                rewrite
+                  ^/?[Nn]?([0-9]+)$
+                  https://www.openstreetmap.org/node/$1
+                  permanent;
+                #ok working - proxy_pass  https://www.openstreetmap.org;
+                #                return 301 https://www.openstreetmap.org;
+        }
+
+
         # ibge
         location /geo:br-ibge2020: {
           rewrite "^/?(geo:)br-ibge2020:(\-?\d+\.?\d*,\-?\d+\.?\d*)"
@@ -79,19 +119,19 @@ server { ## OSM.CODES
 
         # (urn|geo):lex
         location ~* "^/(urn|geo):lex:([a-z]{2}(;[a-z\.]+)?(;[a-z\.]+)?)\.json$" {
-          rewrite "^/(urn|geo):lex:([a-z]{2})\.json$"
+          rewrite "(?i)^/(urn|geo):lex:([a-z]{2})\.json$"
                   /rpc/jurisdiction_geojson_from_isolabel?p_code=$2  break;
 
-          rewrite "^/(urn|geo):lex:([a-z]{2});([a-z]{2})\.json$"
+          rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z]{2})\.json$"
                   /rpc/jurisdiction_geojson_from_isolabel?p_code=$2%3B$3  break;
 
-          rewrite "^/(urn|geo):lex:([a-z]{2});([a-z]{2});([a-z]+)\.json$"
+          rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z]{2});([a-z]+)\.json$"
                   /rpc/jurisdiction_geojson_from_isolabel?p_code=$2%3B$3%3B$4  break;
 
-          rewrite "^/(urn|geo):lex:([a-z]{2});([a-z\.]{3,})\.json$"
+          rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z\.]{3,})\.json$"
                   /rpc/jurisdiction_geojson_from_isolabel?p_code=$2%3B$3  break;
 
-          rewrite "^/(urn|geo):lex:([a-z]{2});([a-z\.]{3,});([a-z]+)?\.json$"
+          rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z\.]{3,});([a-z]+)?\.json$"
                   /rpc/jurisdiction_geojson_from_isolabel?p_code=$2%3B$3%3B$4  break;
 
           proxy_pass http://127.0.0.1:3103;
@@ -99,69 +139,109 @@ server { ## OSM.CODES
 
         # encode
         ## base32
-        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?\.json(/grid(32|33))?$" {
+        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?\.json(/grid(32|33))?(/[A-Z]{2}-[A-Z]{1,3}-[A-Z]+)?$" {
           ### com grid
-          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+)\.json/grid(\d+)$"
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/grid(\d+)$"
                   "/rpc/osmcode_encode?uri=$1%3B$2&grid=$3" break;
           rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/grid(\d+)$"
                   "/rpc/osmcode_encode?uri=$1&grid=$2" break;
 
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/grid(\d+)/(.+)$"
+                  "/rpc/osmcode_encode_postal?uri=$1%3B$2&grid=$3&p_isolabel_ext=$4" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/grid(\d+)/(.+)$"
+                  "/rpc/osmcode_encode_postal?uri=$1&grid=$2&p_isolabel_ext=$3" break;
+
           ### sem grid
-          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+)\.json$"
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json$"
                   "/rpc/osmcode_encode?uri=$1%3B$2&grid=0" break;
           rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json$"
                   "/rpc/osmcode_encode?uri=$1&grid=0" break;
+
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/(.+)$"
+                  "/rpc/osmcode_encode_postal?uri=$1%3B$2&grid=0&p_isolabel_ext=$3" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/(.+)$"
+                  "/rpc/osmcode_encode_postal?uri=$1&grid=0&p_isolabel_ext=$2" break;
 
           proxy_pass http://127.0.0.1:3103;
         }
 
         ## base16h1c
-        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?\.json/base16h1c(/grid(2|4|8|16|3|5|9|17))?$" {
+        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?\.json/base16h1c(/grid(2|4|8|16|3|5|9|17))?(/[A-Z]{2})?$" {
           ### com grid
-          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+)\.json/base16h1c/grid(\d+)$"
-                  "/rpc/osmcode_encode?uri=$1%3B$2&grid=$3&p_base=18" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16h1c/grid(\d+)$"
+                  "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=$3&p_base=18" break;
           rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16h1c/grid(\d+)$"
-                  "/rpc/osmcode_encode?uri=$1&grid=$2&p_base=18" break;
+                  "/rpc/osmcode_encode_scientific?uri=$1&grid=$2&p_base=18" break;
+
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16h1c/grid(\d+)/(.+)$"
+                  "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=$3&p_base=18&p_isolabel_ext=$4" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16h1c/grid(\d+)/(.+)$"
+                  "/rpc/osmcode_encode_scientific?uri=$1&grid=$2&p_base=18&p_isolabel_ext=$3" break;
 
           ### sem grid
-          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+)\.json/base16h1c"
-                  "/rpc/osmcode_encode?uri=$1%3B$2&grid=0&p_base=18" break;
-          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16h1c"
-                  "/rpc/osmcode_encode?uri=$1&grid=0&p_base=18" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16h1c$"
+                  "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=0&p_base=18" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16h1c$"
+                  "/rpc/osmcode_encode_scientific?uri=$1&grid=0&p_base=18" break;
+
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16h1c/(.+)$"
+                  "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=0&p_base=18&p_isolabel_ext=$3" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16h1c/(.+)$"
+                  "/rpc/osmcode_encode_scientific?uri=$1&grid=0&p_base=18&p_isolabel_ext=$2" break;
 
           proxy_pass http://127.0.0.1:3103;
         }
 
         ## base16h
-        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?\.json/base16h(/grid(2|4|8|16|3|5|9|17))?$" {
+        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?\.json/base16h(/grid(2|4|8|16|3|5|9|17))?(/[A-Z]{2})?$" {
           ### com grid
-          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+)\.json/base16h/grid(\d+)$"
-                  "/rpc/osmcode_encode?uri=$1%3B$2&grid=$3&p_base=16" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16h/grid(\d+)$"
+                  "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=$3&p_base=16" break;
           rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16h/grid(\d+)$"
-                  "/rpc/osmcode_encode?uri=$1&grid=$2&p_base=16" break;
+                  "/rpc/osmcode_encode_scientific?uri=$1&grid=$2&p_base=16" break;
+
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16h/grid(\d+)/(.+)$"
+                  "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=$3&p_base=16&p_isolabel_ext=$4" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16h/grid(\d+)/(.+)$"
+                  "/rpc/osmcode_encode_scientific?uri=$1&grid=$2&p_base=16&p_isolabel_ext=$3" break;
 
           ### sem grid
-          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+)\.json/base16h"
-                  "/rpc/osmcode_encode?uri=$1%3B$2&grid=0&p_base=16" break;
-          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16h"
-                  "/rpc/osmcode_encode?uri=$1&grid=0&p_base=16" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16h$"
+                  "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=0&p_base=16" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16h$"
+                  "/rpc/osmcode_encode_scientific?uri=$1&grid=0&p_base=16" break;
+
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16h/(.+)$"
+                  "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=0&p_base=16&p_isolabel_ext=$3" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16h/(.+)$"
+                  "/rpc/osmcode_encode_scientific?uri=$1&grid=0&p_base=16&p_isolabel_ext=$2" break;
 
           proxy_pass http://127.0.0.1:3103;
         }
 
         ## base16
-        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?\.json/base16(/grid(2|4|8|16|3|5|9|17))?$" {
+        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?\.json/base16(/grid(2|4|8|16|3|5|9|17))?(/[A-Z]{2})?$" {
           ### com grid
-          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+)\.json/base16/grid(\d+)$"
-                  "/rpc/osmcode_encode?uri=$1%3B$2&grid=$3&p_base=17" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16/grid(\d+)$"
+                  "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=$3&p_base=17" break;
           rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16/grid(\d+)$"
-                  "/rpc/osmcode_encode?uri=$1&grid=$2&p_base=17" break;
+                  "/rpc/osmcode_encode_scientific?uri=$1&grid=$2&p_base=17" break;
+
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16/grid(\d+)/(.+)$"
+                  "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=$3&p_base=17&p_isolabel_ext=$4" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16/grid(\d+)/(.+)$"
+                  "/rpc/osmcode_encode_scientific?uri=$1&grid=$2&p_base=17&p_isolabel_ext=$3" break;
 
           ### sem grid
-          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+)\.json/base16"
-                  "/rpc/osmcode_encode?uri=$1%3B$2&grid=0&p_base=17" break;
-          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16"
-                  "/rpc/osmcode_encode?uri=$1&grid=0&p_base=17" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16$"
+                  "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=0&p_base=17" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16$"
+                  "/rpc/osmcode_encode_scientific?uri=$1&grid=0&p_base=17" break;
+
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16/(.+)$"
+                  "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=0&p_base=17&p_isolabel_ext=$3" break;
+          rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16/(.+)$"
+                  "/rpc/osmcode_encode_scientific?uri=$1&grid=0&p_base=17&p_isolabel_ext=$2" break;
 
           proxy_pass http://127.0.0.1:3103;
         }
@@ -171,21 +251,21 @@ server { ## OSM.CODES
         ## absoluto 32 (postal)
         location ~* "^/geo:osmcodes:([A-Z]{2})~([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+){0,}\.json$" {
           rewrite "(?i)^/geo:osmcodes:([A-Z]{2})~(([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+){0,})\.json$"
-                  /rpc/osmcode_decode?p_code=$2&p_iso=$1&p_base=32 break;
+                  /rpc/osmcode_decode_postal?p_code=$2&p_iso=$1 break;
           proxy_pass http://127.0.0.1:3103;
         }
 
         ## absoluto 16h1c (cientifica)
         location ~ "^/geo:osmcodes:(([Bb][Rr])|([Uu][Yy]))\+([0123456789ABCDEFghjklmnpqrstvz]([0123456789ABCDEF]{0,}([GHJKLMNPQRSTVZ])?)?)(,[0123456789ABCDEFghjklmnpqrstvz]([0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)?){0,}\.json" {
           rewrite  "^/geo:osmcodes:(([Bb][Rr])|([Uu][Yy]))\+(([0123456789ABCDEFghjklmnpqrstvz]([0123456789ABCDEF]{0,}([GHJKLMNPQRSTVZ])?)?)(,[0123456789ABCDEFghjklmnpqrstvz]([0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)?){0,})\.json$"
-                  /rpc/osmcode_decode?p_code=$4&p_iso=$1&p_base=18 break;
+                  /rpc/osmcode_decode_scientific_absolute?p_code=$4&p_iso=$1&p_base=18 break;
           proxy_pass http://127.0.0.1:3103;
         }
 
         ## absoluto 16h (cientifica)
         location ~* "^/geo:osmcodes:([A-Z]{2})\+([0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)(,[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?){0,}\.json" {
           rewrite "(?i)^/geo:osmcodes:([A-Z]{2})\+(([0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?)(,[0123456789ABCDEF]+([GHJKLMNPQRSTVZ])?){0,})\.json$"
-                  /rpc/osmcode_decode?p_code=$2&p_iso=$1&p_base=16 break;
+                  /rpc/osmcode_decode_scientific_absolute?p_code=$2&p_iso=$1&p_base=16 break;
           proxy_pass http://127.0.0.1:3103;
         }
 
@@ -193,7 +273,7 @@ server { ## OSM.CODES
         ## reduzido 32 (postal) (CO-ANT-Itagui, CO-A-Itagui)
         location ~* "^/geo:osmcodes:([A-Z]{2})-[A-Z]{1,3}-[A-Z]+(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+\.json$" {
           rewrite "(?i)^/geo:osmcodes:(([A-Z]{2})-[A-Z]{1,3}-[A-Z]+)(~|-)([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)\.json$"
-                  /rpc/osmcode_decode_reduced?p_code=$4&p_iso=$1&p_base=32 break;
+                  /rpc/osmcode_decode_postal?p_code=$4&p_iso=$1 break;
 
           proxy_pass http://127.0.0.1:3103;
         }
@@ -201,7 +281,7 @@ server { ## OSM.CODES
         ## reduzido divipola/ibgegeocodigo
         location ~* "^/geo:osmcodes:([A-Z]{2})(-[0-9]+)(~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+\.json$" {
           rewrite "(?i)^/geo:osmcodes:(([A-Z]{2})(-[0-9]+))(~|-)([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)\.json$"
-                  /rpc/osmcode_decode_reduced?p_code=$5&p_iso=$1 break;
+                  /rpc/osmcode_decode_postal?p_code=$5&p_iso=$1 break;
 
           proxy_pass http://127.0.0.1:3103;
         }
@@ -231,29 +311,66 @@ server { ## OSM.CODES
           proxy_pass http://127.0.0.1:3103;
         }
 
+        # geo:co-divipola
+        location ~* "^/(geo:(co-divipola):[0-9]+)\.json/cover(/base16h(1c)?)?$" {
+
+          rewrite "(?i)^/geo:(co-)divipola:([0-9]+)\.json/cover$"
+                  /rpc/jurisdiction_coverage?p_iso=$1$2 break;
+
+          rewrite "(?i)^/geo:(co-)divipola:([0-9]+)\.json/cover/base16h$"
+                  /rpc/jurisdiction_coverage?p_iso=$1$2&p_base=16 break;
+
+          rewrite "(?i)^/geo:(co-)divipola:([0-9]+)\.json/cover/base16h1c$"
+                  /rpc/jurisdiction_coverage?p_iso=$1$2&p_base=18 break;
+          proxy_pass http://127.0.0.1:3103;
+        }
+
+        # geo:br-divipola
+        location ~* "^/(geo:(br-divipola):[0-9]+)\.json/cover(/base16h(1c)?)?$" {
+
+          rewrite "(?i)^/geo:(br-)divipola:([0-9]+)\.json/cover$"
+                  /rpc/jurisdiction_coverage?p_iso=$1$2 break;
+
+          rewrite "(?i)^/geo:(br-)divipola:([0-9]+)\.json/cover/base16h$"
+                  /rpc/jurisdiction_coverage?p_iso=$1$2&p_base=16 break;
+
+          rewrite "(?i)^/geo:(br-)divipola:([0-9]+)\.json/cover/base16h1c$"
+                  /rpc/jurisdiction_coverage?p_iso=$1$2&p_base=18 break;
+          proxy_pass http://127.0.0.1:3103;
+        }
+
+        ### decode list absoluto 32 Tunja test
+        location ~* "^/tunja$" {
+          rewrite "^/.+" /Tunja/ break;
+        }
+
+
         ## leaflet
         ### reduzido divipola/ibgegeocodigo 32
-        location ~*   "^/[A-Z]{2}((-[A-Z]{1,3}-[A-Z]+)|-[0-9]+)((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)?$" {
-          rewrite "(?i)^/[A-Z]{2}((-[A-Z]{1,3}-[A-Z]+)|-[0-9]+)((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)?" /view/ break;
+        location ~*   "^/[A-Z]{2}((-[A-Z]{1,3}-[A-Z]+)|-[0-9]+)((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ\.]+)?$" {
+          rewrite "(?i)^/[A-Z]{2}((-[A-Z]{1,3}-[A-Z]+)|-[0-9]+)((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ\.]+)?" /postal/ break;
         }
+
 
         ### decode list absoluto 32, 16
-        location ~*   "^/[A-Z]{2}(~|\+)([0123456789ABCDEFGHJKLMNPQRSTUVWXYZABCDEFGHJKLMNPQRSTUVWXYZ]+)(,[0123456789ABCDEFGHJKLMNPQRSTUVWXYZ]+){0,}$" {
-          rewrite "(?i)^/[A-Z]{2}(~|\+)([0123456789ABCDEFGHJKLMNPQRSTUVWXYZ]+)(,[0123456789ABCDEFGHJKLMNPQRSTUVWXYZ]+){0,}$" /view/ break;
+        location ~*   "^/[A-Z]{2}(~|\+)([0123456789ABCDEFGHJKLMNPQRSTUVWXYZABCDEFGHJKLMNPQRSTUVWXYZ\.]+)(,[0123456789ABCDEFGHJKLMNPQRSTUVWXYZ\.]+){0,}$" {
+          rewrite "(?i)^/[A-Z]{2}(~|\+)([0123456789ABCDEFGHJKLMNPQRSTUVWXYZ\.]+)(,[0123456789ABCDEFGHJKLMNPQRSTUVWXYZ\.]+){0,}$" /scientific/ break;
         }
 
-        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?(/base16(h|h1c)?)?(/grid(2|4|8|16|32))?$" {
-          rewrite  "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+)?(/base16(h|h1c)?)?(/grid(2|4|8|16|32))?$" /view/ break;
+
+        location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?(/base16(h|h1c)?)?(/grid(2|4|8|16|32))?$" {
+          #rewrite  "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?(/base16(h|h1c)?)?(/grid(2|4|8|16|32))?$" /scientific/ break;
+	  rewrite "^/.+" /postal/ break;
         }
 
         location ~* "^/(geo:iso_ext:)?([A-Z]{2}([\-][A-Z]+)?([\-][A-Z]+)?)$" {
-          rewrite "(?i)^/(geo:iso_ext:)?([A-Z]{2}([\-][A-Z]+)?([\-][A-Z]+)?)$" /view/ break;
+          rewrite "(?i)^/(geo:iso_ext:)?([A-Z]{2}([\-][A-Z]+)?([\-][A-Z]+)?)$" /postal/ break;
 
         }
 
         ### (urn|geo):lex
         location ~* "^/(urn|geo):lex:([a-z]{2}(;[a-z\.]+)?(;[a-z\.]+)?)$" {
-          rewrite "^/(urn|geo):lex:([a-z]{2}(;[a-z\.]+)?(;[a-z\.]+)?)$" /view/ break;
+          rewrite "(?i)^/(urn|geo):lex:([a-z]{2}(;[a-z\.]+)?(;[a-z\.]+)?)$" /view_lex/ break;
         }
 
         location /_doc {
@@ -272,13 +389,6 @@ server { ## OSM.CODES
           rewrite "^/?([^/]+?)(/\.[a-zA-z]+)?$"
              /index.php?q=$1&ext=$2&accept=$http_accept
              last;
-
-          # LIXO FORA DE USO:
-          #rewrite "^/?geo:(\-?\d+\.?\d*),(\-?\d+\.?\d*)$"
-          #  http://127.0.0.1:5001/rpc/latlng_to_city?lat=$1&lng=$2
-          #  last;
-          #rewrite "^/?_ipGeo/(\d[\d\.]+)" http://ip-api.com/json/$1 last;
-          #rewrite "^/?_ipGeo" http://ip-api.com/json/$remote_addr permanent;
         }
 
         location / {
@@ -344,4 +454,62 @@ server { #OLC para comparar com plus.codes
           include snippets/fastcgi-php.conf;
           fastcgi_pass unix:/run/php/php-fpm.sock;
         }
+} # \server
+
+#################### WIKI
+
+
+server {
+    # see https://www.nginx.com/resources/wiki/start/topics/recipes/mediawiki/
+
+    server_name wiki.osm.codes;
+    root /var/www/osm.codes/mediawiki;
+    index  index.php;
+
+    client_max_body_size 5m;
+    client_body_timeout 60;
+
+    location / {
+        try_files $uri $uri/ @rewrite;
+    }
+
+    location @rewrite {
+        rewrite ^/(.*)$ /index.php?title=$1&$args;
+    }
+
+    location ^~ /maintenance/ {
+        return 403;
+    }
+
+    location /rest.php {
+        try_files $uri $uri/ /rest.php?$args;
+    }
+
+    location ~ \.php$ {
+        # include fastcgi_params;
+        # fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $request_filename;
+    }
+
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ {
+        try_files $uri /index.php;
+        expires max;
+        log_not_found off;
+    }
+
+    location = /_.gif {
+        expires max;
+        empty_gif;
+    }
+
+    location ^~ /cache/ {
+        deny all;
+    }
+
+    location /dumps {
+        root /var/www/osm.codes/mediawiki/local;
+        autoindex on;
+    }
 } # \server

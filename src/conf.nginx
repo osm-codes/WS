@@ -3,9 +3,9 @@
 ##
 
 server {
+    server_name test.osm.codes;
     listen              80;
     listen              443 ssl;
-    server_name test.osm.codes;
     include /etc/nginx/ssl.conf;
     root /var/www/test.osm.codes/;
     index index.php index.html index.htm;
@@ -16,9 +16,9 @@ server {
 } # \server
 
 server {
+    server_name docs.osm.codes;
     listen              80;
     listen              443 ssl;
-    server_name docs.osm.codes;
     include /etc/nginx/ssl.conf;
     root /var/www/docs.osm.codes/;
     index index.php index.html index.htm;
@@ -36,9 +36,9 @@ server {
 } # \server
 
 server {
+    server_name api.osm.codes;
     listen              80;
     listen              443 ssl;
-    server_name api.osm.codes;
     include /etc/nginx/ssl.conf;
     root /var/www/api.osm.codes/;
     access_log /var/log/nginx/api.osm.codes.access_log;
@@ -58,10 +58,10 @@ server {
 } # \server
 
 server { ## OSM.CODES
+        server_name osm.codes www.osm.codes;
         listen              80;
         listen              443 ssl;
         include /etc/nginx/ssl.conf;
-        server_name osm.codes www.osm.codes;
         access_log /var/log/nginx/osm.codes.access_log;
         root /var/www/osm.codes/;
         index index.php index.html index.htm;
@@ -84,7 +84,7 @@ server { ## OSM.CODES
           proxy_pass http://127.0.0.1:3103;
         }
 
-
+        # OSM redirect
         location ~ ^/?[RrWwNn]?[0-9]+$ {
                 rewrite
                   ^/?[Rr]?([0-9]+)$
@@ -101,7 +101,6 @@ server { ## OSM.CODES
                 #ok working - proxy_pass  https://www.openstreetmap.org;
                 #                return 301 https://www.openstreetmap.org;
         }
-
 
         # ibge
         location /geo:br-ibge2020: {
@@ -402,10 +401,10 @@ server { ## OSM.CODES
 } # \server
 
 server {
-	listen		    80;
+        server_name git.osm.codes;
+        listen		    80;
         listen              443 ssl;
         include /etc/nginx/ssl.conf;
-        server_name git.osm.codes;
         location ~ ^/?.+ {
                 rewrite
                   ^/?licenses(/.*$|$)
@@ -461,7 +460,6 @@ server { #OLC para comparar com plus.codes
 
 server {
     # see https://www.nginx.com/resources/wiki/start/topics/recipes/mediawiki/
-
     server_name wiki.osm.codes;
     root /var/www/osm.codes/mediawiki;
     index  index.php;

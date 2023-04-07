@@ -83,6 +83,8 @@ Exemplos de interface de referência para a criação da nossa:
 
 The typographic font used on Mercosur license plates, [FE-Schrift](https://pt.wikipedia.org/wiki/FE-Schrift), is demonstrably more readable (for humans and computers), avoiding ambiguity between letters. When dealing with mixed geocode (eg `CO-MAG-SantaMaria~3T6L.L1K`), use, as on the plate, the nominal prefix (`CO-MAG-SantaMaria`) with a smaller font size (from 50% to 75%).
 
+
+
 ![image](../_assets/osmCodes_font-alphabet.png)
 
 ![image](../_assets/osmCodes_font-brIllustration1.png)

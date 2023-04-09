@@ -27,8 +27,8 @@ CREATE SCHEMA geouri_ext;
 -- * remover "OR REPLACE" because has a DROP before.
 
 
-CREATE FUNCTION geouri_ext.pluscode_cliplatitude(lat numeric)
-RETURNS numeric AS $f$
+CREATE FUNCTION geouri_ext.pluscode_cliplatitude(lat float)
+RETURNS float AS $f$
   BEGIN
       IF lat < -90 THEN
           RETURN -90;
@@ -41,7 +41,7 @@ RETURNS numeric AS $f$
   END;
 $f$ LANGUAGE 'plpgsql' IMMUTABLE
 ;
-COMMENT ON FUNCTION geouri_ext.pluscode_cliplatitude(numeric)
+COMMENT ON FUNCTION geouri_ext.pluscode_cliplatitude(float)
   IS 'Clip latitude between -90 and 90 degrees.'
 ;
 -- select geouri_ext.pluscode_cliplatitude(149.18);
@@ -49,7 +49,7 @@ COMMENT ON FUNCTION geouri_ext.pluscode_cliplatitude(numeric)
 
 CREATE FUNCTION geouri_ext.pluscode_computeLatitudePrecision(
     codeLength int -- How long must be the pluscode
-) RETURNS numeric AS $f$
+) RETURNS float AS $f$
 DECLARE
     CODE_ALPHABET_ text := '23456789CFGHJMPQRVWX';
     ENCODING_BASE_ int := char_length(CODE_ALPHABET_);
@@ -71,8 +71,8 @@ COMMENT ON FUNCTION geouri_ext.pluscode_computeLatitudePrecision(int)
 
 
 CREATE FUNCTION geouri_ext.pluscode_normalizelongitude(
-    lng numeric  -- longitude to use for the reference location
-) RETURNS numeric AS $f$
+    lng float  -- longitude to use for the reference location
+) RETURNS float AS $f$
 BEGIN
     WHILE (lng < -180) LOOP
       lng := lng + 360;
@@ -84,7 +84,7 @@ BEGIN
 END;
 $f$ LANGUAGE 'plpgsql' IMMUTABLE
 ;
-COMMENT ON FUNCTION geouri_ext.pluscode_normalizelongitude(numeric)
+COMMENT ON FUNCTION geouri_ext.pluscode_normalizelongitude(float)
   IS 'Normalize a longitude between -180 and 180 degrees (180 excluded).'
 ;
 -- select geouri_ext.pluscode_normalizelongitude(188.18);
@@ -162,30 +162,30 @@ COMMENT ON FUNCTION geouri_ext.pluscode_isvalid(text)
 
 
 CREATE FUNCTION geouri_ext.pluscode_codearea(
-    latitudelo numeric,   -- lattitude low of the pluscode
-    longitudelo numeric,  -- longitude low of the pluscode
-    latitudehi numeric,   -- lattitude high of the pluscode
-    longitudehi numeric,  -- longitude high of the pluscode
+    latitudelo float,   -- lattitude low of the pluscode
+    longitudelo float,  -- longitude low of the pluscode
+    latitudehi float,   -- lattitude high of the pluscode
+    longitudehi float,  -- longitude high of the pluscode
     codelength integer    -- length of the pluscode
 ) RETURNS TABLE(
-  lat_lo numeric,
-  lng_lo numeric,
-  lat_hi numeric,
-  lng_hi numeric,
-  code_length numeric,
-  lat_center numeric,
-  lng_center numeric
+  lat_lo float,
+  lng_lo float,
+  lat_hi float,
+  lng_hi float,
+  code_length float,
+  lat_center float,
+  lng_center float
 ) LANGUAGE 'plpgsql' IMMUTABLE
   ROWS 1000
 AS $f$
 DECLARE
-    rlatitudeLo numeric:= latitudeLo;
-    rlongitudeLo numeric:= longitudeLo;
-    rlatitudeHi numeric:= latitudeHi;
-    rlongitudeHi numeric:= longitudeHi;
-    rcodeLength numeric:= codeLength;
-    rlatitudeCenter numeric:= 0;
-    rlongitudeCenter numeric:= 0;
+    rlatitudeLo float:= latitudeLo;
+    rlongitudeLo float:= longitudeLo;
+    rlatitudeHi float:= latitudeHi;
+    rlongitudeHi float:= longitudeHi;
+    rcodeLength float:= codeLength;
+    rlatitudeCenter float:= 0;
+    rlongitudeCenter float:= 0;
     latitude_max_ int:= 90;
     longitude_max_ int:= 180;
 BEGIN
@@ -203,20 +203,19 @@ BEGIN
     END IF;
 
     RETURN QUERY SELECT
-        rlatitudeLo::double precision::numeric as lat_lo,
-        rlongitudeLo::double precision::numeric as lng_lo,
-        rlatitudeHi::double precision::numeric as lat_hi,
-        rlongitudeHi::double precision::numeric as lng_hi,
+        rlatitudeLo as lat_lo,
+        rlongitudeLo as lng_lo,
+        rlatitudeHi as lat_hi,
+        rlongitudeHi as lng_hi,
         rcodeLength as code_length,
-        rlatitudeCenter::double precision::numeric,
-        rlongitudeCenter::double precision::numeric;
+        rlatitudeCenter,
+        rlongitudeCenter;
 END;
 $f$;
 COMMENT ON FUNCTION geouri_ext.pluscode_codearea
   IS 'Coordinates of a decoded pluscode.'
 ;
 -- select geouri_ext.pluscode_codearea(49.1805,-0.378625,49.180625,-0.3785,10::int);
-
 
 
 CREATE FUNCTION geouri_ext.pluscode_isshort(
@@ -285,8 +284,8 @@ COMMENT ON FUNCTION geouri_ext.pluscode_isfull(text)
 
 
 CREATE FUNCTION geouri_ext.pluscode_encode(
-    latitude numeric,          -- latitude ref
-    longitude numeric,         -- longitude ref
+    latitude float,          -- latitude ref
+    longitude float,         -- longitude ref
     codeLength int DEFAULT 10  -- codeLength int// How long must be the pluscode
 ) RETURNS text AS $f$
 DECLARE
@@ -365,7 +364,7 @@ BEGIN
 END;
 $f$ LANGUAGE 'plpgsql' IMMUTABLE
 ;
-COMMENT ON FUNCTION geouri_ext.pluscode_encode(numeric,numeric,int)
+COMMENT ON FUNCTION geouri_ext.pluscode_encode(float,float,int)
   IS 'Encode lat lng to get pluscode.'
 ;
 -- select geouri_ext.pluscode_encode(49.05,-0.108,12);
@@ -374,13 +373,13 @@ COMMENT ON FUNCTION geouri_ext.pluscode_encode(numeric,numeric,int)
 CREATE FUNCTION geouri_ext.pluscode_decode(
     code text  -- code text// the pluscode to decode
 ) RETURNS TABLE (
-  lat_lo numeric,
-  lng_lo numeric,
-  lat_hi numeric,
-  lng_hi numeric,
-  code_length numeric,
-  lat_center numeric,
-  lng_center numeric
+  lat_lo float,
+  lng_lo float,
+  lat_hi float,
+  lng_hi float,
+  code_length float,
+  lat_center float,
+  lng_center float
 )
     LANGUAGE 'plpgsql' IMMUTABLE
     ROWS 1000
@@ -390,36 +389,36 @@ lat_out float := 0;
 lng_out float := 0;
 latitude_max_ int := 90;
 longitude_max_ int := 180;
-lat_precision numeric := 0;
-lng_precision numeric:= 0;
+lat_precision float := 0;
+lng_precision float := 0;
 code_alphabet text := '23456789CFGHJMPQRVWX';
 stripped_code text := UPPER(replace(replace(code,'0',''),'+',''));
 encoding_base_ int := char_length(code_alphabet);
-pair_precision_ numeric := power(encoding_base_::double precision, 3::double precision);
-normal_lat numeric:= -latitude_max_ * pair_precision_;
-normal_lng numeric:= -longitude_max_ * pair_precision_;
-grid_lat_ numeric:= 0;
-grid_lng_ numeric:= 0;
+pair_precision_ float := power(encoding_base_::float, 3::float);
+normal_lat float:= -latitude_max_ * pair_precision_;
+normal_lng float:= -longitude_max_ * pair_precision_;
+grid_lat_ float:= 0;
+grid_lng_ float:= 0;
 max_digit_count_ int:= 15;
 pair_code_length_ int:=10;
 digits int:= 0;
-pair_first_place_value_ numeric:= power(encoding_base_, (pair_code_length_/2)-1);
+pair_first_place_value_ float:= power(encoding_base_, (pair_code_length_/2)-1);
 pv int:= 0;
 iterator int:=0;
 iterator_d int:=0;
 digit_val int := 0;
-row_ numeric := 0;
-col_ numeric := 0;
+row_ float := 0;
+col_ float := 0;
 return_record record;
 grid_code_length_ int:= max_digit_count_ - pair_code_length_;
 grid_columns_ int := 4;
 grid_rows_  int := 5;
 grid_lat_first_place_value_ int := power(grid_rows_, (grid_code_length_ - 1));
 grid_lng_first_place_value_ int := power(grid_columns_, (grid_code_length_ - 1));
-final_lat_precision_ numeric := pair_precision_ * power(grid_rows_, (max_digit_count_ - pair_code_length_));
-final_lng_precision_ numeric := pair_precision_ * power(grid_columns_, (max_digit_count_ - pair_code_length_));
-rowpv numeric := grid_lat_first_place_value_;
-colpv numeric := grid_lng_first_place_value_;
+final_lat_precision_ float := pair_precision_ * power(grid_rows_, (max_digit_count_ - pair_code_length_));
+final_lng_precision_ float := pair_precision_ * power(grid_columns_, (max_digit_count_ - pair_code_length_));
+rowpv float := grid_lat_first_place_value_;
+colpv float := grid_lng_first_place_value_;
 
 BEGIN
     IF (geouri_ext.pluscode_isfull(code)) is FALSE THEN
@@ -490,10 +489,10 @@ BEGIN
     END IF ;
 
     return_record := geouri_ext.pluscode_codearea(
-            lat_out::numeric,
-            lng_out::numeric,
-            (lat_out+lat_precision)::numeric,
-            (lng_out+lng_precision)::numeric,
+            lat_out,
+            lng_out,
+            (lat_out+lat_precision),
+            (lng_out+lng_precision),
             digits::int
     );
     RETURN QUERY SELECT
@@ -515,16 +514,16 @@ COMMENT ON FUNCTION geouri_ext.pluscode_decode(text)
 
 CREATE FUNCTION geouri_ext.pluscode_shorten(
     code text,         -- code text //full code
-    latitude numeric,  -- latitude numeric //latitude to use for the reference location
-    longitude numeric  -- longitude numeric //longitude to use for the reference location
+    latitude float,  -- latitude float //latitude to use for the reference location
+    longitude float  -- longitude float //longitude to use for the reference location
 ) RETURNS text AS $f$
 DECLARE
 padding_character text :='0';
 code_area record;
 min_trimmable_code_len int:= 6;
-range_ numeric:= 0;
-lat_dif numeric:= 0;
-lng_dif numeric:= 0;
+range_ float:= 0;
+lat_dif float:= 0;
+lng_dif float:= 0;
 pair_resolutions_ FLOAT[] := ARRAY[20.0, 1.0, 0.05, 0.0025, 0.000125]::FLOAT[];
 iterator int:= 0;
 BEGIN
@@ -544,7 +543,7 @@ BEGIN
     END IF;
 
     --Are the latitude and longitude valid
-    IF (pg_typeof(latitude) NOT IN ('numeric','real','double precision','integer','bigint','float')) OR (pg_typeof(longitude) NOT IN ('numeric','real','double precision','integer','bigint','float')) THEN
+    IF (pg_typeof(latitude) NOT IN ('float','real','double precision','integer','bigint','float')) OR (pg_typeof(longitude) NOT IN ('float','real','double precision','integer','bigint','float')) THEN
         RAISE EXCEPTION 'LAT || LNG are not numbers % !',pg_typeof(latitude)||' || '||pg_typeof(longitude);
     END IF;
 
@@ -576,7 +575,7 @@ RETURN code;
 END;
 $f$ LANGUAGE 'plpgsql' IMMUTABLE
 ;
-COMMENT ON FUNCTION geouri_ext.pluscode_shorten(text,numeric,numeric)
+COMMENT ON FUNCTION geouri_ext.pluscode_shorten(text,float,float)
   IS 'Remove characters from the start of an OLC code.'
 ;
 -- select geouri_ext.pluscode_shorten('8CXX5JJC+6H6H6H',49.18,-0.37);
@@ -584,15 +583,15 @@ COMMENT ON FUNCTION geouri_ext.pluscode_shorten(text,numeric,numeric)
 
 CREATE FUNCTION geouri_ext.pluscode_recovernearest(
     short_code text,             -- a valid shortcode
-    reference_latitude numeric,  -- a valid latitude
-    reference_longitude numeric  -- a valid longitude
+    reference_latitude float,  -- a valid latitude
+    reference_longitude float  -- a valid longitude
 ) RETURNS text AS $f$
 DECLARE
 padding_length int :=0;
 separator_position_ int := 8;
 separator_ text := '+';
 resolution int := 0;
-half_resolution numeric := 0;
+half_resolution float := 0;
 code_area record;
 latitude_max int := 90;
 code_out text := '';
@@ -607,10 +606,11 @@ BEGIN
         RAISE EXCEPTION 'NOT A VALID FULL CODE: %', code;
     END IF;
 
-    --Are the latitude and longitude valid
-    IF (pg_typeof(reference_latitude) NOT IN ('numeric','real','double precision','integer','bigint','float')) OR (pg_typeof(reference_longitude) NOT IN ('numeric','real','double precision','integer','bigint','float')) THEN
-        RAISE EXCEPTION 'LAT || LNG are not numbers % !',pg_typeof(latitude)||' || '||pg_typeof(longitude);
-    END IF;
+    -- Only make sense for Javascript:
+    --Are the latitude and longitude valid.
+    --IF (pg_typeof(reference_latitude) NOT IN ('float','real','double precision','integer','bigint','float')) OR (pg_typeof(reference_longitude) NOT IN ('float','real','double precision','integer','bigint','float')) THEN
+    --    RAISE EXCEPTION 'LAT || LNG are not numbers % !',pg_typeof(latitude)||' || '||pg_typeof(longitude);
+    --END IF;
 
     reference_latitude := geouri_ext.pluscode_cliplatitude(reference_latitude);
     reference_longitude := geouri_ext.pluscode_normalizelongitude(reference_longitude);
@@ -624,7 +624,7 @@ BEGIN
     half_resolution := resolution / 2.0;
 
     -- Concatenate short_code and the calculated value --> encode(lat,lng)
-    code_area := geouri_ext.pluscode_decode(SUBSTRING(geouri_ext.pluscode_encode(reference_latitude::numeric, reference_longitude::numeric) , 1 , padding_length) || short_code);
+    code_area := geouri_ext.pluscode_decode(SUBSTRING(geouri_ext.pluscode_encode(reference_latitude, reference_longitude) , 1 , padding_length) || short_code);
 
     --Check if difference with the center is more than half_resolution
     --Keep value between -90 and 90
@@ -641,13 +641,13 @@ BEGIN
       code_area.lng_center := code_area.lng_center + resolution;
     END IF;
 
-    code_out := geouri_ext.pluscode_encode(code_area.lat_center::numeric, code_area.lng_center::numeric, code_area.code_length::integer);
+    code_out := geouri_ext.pluscode_encode(code_area.lat_center, code_area.lng_center, code_area.code_length::integer);
 
 RETURN code_out;
 END;
 $f$ LANGUAGE 'plpgsql' IMMUTABLE
 ;
-COMMENT ON FUNCTION geouri_ext.pluscode_recovernearest(text,numeric,numeric)
+COMMENT ON FUNCTION geouri_ext.pluscode_recovernearest(text,float,float)
   IS 'Retrieve a valid full code (the nearest from lat/lng).'
 ;
 -- select geouri_ext.pluscode_recovernearest('XX5JJC+', 49.1805,-0.3786);

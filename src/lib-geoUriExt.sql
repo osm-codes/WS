@@ -29,17 +29,12 @@ CREATE SCHEMA geouri_ext;
 
 CREATE FUNCTION geouri_ext.pluscode_cliplatitude(lat float)
 RETURNS float AS $f$
-  BEGIN
-      IF lat < -90 THEN
-          RETURN -90;
-      END IF;
-      IF lat > 90 THEN
-          RETURN 90;
-      ELSE
-          RETURN lat;
-      END IF;
+  SELECT CASE
+    WHEN lat < -90 THEN -90
+    WHEN lat > 90  THEN 90
+    ELSE lat
   END;
-$f$ LANGUAGE 'plpgsql' IMMUTABLE
+$f$ LANGUAGE SQL IMMUTABLE
 ;
 COMMENT ON FUNCTION geouri_ext.pluscode_cliplatitude(float)
   IS 'Clip latitude between -90 and 90 degrees.'
@@ -167,16 +162,7 @@ CREATE FUNCTION geouri_ext.pluscode_codearea(
     latitudehi float,   -- lattitude high of the pluscode
     longitudehi float,  -- longitude high of the pluscode
     codelength integer    -- length of the pluscode
-) RETURNS TABLE(
-  lat_lo float,
-  lng_lo float,
-  lat_hi float,
-  lng_hi float,
-  code_length float,
-  lat_center float,
-  lng_center float
-) LANGUAGE 'plpgsql' IMMUTABLE
-  ROWS 1000
+) RETURNS float[] -- lat_lo, lng_lo, lat_hi, lng_hi, code_length, lat_center, lng_center
 AS $f$
 DECLARE
     rlatitudeLo float:= latitudeLo;
@@ -201,19 +187,19 @@ BEGIN
     ELSE
         rlongitudeCenter := (longitudeLo + (longitudeHi - longitudeLo)/ 2);
     END IF;
-
-    RETURN QUERY SELECT
-        rlatitudeLo as lat_lo,
-        rlongitudeLo as lng_lo,
-        rlatitudeHi as lat_hi,
-        rlongitudeHi as lng_hi,
-        rcodeLength as code_length,
+    RETURN array[
+        rlatitudeLo,  -- lat_lo
+        rlongitudeLo, -- lng_lo
+        rlatitudeHi,  -- lat_hi
+        rlongitudeHi, -- lng_hi
+        rcodeLength,  -- code_length
         rlatitudeCenter,
-        rlongitudeCenter;
+        rlongitudeCenter
+    ];
 END;
-$f$;
+$f$ LANGUAGE PLpgSQL IMMUTABLE;
 COMMENT ON FUNCTION geouri_ext.pluscode_codearea
-  IS 'Coordinates of a decoded pluscode.'
+  IS 'Coordinates of a decoded pluscode. Returns [lat_lo, lng_lo, lat_hi, lng_hi, code_length, rlatCenter, rlongCenter].'
 ;
 -- select geouri_ext.pluscode_codearea(49.1805,-0.378625,49.180625,-0.3785,10::int);
 
@@ -372,18 +358,7 @@ COMMENT ON FUNCTION geouri_ext.pluscode_encode(float,float,int)
 
 CREATE FUNCTION geouri_ext.pluscode_decode(
     code text  -- code text// the pluscode to decode
-) RETURNS TABLE (
-  lat_lo float,
-  lng_lo float,
-  lat_hi float,
-  lng_hi float,
-  code_length float,
-  lat_center float,
-  lng_center float
-)
-    LANGUAGE 'plpgsql' IMMUTABLE
-    ROWS 1000
-AS $f$
+) RETURNS float[] AS $f$
 DECLARE
 lat_out float := 0;
 lng_out float := 0;
@@ -488,26 +463,17 @@ BEGIN
         RAISE NOTICE 'digits char_length%', digits;
     END IF ;
 
-    return_record := geouri_ext.pluscode_codearea(
+    RETURN geouri_ext.pluscode_codearea(
             lat_out,
             lng_out,
             (lat_out+lat_precision),
             (lng_out+lng_precision),
             digits::int
     );
-    RETURN QUERY SELECT
-        return_record.lat_lo,
-        return_record.lng_lo,
-        return_record.lat_hi,
-        return_record.lng_hi,
-        return_record.code_length,
-        return_record.lat_center,
-        return_record.lng_center
-    ;
 END;
-$f$;
+$f$ LANGUAGE PLpgSQL IMMUTABLE;
 COMMENT ON FUNCTION geouri_ext.pluscode_decode(text)
-  IS 'Decode a pluscode to get the corresponding bounding box and the center.'
+  IS 'Decode a pluscode to get the corresponding bounding box and the center. Returns [1=lat_lo, 2=lng_lo, 3=lat_hi, 4=lng_hi, 5=code_length, 6=rlatCenter, 7=rlongCenter].'
 ;
 -- select geouri_ext.pluscode_decode('CCCCCCCC+');
 
@@ -519,7 +485,7 @@ CREATE FUNCTION geouri_ext.pluscode_shorten(
 ) RETURNS text AS $f$
 DECLARE
 padding_character text :='0';
-code_area record;
+code_area float[];
 min_trimmable_code_len int:= 6;
 range_ float:= 0;
 lat_dif float:= 0;
@@ -537,8 +503,9 @@ BEGIN
 
     code := UPPER(code);
     code_area := geouri_ext.pluscode_decode(code);
+    -- Returns [1=lat_lo, 2=lng_lo, 3=lat_hi, 4=lng_hi, 5=code_length, 6=rlatCenter, 7=rlongCenter]
 
-    IF (code_area.code_length < min_trimmable_code_len ) THEN
+    IF (code_area[5] < min_trimmable_code_len ) THEN
         RAISE EXCEPTION 'Code must contain more than 6 character(s) : %',code;
     END IF;
 
@@ -550,8 +517,8 @@ BEGIN
     latitude := geouri_ext.pluscode_cliplatitude(latitude);
     longitude := geouri_ext.pluscode_normalizelongitude(longitude);
 
-    lat_dif := ABS(code_area.lat_center - latitude);
-    lng_dif := ABS(code_area.lng_center - longitude);
+    lat_dif := ABS(code_area[6] - latitude);
+    lng_dif := ABS(code_area[7] - longitude);
 
     --calculate max distance with the center
     IF (lat_dif > lng_dif) THEN
@@ -592,7 +559,7 @@ separator_position_ int := 8;
 separator_ text := '+';
 resolution int := 0;
 half_resolution float := 0;
-code_area record;
+code_area float[];
 latitude_max int := 90;
 code_out text := '';
 BEGIN
@@ -625,23 +592,24 @@ BEGIN
 
     -- Concatenate short_code and the calculated value --> encode(lat,lng)
     code_area := geouri_ext.pluscode_decode(SUBSTRING(geouri_ext.pluscode_encode(reference_latitude, reference_longitude) , 1 , padding_length) || short_code);
+    -- Returns [1=lat_lo, 2=lng_lo, 3=lat_hi, 4=lng_hi, 5=code_length, 6=rlatCenter, 7=rlongCenter]
 
     --Check if difference with the center is more than half_resolution
     --Keep value between -90 and 90
-    IF (((reference_latitude + half_resolution) < code_area.lat_center) AND ((code_area.lat_center - resolution) >= -latitude_max)) THEN
-        code_area.lat_center := code_area.lat_center - resolution;
-    ELSIF (((reference_latitude - half_resolution) > code_area.lat_center) AND ((code_area.lat_center + resolution) <= latitude_max)) THEN
-      code_area.lat_center := code_area.lat_center + resolution;
+    IF (((reference_latitude + half_resolution) < code_area[6]) AND ((code_area[6] - resolution) >= -latitude_max)) THEN
+        code_area[6] := code_area[6] - resolution;
+    ELSIF (((reference_latitude - half_resolution) > code_area[6]) AND ((code_area[6] + resolution) <= latitude_max)) THEN
+      code_area[6] := code_area[6] + resolution;
     END IF;
 
     -- difference with the longitude reference
-    IF (reference_longitude + half_resolution < code_area.lng_center ) THEN
-      code_area.lng_center := code_area.lng_center - resolution;
-    ELSIF (reference_longitude - half_resolution > code_area.lng_center) THEN
-      code_area.lng_center := code_area.lng_center + resolution;
+    IF (reference_longitude + half_resolution < code_area[7] ) THEN
+      code_area[7] := code_area[7] - resolution;
+    ELSIF (reference_longitude - half_resolution > code_area[7]) THEN
+      code_area[7] := code_area[7] + resolution;
     END IF;
 
-    code_out := geouri_ext.pluscode_encode(code_area.lat_center, code_area.lng_center, code_area.code_length::integer);
+    code_out := geouri_ext.pluscode_encode(code_area[6], code_area[7], code_area[5]::integer);
 
 RETURN code_out;
 END;

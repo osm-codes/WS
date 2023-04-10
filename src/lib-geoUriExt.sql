@@ -1,5 +1,32 @@
--- Pluscode implementation for PostgreSQL
 --
+-- Library for extended Geo URI protocol
+--
+
+-- Pendente testar as geometrias !  
+
+
+DROP SCHEMA IF EXISTS geouri_ext CASCADE; -- se the
+CREATE SCHEMA geouri_ext;
+
+-- ABBREVIATIONS:
+--  OLC = Open Location Code (used by Google PlusCodes)
+--  GHS = Geohash, the classic
+--  S2 = S2 Geometry (original)
+--  S2H = S2 Geometry (adaptaed to be hierarchical)
+--  {country}_PC = postal code of the country, e.g. BR_PC
+
+--------------------
+--------------------
+-- OLC (Open Location Code) FUNCTIONS
+-- By https://github.com/google/open-location-code/blob/main/plpgsql/pluscode_functions.sql
+-- functions changed by rationale:
+-- * add schema to isolate GeoURI_extended from other functions.
+-- * remove "cost 100" as https://stackoverflow.com/a/23953107/287948
+-- * reformat as OSMcodes strandard PG format.
+-- * remover "OR REPLACE" because has a DROP before.
+
+--
+-- Open Location Code implementation for PostgreSQL
 --
 -- Licensed under the Apache License, Version 2.0 (the 'License');
 -- you may not use this file except in compliance with the License.
@@ -13,21 +40,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
---
-DROP SCHEMA IF EXISTS geouri_ext CASCADE; -- se the
-CREATE SCHEMA geouri_ext;
-
---------------------
---------------------
--- PLUS CODES FUNCTIONS, FROM https://github.com/google/open-location-code/blob/main/plpgsql/pluscode_functions.sql
--- functions changed by rationale:
--- * add schema to isolate GeoURI_extended from other functions.
--- * remove "cost 100" as https://stackoverflow.com/a/23953107/287948
--- * reformat as OSMcodes strandard PG format.
--- * remover "OR REPLACE" because has a DROP before.
 
 
-CREATE FUNCTION geouri_ext.pluscode_cliplatitude(lat float)
+CREATE FUNCTION geouri_ext.olc_cliplatitude(lat float)
 RETURNS float AS $f$
   SELECT CASE
     WHEN lat < -90 THEN -90
@@ -36,14 +51,14 @@ RETURNS float AS $f$
   END;
 $f$ LANGUAGE SQL IMMUTABLE
 ;
-COMMENT ON FUNCTION geouri_ext.pluscode_cliplatitude(float)
+COMMENT ON FUNCTION geouri_ext.olc_cliplatitude(float)
   IS 'Clip latitude between -90 and 90 degrees.'
 ;
--- select geouri_ext.pluscode_cliplatitude(149.18);
+-- select geouri_ext.olc_cliplatitude(149.18);
 
 
-CREATE FUNCTION geouri_ext.pluscode_computeLatitudePrecision(
-    codeLength int -- How long must be the pluscode
+CREATE FUNCTION geouri_ext.olc_computeLatitudePrecision(
+    codeLength int -- How long must be the OLC code
 ) RETURNS float AS $f$
 DECLARE
     CODE_ALPHABET_ text := '23456789CFGHJMPQRVWX';
@@ -59,13 +74,13 @@ BEGIN
 END;
 $f$ LANGUAGE 'plpgsql' IMMUTABLE
 ;
-COMMENT ON FUNCTION geouri_ext.pluscode_computeLatitudePrecision(int)
+COMMENT ON FUNCTION geouri_ext.olc_computeLatitudePrecision(int)
   IS 'Compute the latitude precision value for a given code length.'
 ;
--- select geouri_ext.pluscode_computeLatitudePrecision(11);
+-- select geouri_ext.olc_computeLatitudePrecision(11);
 
 
-CREATE FUNCTION geouri_ext.pluscode_normalizelongitude(
+CREATE FUNCTION geouri_ext.olc_normalizelongitude(
     lng float  -- longitude to use for the reference location
 ) RETURNS float AS $f$
 BEGIN
@@ -79,16 +94,16 @@ BEGIN
 END;
 $f$ LANGUAGE 'plpgsql' IMMUTABLE
 ;
-COMMENT ON FUNCTION geouri_ext.pluscode_normalizelongitude(float)
+COMMENT ON FUNCTION geouri_ext.olc_normalizelongitude(float)
   IS 'Normalize a longitude between -180 and 180 degrees (180 excluded).'
 ;
--- select geouri_ext.pluscode_normalizelongitude(188.18);
+-- select geouri_ext.olc_normalizelongitude(188.18);
 
 --
 
 
-CREATE FUNCTION geouri_ext.pluscode_isvalid(
-    code text -- a pluscode
+CREATE FUNCTION geouri_ext.olc_isvalid(
+    code text -- a OLC code
 ) RETURNS boolean AS $f$
 DECLARE
 separator_ text := '+';
@@ -150,18 +165,18 @@ RETURN TRUE;
 END;
 $f$ LANGUAGE 'plpgsql' IMMUTABLE
 ;
-COMMENT ON FUNCTION geouri_ext.pluscode_isvalid(text)
+COMMENT ON FUNCTION geouri_ext.olc_isvalid(text)
   IS 'Check if the code is valid.'
 ;
--- select geouri_ext.pluscode_isvalid('XX5JJC23+00');
+-- select geouri_ext.olc_isvalid('XX5JJC23+00');
 
 
-CREATE FUNCTION geouri_ext.pluscode_codearea(
-    latitudelo float,   -- lattitude low of the pluscode
-    longitudelo float,  -- longitude low of the pluscode
-    latitudehi float,   -- lattitude high of the pluscode
-    longitudehi float,  -- longitude high of the pluscode
-    codelength integer    -- length of the pluscode
+CREATE FUNCTION geouri_ext.olc_codearea(
+    latitudelo float,   -- lattitude low of the OLC code
+    longitudelo float,  -- longitude low of the OLC code
+    latitudehi float,   -- lattitude high of the OLC code
+    longitudehi float,  -- longitude high of the OLC code
+    codelength integer    -- length of the OLC code
 ) RETURNS float[] -- lat_lo, lng_lo, lat_hi, lng_hi, code_length, lat_center, lng_center
 AS $f$
 DECLARE
@@ -198,24 +213,24 @@ BEGIN
     ];
 END;
 $f$ LANGUAGE PLpgSQL IMMUTABLE;
-COMMENT ON FUNCTION geouri_ext.pluscode_codearea
-  IS 'Coordinates of a decoded pluscode. Returns [lat_lo, lng_lo, lat_hi, lng_hi, code_length, rlatCenter, rlongCenter].'
+COMMENT ON FUNCTION geouri_ext.olc_codearea
+  IS 'Coordinates of a decoded OLC code. Returns [lat_lo, lng_lo, lat_hi, lng_hi, code_length, rlatCenter, rlongCenter].'
 ;
--- select geouri_ext.pluscode_codearea(49.1805,-0.378625,49.180625,-0.3785,10::int);
+-- select geouri_ext.olc_codearea(49.1805,-0.378625,49.180625,-0.3785,10::int);
 
 
-CREATE FUNCTION geouri_ext.pluscode_isshort(
-    code text -- a valid pluscode
+CREATE FUNCTION geouri_ext.olc_isshort(
+    code text -- a valid OLC code
 ) RETURNS boolean AS $f$
 DECLARE
 separator_ text := '+';
 separator_position int := 9;
 BEGIN
-    -- the pluscode is valid ?
-    IF (geouri_ext.pluscode_isvalid(code)) is FALSE THEN
+    -- the OLC code is valid ?
+    IF (geouri_ext.olc_isvalid(code)) is FALSE THEN
         RETURN FALSE;
     END IF;
-    -- the pluscode contain a '+' at a correct place
+    -- the OLC code contain a '+' at a correct place
     IF ((POSITION(separator_ in code)>0) AND (POSITION(separator_ in code)< separator_position)) THEN
         RETURN TRUE;
     END IF;
@@ -223,14 +238,14 @@ RETURN FALSE;
 END;
 $f$ LANGUAGE 'plpgsql' IMMUTABLE
 ;
-COMMENT ON FUNCTION geouri_ext.pluscode_isshort(text)
-  IS 'Check if the code is a short version of a pluscode.'
+COMMENT ON FUNCTION geouri_ext.olc_isshort(text)
+  IS 'Check if the code is a short version of a OLC code.'
 ;
--- select geouri_ext.pluscode_isshort('XX5JJC+');
+-- select geouri_ext.olc_isshort('XX5JJC+');
 
 
-CREATE FUNCTION geouri_ext.pluscode_isfull(
-    code text  -- codeplus
+CREATE FUNCTION geouri_ext.olc_isfull(
+    code text  -- OLC code
 ) RETURNS boolean AS $f$
 DECLARE
 code_alphabet text := '23456789CFGHJMPQRVWX';
@@ -240,11 +255,11 @@ encoding_base_ int := char_length(code_alphabet);
 latitude_max_ int := 90;
 longitude_max_ int := 180;
 BEGIN
-    IF (geouri_ext.pluscode_isvalid(code)) is FALSE THEN
+    IF (geouri_ext.olc_isvalid(code)) is FALSE THEN
         RETURN FALSE;
     END IF;
     -- If is short --> not full.
-    IF (geouri_ext.pluscode_isshort(code)) is TRUE THEN
+    IF (geouri_ext.olc_isshort(code)) is TRUE THEN
         RETURN FALSE;
     END IF;
     --Check latitude for first lat char
@@ -263,16 +278,16 @@ BEGIN
 END;
 $f$ LANGUAGE 'plpgsql' IMMUTABLE
 ;
-COMMENT ON FUNCTION geouri_ext.pluscode_isfull(text)
+COMMENT ON FUNCTION geouri_ext.olc_isfull(text)
   IS 'Is the codeplus a full code.'
 ;
--- select geouri_ext.pluscode_isfull('cccccc+')
+-- select geouri_ext.olc_isfull('cccccc+')
 
 
-CREATE FUNCTION geouri_ext.pluscode_encode(
+CREATE FUNCTION geouri_ext.olc_encode(
     latitude float,          -- latitude ref
     longitude float,         -- longitude ref
-    codeLength int DEFAULT 10  -- codeLength int// How long must be the pluscode
+    codeLength int DEFAULT 10  -- How long must be the OLC code
 ) RETURNS text AS $f$
 DECLARE
     SEPARATOR_ text := '+';
@@ -305,11 +320,11 @@ BEGIN
 
     codeLength := LEAST(codeLength, MAX_DIGIT_COUNT_);
 
-    latitude := geouri_ext.pluscode_cliplatitude(latitude);
-    longitude := geouri_ext.pluscode_normalizelongitude(longitude);
+    latitude := geouri_ext.olc_cliplatitude(latitude);
+    longitude := geouri_ext.olc_normalizelongitude(longitude);
 
     IF (latitude = 90) THEN
-        latitude := latitude - geouri_ext.pluscode_computeLatitudePrecision(codeLength);
+        latitude := latitude - geouri_ext.olc_computeLatitudePrecision(codeLength);
     END IF;
 
     latVal := floor(round((latitude + LATITUDE_MAX_) * FINAL_LAT_PRECISION_, 6));
@@ -350,14 +365,14 @@ BEGIN
 END;
 $f$ LANGUAGE 'plpgsql' IMMUTABLE
 ;
-COMMENT ON FUNCTION geouri_ext.pluscode_encode(float,float,int)
-  IS 'Encode lat lng to get pluscode.'
+COMMENT ON FUNCTION geouri_ext.olc_encode(float,float,int)
+  IS 'Encode lat lng to get OLC code.'
 ;
--- select geouri_ext.pluscode_encode(49.05,-0.108,12);
+-- select geouri_ext.olc_encode(49.05,-0.108,12);
 
 
-CREATE FUNCTION geouri_ext.pluscode_decode(
-    code text  -- code text// the pluscode to decode
+CREATE FUNCTION geouri_ext.olc_decode(
+    code text  -- the OLC code to decode
 ) RETURNS float[] AS $f$
 DECLARE
 lat_out float := 0;
@@ -396,7 +411,7 @@ rowpv float := grid_lat_first_place_value_;
 colpv float := grid_lng_first_place_value_;
 
 BEGIN
-    IF (geouri_ext.pluscode_isfull(code)) is FALSE THEN
+    IF (geouri_ext.olc_isfull(code)) is FALSE THEN
         RAISE EXCEPTION 'NOT A VALID FULL CODE: %', code;
     END IF;
     --strip 0 and + chars
@@ -463,7 +478,7 @@ BEGIN
         RAISE NOTICE 'digits char_length%', digits;
     END IF ;
 
-    RETURN geouri_ext.pluscode_codearea(
+    RETURN geouri_ext.olc_codearea(
             lat_out,
             lng_out,
             (lat_out+lat_precision),
@@ -472,16 +487,16 @@ BEGIN
     );
 END;
 $f$ LANGUAGE PLpgSQL IMMUTABLE;
-COMMENT ON FUNCTION geouri_ext.pluscode_decode(text)
-  IS 'Decode a pluscode to get the corresponding bounding box and the center. Returns [1=lat_lo, 2=lng_lo, 3=lat_hi, 4=lng_hi, 5=code_length, 6=rlatCenter, 7=rlongCenter].'
+COMMENT ON FUNCTION geouri_ext.olc_decode(text)
+  IS 'Decode a OLC code to get the corresponding bounding box and the center. Returns [1=lat_lo, 2=lng_lo, 3=lat_hi, 4=lng_hi, 5=code_length, 6=rlatCenter, 7=rlongCenter].'
 ;
--- select geouri_ext.pluscode_decode('CCCCCCCC+');
+-- select geouri_ext.olc_decode('CCCCCCCC+');
 
 
-CREATE FUNCTION geouri_ext.pluscode_shorten(
-    code text,         -- code text //full code
-    latitude float,  -- latitude float //latitude to use for the reference location
-    longitude float  -- longitude float //longitude to use for the reference location
+CREATE FUNCTION geouri_ext.olc_shorten(
+    code text,       --full code
+    latitude float,  --latitude to use for the reference location
+    longitude float  --longitude to use for the reference location
 ) RETURNS text AS $f$
 DECLARE
 padding_character text :='0';
@@ -493,7 +508,7 @@ lng_dif float:= 0;
 pair_resolutions_ FLOAT[] := ARRAY[20.0, 1.0, 0.05, 0.0025, 0.000125]::FLOAT[];
 iterator int:= 0;
 BEGIN
-    IF (geouri_ext.pluscode_isfull(code)) is FALSE THEN
+    IF (geouri_ext.olc_isfull(code)) is FALSE THEN
         RAISE EXCEPTION 'Code is not full and valid: %', code;
     END IF;
 
@@ -502,7 +517,7 @@ BEGIN
     END IF;
 
     code := UPPER(code);
-    code_area := geouri_ext.pluscode_decode(code);
+    code_area := geouri_ext.olc_decode(code);
     -- Returns [1=lat_lo, 2=lng_lo, 3=lat_hi, 4=lng_hi, 5=code_length, 6=rlatCenter, 7=rlongCenter]
 
     IF (code_area[5] < min_trimmable_code_len ) THEN
@@ -514,8 +529,8 @@ BEGIN
         RAISE EXCEPTION 'LAT || LNG are not numbers % !',pg_typeof(latitude)||' || '||pg_typeof(longitude);
     END IF;
 
-    latitude := geouri_ext.pluscode_cliplatitude(latitude);
-    longitude := geouri_ext.pluscode_normalizelongitude(longitude);
+    latitude := geouri_ext.olc_cliplatitude(latitude);
+    longitude := geouri_ext.olc_normalizelongitude(longitude);
 
     lat_dif := ABS(code_area[6] - latitude);
     lng_dif := ABS(code_area[7] - longitude);
@@ -542,13 +557,13 @@ RETURN code;
 END;
 $f$ LANGUAGE 'plpgsql' IMMUTABLE
 ;
-COMMENT ON FUNCTION geouri_ext.pluscode_shorten(text,float,float)
+COMMENT ON FUNCTION geouri_ext.olc_shorten(text,float,float)
   IS 'Remove characters from the start of an OLC code.'
 ;
--- select geouri_ext.pluscode_shorten('8CXX5JJC+6H6H6H',49.18,-0.37);
+-- select geouri_ext.olc_shorten('8CXX5JJC+6H6H6H',49.18,-0.37);
 
 
-CREATE FUNCTION geouri_ext.pluscode_recovernearest(
+CREATE FUNCTION geouri_ext.olc_recovernearest(
     short_code text,             -- a valid shortcode
     reference_latitude float,  -- a valid latitude
     reference_longitude float  -- a valid longitude
@@ -564,8 +579,8 @@ latitude_max int := 90;
 code_out text := '';
 BEGIN
 
-    IF (geouri_ext.pluscode_isshort(short_code)) is FALSE THEN
-        IF (geouri_ext.pluscode_isfull(short_code)) THEN
+    IF (geouri_ext.olc_isshort(short_code)) is FALSE THEN
+        IF (geouri_ext.olc_isfull(short_code)) THEN
             RETURN UPPER(short_code);
         ELSE
             RAISE EXCEPTION 'Short code is not valid: %', short_code;
@@ -579,8 +594,8 @@ BEGIN
     --    RAISE EXCEPTION 'LAT || LNG are not numbers % !',pg_typeof(latitude)||' || '||pg_typeof(longitude);
     --END IF;
 
-    reference_latitude := geouri_ext.pluscode_cliplatitude(reference_latitude);
-    reference_longitude := geouri_ext.pluscode_normalizelongitude(reference_longitude);
+    reference_latitude := geouri_ext.olc_cliplatitude(reference_latitude);
+    reference_longitude := geouri_ext.olc_normalizelongitude(reference_longitude);
 
     short_code := UPPER(short_code);
     -- Calculate the number of digits to recover.
@@ -591,7 +606,7 @@ BEGIN
     half_resolution := resolution / 2.0;
 
     -- Concatenate short_code and the calculated value --> encode(lat,lng)
-    code_area := geouri_ext.pluscode_decode(SUBSTRING(geouri_ext.pluscode_encode(reference_latitude, reference_longitude) , 1 , padding_length) || short_code);
+    code_area := geouri_ext.olc_decode(SUBSTRING(geouri_ext.olc_encode(reference_latitude, reference_longitude) , 1 , padding_length) || short_code);
     -- Returns [1=lat_lo, 2=lng_lo, 3=lat_hi, 4=lng_hi, 5=code_length, 6=rlatCenter, 7=rlongCenter]
 
     --Check if difference with the center is more than half_resolution
@@ -609,13 +624,98 @@ BEGIN
       code_area[7] := code_area[7] + resolution;
     END IF;
 
-    code_out := geouri_ext.pluscode_encode(code_area[6], code_area[7], code_area[5]::integer);
+    code_out := geouri_ext.olc_encode(code_area[6], code_area[7], code_area[5]::integer);
 
 RETURN code_out;
 END;
 $f$ LANGUAGE 'plpgsql' IMMUTABLE
 ;
-COMMENT ON FUNCTION geouri_ext.pluscode_recovernearest(text,float,float)
+COMMENT ON FUNCTION geouri_ext.olc_recovernearest(text,float,float)
   IS 'Retrieve a valid full code (the nearest from lat/lng).'
 ;
--- select geouri_ext.pluscode_recovernearest('XX5JJC+', 49.1805,-0.3786);
+-- select geouri_ext.olc_recovernearest('XX5JJC+', 49.1805,-0.3786);
+
+
+
+--------------------
+--------------------
+-- GEOHASH FUNCTIONS
+-- By PostGIS or GGeohash.
+
+
+-- GEOMETRY
+
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+-- ST_GeoHash(geometry geom, integer maxchars=full_precision_of_point);
+-- Return a GeoHash representation (http://en.wikipedia.org/wiki/Geohash) of the geometry
+
+CREATE FUNCTION geouri_ext.ghs_geom(  -- byGeom
+  geom geometry, digits integer DEFAULT 9
+) RETURNS geometry AS $wrap$
+  SELECT ST_GeomFromGeoHash(ST_GeoHash($1,$2),$2)
+$wrap$ LANGUAGE SQL IMMUTABLE
+;
+COMMENT ON FUNCTION geouri_ext.ghs_geom(geometry,integer)
+  IS 'Wrap for ST_GeomFromGeoHash(ST_GeoHash()). Return a geometry from a GeoHash of a point or geometry (in SRID 4326).'
+;
+
+CREATE FUNCTION geouri_ext.ghs_geom( -- byLatLon
+  lat float, lon float,
+  digits integer DEFAULT 9
+) RETURNS geometry AS $wrap$
+  SELECT geouri_ext.ghs_geom( ST_SetSRID(ST_Point($2,$1),4326), $3 )
+$wrap$ LANGUAGE SQL IMMUTABLE
+;
+COMMENT ON FUNCTION geouri_ext.ghs_geom(float,float,integer)
+  IS 'Wrap for ghs_geom(). Converts latLon into a point.'
+;
+
+CREATE FUNCTION geouri_ext.ghs_geom( -- byCode
+  code text,
+  digits integer DEFAULT NULL -- truncate when not null
+) RETURNS geometry AS $wrap$
+  SELECT ST_GeomFromGeoHash( $1, CASE WHEN $2 IS NULL THEN length($1) ELSE $2 END)
+$wrap$ LANGUAGE SQL IMMUTABLE
+;
+COMMENT ON FUNCTION geouri_ext.ghs_geom(text,integer)
+  IS 'Wrap for ST_GeomFromGeoHash(). Use digits to truncate the code.'
+;
+
+--------------------
+
+CREATE FUNCTION geouri_ext.olc_geom( -- byLatLon
+  code text
+) RETURNS geometry AS $f$
+  SELECT ST_MakeEnvelope(a[2], a[1], a[4], a[3], 4326)
+                    --  xmin, ymin, xmax, ymax  (x=lon, y=lat)
+  FROM ( SELECT geouri_ext.olc_decode($1) ) t(a)
+  -- Returns [1=lat_lo, 2=lng_lo, 3=lat_hi, 4=lng_hi, 5=code_length, 6=rlatCenter, 7=rlongCenter].'
+$f$ LANGUAGE SQL IMMUTABLE
+;
+COMMENT ON FUNCTION geouri_ext.olc_geom(text)
+  IS 'Returns OLC_center as complete cell geometry.'
+;
+
+CREATE FUNCTION geouri_ext.olc_geom( -- byLatLon
+  lat float, lon float,
+  maxchars integer DEFAULT 9
+) RETURNS geometry AS $wrap$
+  SELECT geouri_ext.olc_geom( geouri_ext.olc_encode($1,$2,$3) )
+$wrap$ LANGUAGE SQL IMMUTABLE
+;
+COMMENT ON FUNCTION geouri_ext.olc_geom(float,float,integer)
+  IS 'Returns OLC_center as complete cell geometry. Wrap for olc_geom(olc_encode()).'
+;
+
+CREATE FUNCTION geouri_ext.olc_geom( -- byLatLon
+  geom geometry,
+  maxchars integer DEFAULT 9
+) RETURNS geometry AS $wrap$
+  SELECT geouri_ext.olc_geom( ST_Y(g), ST_X(g), $2 )
+  FROM (SELECT CASE WHEN GeometryType($1)='POINT' THEN $1 ELSE ST_PointOnSurface($1) END) t(g)
+$wrap$ LANGUAGE SQL IMMUTABLE
+;
+COMMENT ON FUNCTION geouri_ext.olc_geom(geometry,integer)
+  IS 'Returns OLC_center as complete cell geometry. Wrap of olc_geom(float,float).'
+;

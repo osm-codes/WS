@@ -336,58 +336,51 @@ CREATE or replace FUNCTION api.jurisdiction_coverage(
 ) RETURNS jsonb AS $f$
   SELECT jsonb_build_object(
     'type', 'FeatureCollection',
-    'features',
-      (
-        SELECT coalesce(jsonb_agg(
-          ST_AsGeoJSONb(ST_Transform_resilient(geom,4326,0.005),8,0,null,
-              jsonb_strip_nulls(jsonb_build_object(
-                  'code',
-                      CASE
-                        WHEN p_base = 18 THEN osmc.encode_16h1c(code,(('{"CO":170, "BR":76, "UY":858, "EC":218}'::jsonb)->( (osmc.str_geocodeiso_decode(p_iso))[2]  ))::int)
-                        ELSE code
-                      END
-                  ,
-                  'area', s.area,
-                  'side', SQRT(s.area),
-                  'base', osmc.string_base(p_base),
-                  'index', index
-                  ))
-              )::jsonb),'[]'::jsonb)
-        FROM
-        (
-          SELECT geom, bbox,
-            CASE
-            WHEN (osmc.str_geocodeiso_decode(p_iso))[1] LIKE '%-%-%'
-            THEN kx_prefix
-            ELSE
-              (
-                CASE
-                WHEN p_base IN (16,17,18) THEN natcod.vbit_to_baseh( osmc.extract_L0bits(cbits,(osmc.str_geocodeiso_decode(p_iso))[2]),16)
-                ELSE                           natcod.vbit_to_strstd(osmc.extract_L0bits32(cbits,(osmc.str_geocodeiso_decode(p_iso))[2]),'32nvu')
-                END
-              )
-            END AS code,
-
-            CASE
-            WHEN (osmc.str_geocodeiso_decode(p_iso))[1] LIKE '%-%-%'
-            THEN cindex
-            ELSE null
-            END AS index
-
-            FROM osmc.coverage
-            WHERE isolabel_ext = (osmc.str_geocodeiso_decode(p_iso))[1]
-        ) t
-        -- area geom
-        LEFT JOIN LATERAL
-        (
-          SELECT ST_Area(ggeohash.draw_cell_bybox(t.bbox,false,ST_SRID(t.geom))) AS area,
-                 (osmc.str_geocodeiso_decode(p_iso)) AS isodecoded
-        ) s
-        ON TRUE
-      )
+    'features', (coalesce(jsonb_agg(
+      ST_AsGeoJSONb(ST_Transform_resilient(geom,4326,0.005),8,0,null,
+          jsonb_strip_nulls(jsonb_build_object(
+              'code', code,
+              'area', area,
+              'side', SQRT(area),
+              'base', osmc.string_base(p_base),
+              'index', index,
+              'is_country', is_country,
+              'is_contained', is_contained,
+              'is_overlay', is_overlay,
+              'level', level
+              ))
+          )::jsonb),'[]'::jsonb))
     )
+  FROM
+  osmc.str_geocodeiso_decode(p_iso) t(x),
+  LATERAL (
+    SELECT geom, bbox, is_country, is_contained, is_overlay, kx_prefix,
+            ST_Area(ggeohash.draw_cell_bybox(bbox,false,ST_SRID(geom))) AS area,
+            length(kx_prefix) AS level,
+      CASE
+      WHEN x[1] LIKE '%-%-%'
+      THEN kx_prefix
+      ELSE
+        (
+          CASE
+          WHEN p_base IN (16,17) THEN                   natcod.vbit_to_baseh( osmc.extract_L0bits(  cbits,x[2]),16)
+          WHEN p_base IN (18)    THEN osmc.encode_16h1c(natcod.vbit_to_baseh( osmc.extract_L0bits(  cbits,x[2]),16),(('{"CO":170, "BR":76, "UY":858, "EC":218}'::jsonb)->(x[2]))::int)
+          ELSE                                          natcod.vbit_to_strstd(osmc.extract_L0bits32(cbits,x[2]),'32nvu')
+          END
+        )
+      END AS code,
+
+      CASE
+      WHEN x[1] LIKE '%-%-%'
+      THEN cindex
+      ELSE null
+      END AS index
+
+      FROM osmc.coverage
+      WHERE isolabel_ext = x[1]
+  ) r
 $f$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.jurisdiction_coverage(text,int)
-  IS 'Return l0cover.'
+  IS 'Returns jurisdiction coverage.'
 ;
 -- EXPLAIN ANALYZE SELECT api.jurisdiction_coverage('BR-SP-SaoCaetanoSul');

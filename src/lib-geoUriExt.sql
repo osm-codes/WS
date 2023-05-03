@@ -636,6 +636,49 @@ COMMENT ON FUNCTION geouri_ext.olc_recovernearest(text,float,float)
 -- select geouri_ext.olc_recovernearest('XX5JJC+', 49.1805,-0.3786);
 
 
+-- see: https://github.com/google/open-location-code/blob/main/docs/specification.md#code-precision
+CREATE or replace FUNCTION geouri_ext.uncertain_olc(u float) RETURNS int AS $f$
+  -- GeoURI's uncertainty value "is the radius of the disk that represents uncertainty geometrically."
+  SELECT CASE -- discretization by "snap to code length."
+    WHEN s < 0.02 THEN 15
+    WHEN s < 0.09 THEN 14
+    WHEN s < 0.43 THEN 13
+    WHEN s < 1.91 THEN 12
+    WHEN s < 8.52 THEN 11
+    WHEN s < 145 THEN 10
+    WHEN s < 2922 THEN 8
+    WHEN s < 58443 THEN 6
+    WHEN s < 1168660 THEN 4
+    ELSE 2
+    END
+  FROM (SELECT CASE WHEN u > 9 THEN (ROUND(u,0))*2 ELSE (ROUND(u,1))*2 END) t(s)
+$f$ LANGUAGE SQL IMMUTABLE;
+COMMENT ON FUNCTION geouri_ext.uncertain_olc(float)
+  IS 'Converts uncertainty to OLC code size.'
+;
+
+-- see: https://www.movable-type.co.uk/scripts/geohash.html
+CREATE or replace FUNCTION geouri_ext.uncertain_ghs(u float) RETURNS int AS $f$
+  -- GeoURI's uncertainty value "is the radius of the disk that represents uncertainty geometrically."
+  SELECT CASE -- discretization by "snap to code length."
+    WHEN s < 0.09 THEN 12
+    WHEN s < 0.5 THEN 11
+    WHEN s < 2.81 THEN 10
+    WHEN s < 15 THEN 9
+    WHEN s < 90 THEN 8
+    WHEN s < 4389 THEN 7
+    WHEN s < 28763 THEN 6
+    WHEN s < 68109 THEN 5
+    WHEN s < 121659 THEN 4
+    WHEN s < 519941 THEN 3
+    WHEN s < 2941941 THEN 2
+    ELSE 1
+    END
+  FROM (SELECT CASE WHEN u > 9 THEN (ROUND(u,0))*2 ELSE (ROUND(u,1))*2 END) t(s)
+$f$ LANGUAGE SQL IMMUTABLE;
+COMMENT ON FUNCTION geouri_ext.uncertain_ghs(float)
+  IS 'Converts uncertainty to GHS code size.'
+;
 
 --------------------
 --------------------

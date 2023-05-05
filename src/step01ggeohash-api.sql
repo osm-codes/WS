@@ -51,18 +51,7 @@ CREATE or replace FUNCTION api.osmcode_encode(
   SELECT
   (
     SELECT api.osmcode_encode_scientific(uri,grid,isolabel_ext)
-    FROM
-    (
-      SELECT isolabel_ext, geom
-      FROM optim.jurisdiction_geom
-      WHERE isolabel_ext IN ('BR','CO','UY','EC')
-
-      UNION
-
-      SELECT isolabel_ext, geom
-      FROM optim.jurisdiction_eez
-      WHERE isolabel_ext IN ('BR','CO','UY','EC')
-    ) x
+    FROM optim.mvwjurisdiction_geomeez x
     WHERE ST_Contains(geom,ST_SetSRID(ST_MakePoint(latLon[2],latLon[1]),4326))
   )
   FROM ( SELECT str_geouri_decode(uri) ) t(latLon)

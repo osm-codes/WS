@@ -284,7 +284,17 @@ server {
         rewrite "(?i)^/scientific_full/[A-Z]{2}(~|\+)([0123456789ABCDEFGHJKLMNPQRSTUVWXYZ\.]+)(,[0123456789ABCDEFGHJKLMNPQRSTUVWXYZ\.]+){0,}$" /scientific_full/ break;
     }
 
-    location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?(/base16(h|h1c)?)?(/grid(2|4|8|16|32))?$" {
+    location ~* "^/geo:(ghs:|olc:)?\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?(/base16(h|h1c)?)?(/grid(2|4|8|16|32))?$" {
+        rewrite "^/.+" /logistic/ break;
+    }
+
+    # ghs
+    location ~* "^/geo:ghs:([0123456789BCDEFGHJKMNPQRSTUVWXYZ]+)$" {
+        rewrite "^/.+" /logistic/ break;
+    }
+
+    # olc
+    location ~* "^/geo:olc:(([23456789CFGHJMPQRVWX]+0*){1,8}\+([23456789CFGHJMPQRVWX]+)?)$" {
         rewrite "^/.+" /logistic/ break;
     }
 

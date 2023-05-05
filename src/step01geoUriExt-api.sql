@@ -17,7 +17,7 @@ CREATE or replace FUNCTION api.olc_encode(
                   'side', SQRT(ST_Area(y,true))
                   )
               )::jsonb)
-        FROM (SELECT geouri_ext.olc_encode(u[1],u[2],geouri_ext.uncertain_olc(u[4]))) t(x),
+        FROM (SELECT geouri_ext.olc_encode(u[1],u[2],geouri_ext.uncertain_olc( (CASE WHEN u[4] IS NULL THEN 10 ELSE u[4] END) ))) t(x),
         LATERAL (SELECT geouri_ext.olc_geom(x)) s(y)
       )
     )
@@ -54,7 +54,7 @@ BEGIN
         )
         ELSE jsonb_build_object('error', 'Unknown.')
       END
-    FROM (SELCET geouri_ext.olc_geom(code)) s(y)
+    FROM (SELEcT geouri_ext.olc_geom(code)) s(y)
   );
 END;
 $f$ LANGUAGE 'plpgsql' IMMUTABLE;
@@ -81,7 +81,7 @@ CREATE or replace FUNCTION api.ghs_encode(
                   'side', SQRT(ST_Area(y,true))
                   )
               )::jsonb)
-        FROM (SELECT  ST_GeoHash(ST_SetSRID(ST_Point(u[2],u[1]),4326),geouri_ext.uncertain_ghs(u[4])) ) t(x),
+        FROM (SELECT  ST_GeoHash(ST_SetSRID(ST_Point(u[2],u[1]),4326),geouri_ext.uncertain_ghs( (CASE WHEN u[4] IS NULL THEN 9 ELSE u[4] END) )) ) t(x),
         LATERAL (SELECT ST_GeomFromGeoHash(x)) s(y)
       )
     )

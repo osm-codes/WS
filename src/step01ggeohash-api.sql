@@ -44,7 +44,7 @@ COMMENT ON FUNCTION api.osmcode_encode_scientific(text,int,text)
 ;
 -- EXPLAIN ANALYZE SELECT api.osmcode_encode_scientific('geo:-15.5,-47.8;u=600000',18,'0','BR');
 
-CREATE or replace FUNCTION api.osmcode_encode(
+CREATE or replace FUNCTION api.osmcode_encode_sci(
   uri    text,
   grid   int DEFAULT 0
 ) RETURNS jsonb AS $wrap$
@@ -53,6 +53,23 @@ CREATE or replace FUNCTION api.osmcode_encode(
     SELECT api.osmcode_encode_scientific(uri,grid,isolabel_ext)
     FROM optim.mvwjurisdiction_geomeez x
     WHERE ST_Contains(geom,ST_SetSRID(ST_MakePoint(latLon[2],latLon[1]),4326))
+  )
+  FROM ( SELECT str_geouri_decode(uri) ) t(latLon)
+$wrap$ LANGUAGE SQL IMMUTABLE;
+COMMENT ON FUNCTION api.osmcode_encode_sci(text,int)
+  IS 'Encodes Geo URI to OSMcode.'
+;
+
+CREATE or replace FUNCTION api.osmcode_encode(
+  uri    text,
+  grid   int DEFAULT 0
+) RETURNS jsonb AS $wrap$
+  SELECT
+  (
+    SELECT api.osmcode_encode_postal(uri,grid,isolabel_ext)
+    FROM optim.jurisdiction_geom x
+    WHERE ST_Contains(geom,ST_SetSRID(ST_MakePoint(latLon[2],latLon[1]),4326))
+          AND isolabel_ext LIKE '%-%-%'
   )
   FROM ( SELECT str_geouri_decode(uri) ) t(latLon)
 $wrap$ LANGUAGE SQL IMMUTABLE;

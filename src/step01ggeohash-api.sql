@@ -194,7 +194,9 @@ CREATE or replace FUNCTION api.osmcode_decode_postal_absolute(
                         'side', SQRT(ST_Area(v.geom)),
                         'base', '32nvu',
                         'jurisd_local_id', t.jurisd_local_id,
-                        'short_code', t.short_code,
+                        'jurisd_base_id', v.jurisd_base_id,
+                        'isolabel_ext', t.isolabel_ext,
+                        'short_code', CASE WHEN upper_p_iso IN ('CO') THEN upper_p_iso || '-' || t.jurisd_local_id ELSE t.isolabel_ext END || '~' || t.short_code,
                         'scientic_code', CASE
                                           WHEN upper_p_iso IN ('BR','UY') THEN osmc.encode_16h1c(natcod.vbit_to_baseh(osmc.vbit_from_b32nvu_to_vbit_16h(codebits,jurisd_base_id),16),jurisd_base_id)
                                           ELSE                                                   natcod.vbit_to_baseh(osmc.vbit_from_b32nvu_to_vbit_16h(codebits,jurisd_base_id),16)
@@ -226,7 +228,7 @@ $f$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.osmcode_decode_postal_absolute(text,text)
   IS 'Decode absolute postal OSMcode.'
 ;
--- EXPLAIN ANALYZE SELECT api.osmcode_decode_postal_absolute('D6MCY0','CO');
+-- EXPLAIN ANALYZE SELECT api.osmcode_decode_postal_absolute('6HRJ27TB','CO');
 
 CREATE or replace FUNCTION api.osmcode_decode_postal_absolute(
    p_code text
@@ -251,11 +253,13 @@ CREATE or replace FUNCTION api.osmcode_decode_postal(
                 ST_AsGeoJSONb(ST_Transform_resilient(v.geom,4326,0.005),8,0,null,
                     jsonb_strip_nulls(jsonb_build_object(
                         'code', code,
-                        'short_code', short_code,
+                        'short_code', CASE WHEN country_iso IN ('CO') THEN country_iso || '-' || jurisd_local_id ELSE isolabel_ext END || '~' || short_code,
                         'area', ST_Area(v.geom),
                         'side', SQRT(ST_Area(v.geom)),
                         'base', '32nvu',
                         'jurisd_local_id', jurisd_local_id,
+                        'jurisd_base_id', jurisd_base_id,
+                        'isolabel_ext', isolabel_ext,
                         'truncated_code',truncated_code,
                         'scientic_code', CASE
                                           WHEN country_iso IN ('BR','UY') THEN osmc.encode_16h1c(natcod.vbit_to_baseh(osmc.vbit_from_b32nvu_to_vbit_16h(codebits,jurisd_base_id),16),jurisd_base_id)
@@ -284,7 +288,6 @@ CREATE or replace FUNCTION api.osmcode_decode_postal(
                 WHEN length(code) > 7 AND country_iso IN ('UY')      THEN natcod.b32nvu_to_vbit(substring(code,1,7))
                 ELSE natcod.b32nvu_to_vbit(code)
               END AS codebits,
-              isolabel_ext || '~' ||
               CASE
                 WHEN length(code) > 9 AND country_iso IN ('BR')      THEN substring(upper(p_code),1,length(p_code)-length(code)+9)
                 WHEN length(code) > 8 AND country_iso IN ('EC','CO') THEN substring(upper(p_code),1,length(p_code)-length(code)+8)

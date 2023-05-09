@@ -288,14 +288,20 @@ server {
         rewrite "^/.+" /logistic/ break;
     }
 
-    # ghs
-    location ~* "^/geo:ghs:([0123456789BCDEFGHJKMNPQRSTUVWXYZ]+)$" {
-        rewrite "^/.+" /logistic/ break;
+    ### ghs
+    location ~* "^(/scientific_full)?(/[A-Z]{2}((-[A-Z]{1,3}-[A-Z\.]+))?)?/geo:ghs:([0123456789BCDEFGHJKMNPQRSTUVWXYZ]+)$" {
+        rewrite "(?i)^/geo.+" /logistic/ break;
+        rewrite "(?i)^/[A-Z]{2}/.+" /scientific/ break;
+        rewrite "(?i)^/[A-Z]{2}\-.+" /logistic/ break;
+        rewrite "(?i)^/scientific_full.+" /scientific_full/ break;
     }
 
-    # olc
-    location ~* "^/geo:olc:(([23456789CFGHJMPQRVWX]+0*){1,8}\+([23456789CFGHJMPQRVWX]+)?)$" {
-        rewrite "^/.+" /logistic/ break;
+    ### olc
+    location ~* "^(/scientific_full)?(/[A-Z]{2}((-[A-Z]{1,3}-[A-Z\.]+))?)?/geo:olc:(([23456789CFGHJMPQRVWX]+0*){1,8}\+([23456789CFGHJMPQRVWX]+)?)$" {
+        rewrite "(?i)^/geo.+" /logistic/ break;
+        rewrite "(?i)^/[A-Z]{2}/.+" /scientific/ break;
+        rewrite "(?i)^/[A-Z]{2}\-.+" /logistic/ break;
+        rewrite "(?i)^/scientific_full.+" /scientific_full/ break;
     }
 
     location ~* "^/(geo:iso_ext:)?([A-Z]{2}([\-][A-Z]+)?([\-][A-Z]+)?)$" {
@@ -305,6 +311,11 @@ server {
     ### (urn|geo):lex
     location ~* "^/(urn|geo):lex:([a-z]{2}(;[a-z\.]+)?(;[a-z\.]+)?)$" {
         rewrite "(?i)^/(urn|geo):lex:([a-z]{2}(;[a-z\.]+)?(;[a-z\.]+)?)$" /view_lex/ break;
+    }
+
+
+    location ~*   "^/(CO|BR)-[0-9]+$" {
+        rewrite "(?i)^.*$" /logistic/ break;
     }
 
     location /_doc {

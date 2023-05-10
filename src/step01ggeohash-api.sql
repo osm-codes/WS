@@ -271,26 +271,26 @@ CREATE or replace FUNCTION api.osmcode_decode_postal(
             (
               SELECT jurisd_local_id, jurisd_base_id, isolabel_ext, country_iso,
               CASE
-                WHEN length(code) > 9 AND country_iso IN ('BR')      THEN substring(code,1,9)
-                WHEN length(code) > 8 AND country_iso IN ('EC','CO') THEN substring(code,1,8)
+                WHEN length(code) > 9 AND country_iso IN ('BR','CO') THEN substring(code,1,9)
+                WHEN length(code) > 8 AND country_iso IN ('EC')      THEN substring(code,1,8)
                 WHEN length(code) > 7 AND country_iso IN ('UY')      THEN substring(code,1,7)
                 ELSE code
               END AS code,
               CASE
-                WHEN length(code) > 9 AND country_iso IN ('BR')      THEN TRUE
-                WHEN length(code) > 8 AND country_iso IN ('EC','CO') THEN TRUE
+                WHEN length(code) > 9 AND country_iso IN ('BR','CO') THEN TRUE
+                WHEN length(code) > 8 AND country_iso IN ('EC')      THEN TRUE
                 WHEN length(code) > 7 AND country_iso IN ('UY')      THEN TRUE
                 ELSE NULL
               END AS truncated_code,
               CASE
-                WHEN length(code) > 9 AND country_iso IN ('BR')      THEN natcod.b32nvu_to_vbit(substring(code,1,9))
-                WHEN length(code) > 8 AND country_iso IN ('EC','CO') THEN natcod.b32nvu_to_vbit(substring(code,1,8))
+                WHEN length(code) > 9 AND country_iso IN ('BR','CO') THEN natcod.b32nvu_to_vbit(substring(code,1,9))
+                WHEN length(code) > 8 AND country_iso IN ('EC')      THEN natcod.b32nvu_to_vbit(substring(code,1,8))
                 WHEN length(code) > 7 AND country_iso IN ('UY')      THEN natcod.b32nvu_to_vbit(substring(code,1,7))
                 ELSE natcod.b32nvu_to_vbit(code)
               END AS codebits,
               CASE
-                WHEN length(code) > 9 AND country_iso IN ('BR')      THEN substring(upper(p_code),1,length(p_code)-length(code)+9)
-                WHEN length(code) > 8 AND country_iso IN ('EC','CO') THEN substring(upper(p_code),1,length(p_code)-length(code)+8)
+                WHEN length(code) > 9 AND country_iso IN ('BR','CO') THEN substring(upper(p_code),1,length(p_code)-length(code)+9)
+                WHEN length(code) > 8 AND country_iso IN ('EC')      THEN substring(upper(p_code),1,length(p_code)-length(code)+8)
                 WHEN length(code) > 7 AND country_iso IN ('UY')      THEN substring(upper(p_code),1,length(p_code)-length(code)+7)
                 ELSE upper(p_code)
               END AS short_code
@@ -308,7 +308,7 @@ CREATE or replace FUNCTION api.osmcode_decode_postal(
             ) c,
             LATERAL
             (
-              SELECT ggeohash.draw_cell_bybox(ggeohash.decode_box2(osmc.vbit_withoutL0(codebits,c.country_iso,32),bbox, CASE WHEN country_iso = 'EC' THEN TRUE ELSE FALSE END),false,ST_SRID(geom)) AS geom
+              SELECT ggeohash.draw_cell_bybox(ggeohash.decode_box2(osmc.vbit_withoutL0((osmc.vbit_from_b32nvu_to_vbit_16h(codebits,c.jurisd_base_id)),c.country_iso,16),bbox, CASE WHEN country_iso = 'EC' THEN TRUE ELSE FALSE END),false,ST_SRID(geom)) AS geom
               FROM osmc.coverage
               WHERE is_country IS TRUE AND cbits::bit(10) = c.jurisd_base_id::bit(10) AND ( ( osmc.extract_L0bits32(cbits,isolabel_ext) # codebits::bit(5) ) = 0::bit(5) ) -- 1 dígito  base 32nvu
             ) v

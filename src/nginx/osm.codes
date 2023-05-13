@@ -2,7 +2,7 @@
 # Servidores OSM.CODES
 ##
 
-# dominio principal, usa dl05s_main em :3105
+# subdominio test, usa dl05s_main em :3105
 server {
     server_name osm.codes;
 
@@ -62,12 +62,16 @@ server {
     }
 
     ## olc|ghs
-    location ~* "^/geo:(olc|ghs):\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?$" {
+    location ~* "^/geo:(olc|ghs):\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?\.json$" {
+        rewrite "^/(geo:olc:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json$"
+            "/rpc/olc_encode?uri=$1%3B$2" break;
+        rewrite "^/(geo:olc:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json$"
+            "/rpc/olc_encode?uri=$1" break;
 
-        rewrite "^/(geo:olc:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)$"
-            "/rpc/olc_encode?uri=$1%3B$2&grid=$4" break;
-        rewrite "^/(geo:olc:\-?\d+\.?\d*,\-?\d+\.?\d*)$"
-            "/rpc/olc_encode?uri=$1&grid=$3" break;
+        rewrite "^/(geo:ghs:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json$"
+            "/rpc/ghs_encode?uri=$1%3B$2" break;
+        rewrite "^/(geo:ghs:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json$"
+            "/rpc/ghs_encode?uri=$1" break;
 
         proxy_pass http://127.0.0.1:3105;
     }
@@ -237,14 +241,26 @@ server {
         proxy_pass http://127.0.0.1:3105;
     }
 
-    # geo:br-divipola
-    location ~* "^/(geo:(br-divipola):[0-9]+)\.json/cover(/base16h(1c)?)?$" {
-        rewrite "(?i)^/geo:(br-)divipola:([0-9]+)\.json/cover$"
+    # geo:br-geocodigo
+    location ~* "^/(geo:(br-geocodigo):[0-9]+)\.json/cover(/base16h(1c)?)?$" {
+        rewrite "(?i)^/geo:(br-)geocodigo:([0-9]+)\.json/cover$"
             /rpc/jurisdiction_coverage?p_iso=$1$2 break;
-        rewrite "(?i)^/geo:(br-)divipola:([0-9]+)\.json/cover/base16h$"
+        rewrite "(?i)^/geo:(br-)geocodigo:([0-9]+)\.json/cover/base16h$"
             /rpc/jurisdiction_coverage?p_iso=$1$2&p_base=16 break;
-        rewrite "(?i)^/geo:(br-)divipola:([0-9]+)\.json/cover/base16h1c$"
+        rewrite "(?i)^/geo:(br-)geocodigo:([0-9]+)\.json/cover/base16h1c$"
             /rpc/jurisdiction_coverage?p_iso=$1$2&p_base=18 break;
+        proxy_pass http://127.0.0.1:3105;
+    }
+
+    # ghs
+    location ~* "^/geo:ghs:([0123456789BCDEFGHJKMNPQRSTUVWXYZ]+).json$" {
+        rewrite "(?i)^/geo:ghs:([0123456789BCDEFGHJKMNPQRSTUVWXYZ]+).json$" "/rpc/ghs_decode?code=$1" break;
+        proxy_pass http://127.0.0.1:3105;
+    }
+
+    # olc
+    location ~* "^/geo:olc:(([23456789CFGHJMPQRVWX]+0*){1,8}\+([23456789CFGHJMPQRVWX]+)?).json$" {
+        rewrite "(?i)^/geo:olc:([^\.]+).json$" "/rpc/olc_decode?code=$1" break;
         proxy_pass http://127.0.0.1:3105;
     }
 
@@ -272,8 +288,24 @@ server {
         rewrite "(?i)^/scientific_full/[A-Z]{2}(~|\+)([0123456789ABCDEFGHJKLMNPQRSTUVWXYZ\.]+)(,[0123456789ABCDEFGHJKLMNPQRSTUVWXYZ\.]+){0,}$" /scientific_full/ break;
     }
 
-    location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?(/base16(h|h1c)?)?(/grid(2|4|8|16|32))?$" {
+    location ~* "^/geo:(ghs:|olc:)?\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?(/base16(h|h1c)?)?(/grid(2|4|8|16|32))?$" {
         rewrite "^/.+" /logistic/ break;
+    }
+
+    ### ghs
+    location ~* "^(/scientific_full)?(/[A-Z]{2}((-[A-Z]{1,3}-[A-Z\.]+))?)?/geo:ghs:([0123456789BCDEFGHJKMNPQRSTUVWXYZ]+)$" {
+        rewrite "(?i)^/geo.+" /logistic/ break;
+        rewrite "(?i)^/[A-Z]{2}/.+" /scientific/ break;
+        rewrite "(?i)^/[A-Z]{2}\-.+" /logistic/ break;
+        rewrite "(?i)^/scientific_full.+" /scientific_full/ break;
+    }
+
+    ### olc
+    location ~* "^(/scientific_full)?(/[A-Z]{2}((-[A-Z]{1,3}-[A-Z\.]+))?)?/geo:olc:(([23456789CFGHJMPQRVWX]+0*){1,8}\+([23456789CFGHJMPQRVWX]+)?)$" {
+        rewrite "(?i)^/geo.+" /logistic/ break;
+        rewrite "(?i)^/[A-Z]{2}/.+" /scientific/ break;
+        rewrite "(?i)^/[A-Z]{2}\-.+" /logistic/ break;
+        rewrite "(?i)^/scientific_full.+" /scientific_full/ break;
     }
 
     location ~* "^/(geo:iso_ext:)?([A-Z]{2}([\-][A-Z]+)?([\-][A-Z]+)?)$" {
@@ -283,6 +315,11 @@ server {
     ### (urn|geo):lex
     location ~* "^/(urn|geo):lex:([a-z]{2}(;[a-z\.]+)?(;[a-z\.]+)?)$" {
         rewrite "(?i)^/(urn|geo):lex:([a-z]{2}(;[a-z\.]+)?(;[a-z\.]+)?)$" /view_lex/ break;
+    }
+
+
+    location ~*   "^/(CO|BR)-[0-9]+$" {
+        rewrite "(?i)^.*$" /logistic/ break;
     }
 
     location /_doc {

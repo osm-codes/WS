@@ -402,6 +402,20 @@ server {
 } # \server
 
 server {
+        listen              80;
+        listen              443 ssl;
+        include /etc/nginx/ssl.conf;
+        server_name git-site.osm.codes;
+        location ~ ^/?.+ {
+                rewrite
+                  ^/?(.*)$
+                  /$1
+                  break;
+                proxy_pass http://osm-codes.github.io;
+        }
+} # \server
+
+server {
         server_name git-raw.osm.codes;
         location ~ ^/?.+ {
                 rewrite

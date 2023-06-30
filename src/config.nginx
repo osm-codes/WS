@@ -604,8 +604,8 @@ server {
         rewrite "(?i)^/[A-Z]{2}((-[A-Z]{1,3}-[A-Z\.]+)|-[0-9]+)((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ\.]+)" /logistic/ break;
     }
 
-    location ~*   "^/[A-Z]{2}(-[A-Z]{1,3})?$" {
-        rewrite "(?i)^/[A-Z]{2}(-[A-Z]{1,3})?$" /select/ break;
+    location ~*   "^/[A-Z]{2}((-[A-Z]{1,3})|(\+|\-|\~))?$" {
+        rewrite "(?i)^/.+" /select/ break;
     }
 
     ### decode list absoluto 32, 16

@@ -42,7 +42,7 @@ $wrap$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.osmcode_encode_scientific(text,int,text)
   IS 'Encodes Geo URI to OSMcode. Wrap for osmcode_encode_context(geometry)'
 ;
--- EXPLAIN ANALYZE SELECT api.osmcode_encode_scientific('geo:-15.5,-47.8;u=600000',18,'0','BR');
+-- EXPLAIN ANALYZE SELECT api.osmcode_encode_scientific('geo:-15.5,-47.8;u=6','0','BR');
 
 CREATE or replace FUNCTION api.osmcode_encode_sci(
   uri    text,
@@ -57,7 +57,7 @@ CREATE or replace FUNCTION api.osmcode_encode_sci(
   FROM ( SELECT str_geouri_decode(uri) ) t(latLon)
 $wrap$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.osmcode_encode_sci(text,int)
-  IS 'Encodes Geo URI to OSMcode.'
+  IS 'Encodes Geo URI (no context) to scientific OSMcode.'
 ;
 
 CREATE or replace FUNCTION api.osmcode_encode(
@@ -74,7 +74,7 @@ CREATE or replace FUNCTION api.osmcode_encode(
   FROM ( SELECT str_geouri_decode(uri) ) t(latLon)
 $wrap$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.osmcode_encode(text,int)
-  IS 'Encodes Geo URI to OSMcode.'
+  IS 'Encodes Geo URI (no context) to logistic OSMcode.'
 ;
 -- EXPLAIN ANALYZE SELECT api.osmcode_encode('geo:3.461,-76.577');
 -- EXPLAIN ANALYZE SELECT api.osmcode_encode('geo:-15.5,-47.8');

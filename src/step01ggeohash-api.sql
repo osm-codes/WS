@@ -50,9 +50,13 @@ CREATE or replace FUNCTION api.osmcode_encode_sci(
 ) RETURNS jsonb AS $wrap$
   SELECT
   (
-    SELECT api.osmcode_encode_scientific(uri,grid,isolabel_ext)
-    FROM optim.mvwjurisdiction_geomeez x
-    WHERE ST_Contains(geom,ST_SetSRID(ST_MakePoint(latLon[2],latLon[1]),4326))
+    SELECT api.osmcode_encode_scientific(uri,grid,
+    CASE
+    WHEN jurisd_base_id IS NULL THEN ( SELECT isolabel_ext FROM optim.jurisdiction_bbox_border WHERE bbox_id = x.id AND ( ST_Contains(geom,ST_SetSRID(ST_MakePoint(latLon[2],latLon[1]),4326)) ) )
+    ELSE isolabel_ext
+    END)
+    FROM optim.jurisdiction_bbox x
+    WHERE ST_MakePoint(latLon[2],latLon[1]) && geom
   )
   FROM ( SELECT str_geouri_decode(uri) ) t(latLon)
 $wrap$ LANGUAGE SQL IMMUTABLE;
@@ -69,7 +73,14 @@ CREATE or replace FUNCTION api.osmcode_encode(
     SELECT api.osmcode_encode_postal(uri,grid,isolabel_ext)
     FROM optim.jurisdiction_geom x
     WHERE ST_Contains(geom,ST_SetSRID(ST_MakePoint(latLon[2],latLon[1]),4326))
-          AND isolabel_ext LIKE '%-%-%'
+          AND isolabel_ext LIKE
+          (SELECT
+            CASE
+            WHEN jurisd_base_id IS NULL THEN ( SELECT isolabel_ext FROM optim.jurisdiction_bbox_border WHERE bbox_id = x.id AND ( ST_Contains(geom,ST_SetSRID(ST_MakePoint(latLon[2],latLon[1]),4326)) ) )
+            ELSE isolabel_ext
+            END
+          FROM optim.jurisdiction_bbox x
+          WHERE ST_MakePoint(latLon[2],latLon[1]) && geom) || '-%-%'
   )
   FROM ( SELECT str_geouri_decode(uri) ) t(latLon)
 $wrap$ LANGUAGE SQL IMMUTABLE;

@@ -23,7 +23,7 @@ COMMENT ON FUNCTION api.osmcode_encode_postal(text,int,text)
   IS 'Encodes Geo URI to Postal OSMcode. Wrap for osmcode_encode_postal.'
 ;
 -- EXPLAIN ANALYZE SELECT api.osmcode_encode_postal('geo:-15.5,-47.8',0,'BR-GO-Planaltina');
--- EXPLAIN ANALYZE SELECT api.osmcode_encode('geo:-15.5,-47.8',32,0);
+-- EXPLAIN ANALYZE SELECT api.osmcode_encode('geo:-15.5,-47.8',0);
 
 CREATE or replace FUNCTION api.osmcode_encode_scientific(
   uri    text,
@@ -48,41 +48,62 @@ CREATE or replace FUNCTION api.osmcode_encode_sci(
   uri    text,
   grid   int DEFAULT 0
 ) RETURNS jsonb AS $wrap$
-  SELECT
+  WITH
+  b AS
   (
-    SELECT api.osmcode_encode_scientific(uri,grid,
+    SELECT ST_MakePoint(a.udec[2],a.udec[1]) AS pt FROM str_geouri_decode(uri) a(udec)
+  ),
+  c AS
+  (
+    SELECT id, jurisd_base_id, isolabel_ext, pt FROM optim.jurisdiction_bbox x, b WHERE b.pt && geom
+  )
+  SELECT api.osmcode_encode_scientific(uri,grid,
     CASE
-    WHEN jurisd_base_id IS NULL THEN ( SELECT isolabel_ext FROM optim.jurisdiction_bbox_border WHERE bbox_id = x.id AND ( ST_Contains(geom,ST_SetSRID(ST_MakePoint(latLon[2],latLon[1]),4326)) ) )
+    WHEN jurisd_base_id IS NULL THEN ( SELECT isolabel_ext FROM optim.jurisdiction_bbox_border WHERE bbox_id = c.id AND ( ST_intersects(geom,ST_SetSRID(c.pt,4326)) ) )
     ELSE isolabel_ext
     END)
-    FROM optim.jurisdiction_bbox x
-    WHERE ST_MakePoint(latLon[2],latLon[1]) && geom
-  )
-  FROM ( SELECT str_geouri_decode(uri) ) t(latLon)
+  FROM c
 $wrap$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.osmcode_encode_sci(text,int)
   IS 'Encodes Geo URI (no context) to scientific OSMcode.'
 ;
+-- EXPLAIN ANALYZE SELECT api.osmcode_encode_sci('geo:3.461,-76.577');
+-- EXPLAIN ANALYZE SELECT api.osmcode_encode_sci('geo:-15.5,-47.8');
 
 CREATE or replace FUNCTION api.osmcode_encode(
   uri    text,
   grid   int DEFAULT 0
 ) RETURNS jsonb AS $wrap$
-  SELECT
+  WITH
+  b AS
   (
-    SELECT api.osmcode_encode_postal(uri,grid,isolabel_ext)
-    FROM optim.jurisdiction_geom x
-    WHERE ST_Contains(geom,ST_SetSRID(ST_MakePoint(latLon[2],latLon[1]),4326))
-          AND isolabel_ext LIKE
-          (SELECT
-            CASE
-            WHEN jurisd_base_id IS NULL THEN ( SELECT isolabel_ext FROM optim.jurisdiction_bbox_border WHERE bbox_id = x.id AND ( ST_Contains(geom,ST_SetSRID(ST_MakePoint(latLon[2],latLon[1]),4326)) ) )
-            ELSE isolabel_ext
-            END
-          FROM optim.jurisdiction_bbox x
-          WHERE ST_MakePoint(latLon[2],latLon[1]) && geom) || '-%-%'
+    SELECT ST_MakePoint(a.udec[2],a.udec[1]) AS pt FROM str_geouri_decode(uri) a(udec)
+  ),
+  c AS
+  (
+    SELECT id, jurisd_base_id, isolabel_ext, pt FROM optim.jurisdiction_bbox x, b WHERE b.pt && geom
+  ),
+  d AS
+  (
+    SELECT id, pt,
+      CASE
+      WHEN jurisd_base_id IS NULL THEN ( SELECT isolabel_ext FROM optim.jurisdiction_bbox_border WHERE bbox_id = c.id AND ( ST_intersects(geom,ST_SetSRID(c.pt,4326)) ) )
+      ELSE isolabel_ext
+      END AS isolabel_ext,
+      CASE
+      WHEN jurisd_base_id IS NULL THEN ( SELECT jurisd_base_id FROM optim.jurisdiction_bbox_border WHERE bbox_id = c.id AND ( ST_intersects(geom,ST_SetSRID(c.pt,4326)) ) )
+      ELSE jurisd_base_id
+      END AS jurisd_base_id
+    FROM c
+  ),
+  e AS
+  (
+    SELECT id, jurisd_base_id, ST_Transform(ST_SetSRID(d.pt,4326),((('{"CO":9377, "BR":952019, "UY":32721, "EC":32717}'::jsonb)->(isolabel_ext))::int)) AS pt, isolabel_ext
+    FROM d
   )
-  FROM ( SELECT str_geouri_decode(uri) ) t(latLon)
+  SELECT api.osmcode_encode_postal(uri,grid,g.isolabel_ext)
+  FROM osmc.coverage g, e
+  WHERE is_country IS FALSE AND cbits::bit(10) = e.jurisd_base_id::bit(10) AND e.pt && g.geom AND (is_contained IS TRUE OR ST_intersects(e.pt,g.geom))
 $wrap$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.osmcode_encode(text,int)
   IS 'Encodes Geo URI (no context) to logistic OSMcode.'

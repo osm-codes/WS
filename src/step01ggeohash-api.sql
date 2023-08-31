@@ -127,7 +127,7 @@ CREATE or replace FUNCTION api.osmcode_decode_scientific_absolute(
             SELECT jsonb_agg(
                 ST_AsGeoJSONb(ST_Transform_resilient(v.geom,4326,0.005),8,0,null,
                     jsonb_strip_nulls(jsonb_build_object(
-                        'code', code_tru,
+                        'code', TRANSLATE(code_tru,'gqhmrvjknpstzy','GQHMRVJKNPSTZY'),
                         'area', ST_Area(v.geom),
                         'side', SQRT(ST_Area(v.geom)),
                         'truncated_code',truncated_code,
@@ -230,8 +230,8 @@ CREATE or replace FUNCTION api.osmcode_decode_postal_absolute(
                         'isolabel_ext', t.isolabel_ext,
                         'short_code', CASE WHEN upper_p_iso IN ('CO') THEN upper_p_iso || '-' || t.jurisd_local_id ELSE t.isolabel_ext END || '~' || t.short_code,
                         'scientic_code', CASE
-                                          WHEN upper_p_iso IN ('BR','UY') THEN osmc.encode_16h1c(natcod.vbit_to_baseh(osmc.vbit_from_b32nvu_to_vbit_16h(codebits,jurisd_base_id),16),jurisd_base_id)
-                                          ELSE                                                   natcod.vbit_to_baseh(osmc.vbit_from_b32nvu_to_vbit_16h(codebits,jurisd_base_id),16)
+                                          WHEN upper_p_iso IN ('BR','UY') THEN osmc.encode_16h1c(natcod.vbit_to_baseh(osmc.vbit_from_b32nvu_to_vbit_16h(codebits,jurisd_base_id),16,true),jurisd_base_id)
+                                          ELSE                                                   natcod.vbit_to_baseh(osmc.vbit_from_b32nvu_to_vbit_16h(codebits,jurisd_base_id),16,true)
                                          END
                         ))
                     )::jsonb) AS gj
@@ -253,7 +253,7 @@ CREATE or replace FUNCTION api.osmcode_decode_postal_absolute(
             LEFT JOIN LATERAL ( SELECT * FROM osmc.encode_short_code(c.code,v.cbits::bit(10)||c.codebits,null,ST_Centroid(v.geom)) ) t ON TRUE
 
             WHERE
-            CASE WHEN upper_p_iso = 'UY' THEN natcod.vbit_to_baseh(osmc.vbit_from_b32nvu_to_vbit_16h(codebits,v.jurisd_base_id),16) NOT IN ('0eg','10g','12g','00r','12r','0eh','05q','11q') ELSE TRUE END
+            CASE WHEN upper_p_iso = 'UY' THEN natcod.vbit_to_baseh(osmc.vbit_from_b32nvu_to_vbit_16h(codebits,v.jurisd_base_id),16,true) NOT IN ('0eg','10g','12g','00r','12r','0eh','05q','11q') ELSE TRUE END
           )
       )
 $f$ LANGUAGE SQL IMMUTABLE;
@@ -294,8 +294,8 @@ CREATE or replace FUNCTION api.osmcode_decode_postal(
                         'isolabel_ext', isolabel_ext,
                         'truncated_code',truncated_code,
                         'scientic_code', CASE
-                                          WHEN country_iso IN ('BR','UY') THEN osmc.encode_16h1c(natcod.vbit_to_baseh(osmc.vbit_from_b32nvu_to_vbit_16h(codebits,jurisd_base_id),16),jurisd_base_id)
-                                          ELSE                                                   natcod.vbit_to_baseh(osmc.vbit_from_b32nvu_to_vbit_16h(codebits,jurisd_base_id),16)
+                                          WHEN country_iso IN ('BR','UY') THEN osmc.encode_16h1c(natcod.vbit_to_baseh(osmc.vbit_from_b32nvu_to_vbit_16h(codebits,jurisd_base_id),16,true),jurisd_base_id)
+                                          ELSE                                                   natcod.vbit_to_baseh(osmc.vbit_from_b32nvu_to_vbit_16h(codebits,jurisd_base_id),16,true)
                                          END
                         ))
                     )::jsonb) AS gj
@@ -383,9 +383,9 @@ CREATE or replace FUNCTION api.jurisdiction_coverage(
                 'code',
                   CASE
                   WHEN is_country IS FALSE THEN kx_prefix
-                  WHEN p_base IN (16,17) THEN                                  natcod.vbit_to_baseh( osmc.extract_L0bits(cbits,x[2]),16)
-                  WHEN p_base IN (18) AND x[2] IN('BR') THEN osmc.encode_16h1c(natcod.vbit_to_baseh( osmc.extract_L0bits(cbits,x[2]),16),76)
-                  WHEN p_base IN (18) AND x[2] IN('UY') THEN osmc.encode_16h1c(natcod.vbit_to_baseh( osmc.extract_L0bits(cbits,x[2]),16),858)
+                  WHEN p_base IN (16,17) THEN                                  natcod.vbit_to_baseh( osmc.extract_L0bits(cbits,x[2]),16,true)
+                  WHEN p_base IN (18) AND x[2] IN('BR') THEN osmc.encode_16h1c(natcod.vbit_to_baseh( osmc.extract_L0bits(cbits,x[2]),16,true),76)
+                  WHEN p_base IN (18) AND x[2] IN('UY') THEN osmc.encode_16h1c(natcod.vbit_to_baseh( osmc.extract_L0bits(cbits,x[2]),16,true),858)
                   ELSE                                          natcod.vbit_to_strstd(osmc.extract_L0bits32(cbits,x[2]),'32nvu')
                   END
                 ,

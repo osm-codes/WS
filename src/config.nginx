@@ -4,16 +4,14 @@
 
 # PRODUCAO: dl05s_main em :3105
 server {
-    server_name osm.codes afa.codes;
-
-    listen              80;
-    listen              443 ssl;
+    server_name osm.codes www.osm.codes afa.codes www.afa.codes;
+    listen 443 ssl;
     include /etc/nginx/ssl.conf;
     root /var/www/osm.codes/;
     index index.php index.html index.htm;
     access_log /var/log/nginx/osm.codes.access_log;
 
-    # sql schema api da dl03t_main
+    # schema api
     ## return csv
     location /_sql.csv {
         rewrite /_sql.csv/(.*) /$1 break;
@@ -338,16 +336,14 @@ server {
 
 # TEST: dl06t_main em :3106
 server {
-    server_name test.osm.codes test.afa.codes;
-
-    listen              80;
-    listen              443 ssl;
+    server_name test.osm.codes www.test.osm.codes test.afa.codes www.test.afa.codes;
+    listen 443 ssl;
     include /etc/nginx/ssl.conf;
     root /var/www/test.osm.codes/;
     index index.php index.html index.htm;
     access_log /var/log/nginx/test.osm.codes.access_log;
 
-    # sql schema api da dl03t_main
+    # schema api
     ## return csv
     location /_sql.csv {
         rewrite /_sql.csv/(.*) /$1 break;
@@ -641,24 +637,20 @@ server {
 } # \server
 
 # OLD: dl03t_main em :3103
-# descontinuado. Redirecionando para test.afa.codes
+# Redirecionando para test.afa.codes
 server {
     server_name old.osm.codes www.old.osm.codes old.afa.codes www.old.afa.codes;
-
-    listen              80;
-    listen              443 ssl;
+    listen 443 ssl;
     include /etc/nginx/ssl.conf;
     access_log /var/log/nginx/old.osm.codes.access_log;
     # root /var/www/old.osm.codes/;
     # index index.php index.html index.htm;
-    return 301 https://test.afa.codes$request_uri;
+    return 302 https://test.afa.codes$request_uri;
 } # \server
 
 server {
     server_name docs.osm.codes docs.afa.codes;
-
-    listen              80;
-    listen              443 ssl;
+    listen 443 ssl;
     include /etc/nginx/ssl.conf;
     # root /var/www/docs.osm.codes/;
     # index index.php index.html index.htm;
@@ -674,20 +666,17 @@ server {
     #     fastcgi_pass unix:/run/php/php-fpm.sock;
     # }
 
-    return 301 https://wiki.addressforall.org/doc/Documenta%C3%A7%C3%A3o_OSMcodes;
+    return 302 https://wiki.addressforall.org/doc/Documenta%C3%A7%C3%A3o_AFA.codes;
 } # \server
 
 server {
     server_name api.osm.codes api.afa.codes;
-
-    listen              80;
-    listen              443 ssl;
+    listen 443 ssl;
     include /etc/nginx/ssl.conf;
-    root /var/www/api.osm.codes/;
     access_log /var/log/nginx/api.osm.codes.access_log;
 
     ## return jurisdiction to autocomplete
-    location /jurisdiction_autocomplete {
+    location / {
         rewrite "(?i)^/jurisdiction_autocomplete/?$"
             /rpc/jurisdiction_autocomplete
             break;
@@ -695,64 +684,51 @@ server {
             /rpc/jurisdiction_autocomplete?p_code=$1
             break;
 
-        proxy_pass http://127.0.0.1:3103;
+        proxy_pass http://127.0.0.1:3105;
     }
 } # \server
 
 server {
-	listen		    80;
-    listen              443 ssl;
+    server_name git.osm.codes www.git.osm.codes git.afa.codes www.git.afa.codes;
+    listen 443 ssl;
     include /etc/nginx/ssl.conf;
-    server_name git.osm.codes git.afa.codes;
+
     location ~ ^/?.+ {
-            rewrite
-                ^/?licenses(/.*$|$)
-                /ppKrauss/licenses/$1
-                break;
-            rewrite
-                ^/?(.*)$
-                /osm-codes/$1
-                break;
-            proxy_pass http://github.com;
-        }
+        rewrite ^/?licenses(/.*$|$) /ppKrauss/licenses/$1 break;
+        rewrite ^/?(.*)$            /osm-codes/$1         break;
+        proxy_pass http://github.com;
+    }
 } # \server
 
 server {
-    listen              80;
-    listen              443 ssl;
-    include /etc/nginx/ssl.conf;
     server_name git-site.osm.codes git-site.afa.codes;
+    listen 443 ssl;
+    include /etc/nginx/ssl.conf;
+
     location ~ ^/?.+ {
-            rewrite
-                ^/?(.*)$
-                /$1
-                break;
-            proxy_pass http://osm-codes.github.io;
+        rewrite ^/?(.*)$ /$1 break;
+        proxy_pass http://osm-codes.github.io;
     }
 } # \server
 
 server {
-    server_name git-raw.osm.codes git-raw.afa.codes;
+    server_name git-raw.osm.codes www.git-raw.osm.codes git-raw.afa.codes www.git-raw.afa.codes;
+    listen 443 ssl;
+
     location ~ ^/?.+ {
-            rewrite
-                ^/?licenses(/.*$|$)
-                /ppKrauss/licenses/$1
-                break;
-            rewrite
-                ^/?(.*)$
-                /osm-codes/$1
-                break;
-            proxy_pass https://raw.githubusercontent.com;
+        rewrite ^/?licenses(/.*$|$) /ppKrauss/licenses/$1 break;
+        rewrite ^/?(.*)$            /osm-codes/$1         break;
+        proxy_pass https://raw.githubusercontent.com;
     }
 } # \server
 
 server { #OLC para comparar com plus.codes
-    server_name olc.osm.codes olc.afa.codes;
-    access_log /var/log/nginx/olc.osm.codes.access_log;
-    root /var/www/olc.osm.codes/;
-    index  index.php index.html index.htm;
+    server_name olc.osm.codes www.olc.osm.codes olc.afa.codes www.olc.afa.codes;
+    listen 443 ssl;
 
-    #add_header X-Frame-Options SAMEORIGIN; #iframe
+    access_log /var/log/nginx/olc.osm.codes.access_log;
+    # root /var/www/olc.osm.codes/;
+    index  index.php index.html index.htm;
 
     location / {
             try_files $uri $uri/ @resolver;
@@ -765,61 +741,5 @@ server { #OLC para comparar com plus.codes
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/run/php/php-fpm.sock;
-    }
-} # \server
-
-# WIKI
-server {
-    # see https://www.nginx.com/resources/wiki/start/topics/recipes/mediawiki/
-
-    server_name wiki.osm.codes;
-    root /var/www/osm.codes/mediawiki;
-    index  index.php;
-
-    client_max_body_size 5m;
-    client_body_timeout 60;
-
-    location / {
-        try_files $uri $uri/ @rewrite;
-    }
-
-    location @rewrite {
-        rewrite ^/(.*)$ /index.php?title=$1&$args;
-    }
-
-    location ^~ /maintenance/ {
-        return 403;
-    }
-
-    location /rest.php {
-        try_files $uri $uri/ /rest.php?$args;
-    }
-
-    location ~ \.php$ {
-        # include fastcgi_params;
-        # fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/run/php/php-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $request_filename;
-    }
-
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ {
-        try_files $uri /index.php;
-        expires max;
-        log_not_found off;
-    }
-
-    location = /_.gif {
-        expires max;
-        empty_gif;
-    }
-
-    location ^~ /cache/ {
-        deny all;
-    }
-
-    location /dumps {
-        root /var/www/osm.codes/mediawiki/local;
-        autoindex on;
     }
 } # \server

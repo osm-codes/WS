@@ -12,6 +12,7 @@ server {
     access_log /var/log/nginx/osm.codes.access_log;
 
     # schema api
+    # deve migrar para api.osm.codes
     ## return csv
     location /_sql.csv {
         rewrite /_sql.csv/(.*) /$1 break;
@@ -344,6 +345,7 @@ server {
     access_log /var/log/nginx/test.osm.codes.access_log;
 
     # schema api
+    # deve migrar para api.test.osm.codes
     ## return csv
     location /_sql.csv {
         rewrite /_sql.csv/(.*) /$1 break;
@@ -649,7 +651,7 @@ server {
 } # \server
 
 server {
-    server_name docs.osm.codes docs.afa.codes;
+    server_name docs.osm.codes docs.afa.codes www.docs.osm.codes www.docs.afa.codes;
     listen 443 ssl;
     include /etc/nginx/ssl.conf;
     # root /var/www/docs.osm.codes/;
@@ -670,7 +672,7 @@ server {
 } # \server
 
 server {
-    server_name api.osm.codes api.afa.codes;
+    server_name api.osm.codes api.afa.codes www.api.osm.codes www.api.afa.codes;
     listen 443 ssl;
     include /etc/nginx/ssl.conf;
     access_log /var/log/nginx/api.osm.codes.access_log;
@@ -685,6 +687,25 @@ server {
             break;
 
         proxy_pass http://127.0.0.1:3105;
+    }
+} # \server
+
+server {
+    server_name api.test.osm.codes api.test.afa.codes www.api.test.osm.codes www.api.test.afa.codes;
+    listen 443 ssl;
+    include /etc/nginx/ssl.conf;
+    access_log /var/log/nginx/api.test.osm.codes.access_log;
+
+    ## return jurisdiction to autocomplete
+    location / {
+        rewrite "(?i)^/jurisdiction_autocomplete/?$"
+            /rpc/jurisdiction_autocomplete
+            break;
+        rewrite "(?i)^/jurisdiction_autocomplete/(([A-Z]{2}(-[A-Z]{1,3})?)(/[A-Z]{2})?)$"
+            /rpc/jurisdiction_autocomplete?p_code=$1
+            break;
+
+        proxy_pass http://127.0.0.1:3106;
     }
 } # \server
 
@@ -714,6 +735,7 @@ server {
 server {
     server_name git-raw.osm.codes www.git-raw.osm.codes git-raw.afa.codes www.git-raw.afa.codes;
     listen 443 ssl;
+    include /etc/nginx/ssl.conf;
 
     location ~ ^/?.+ {
         rewrite ^/?licenses(/.*$|$) /ppKrauss/licenses/$1 break;
@@ -725,9 +747,9 @@ server {
 server { #OLC para comparar com plus.codes
     server_name olc.osm.codes www.olc.osm.codes olc.afa.codes www.olc.afa.codes;
     listen 443 ssl;
+    include /etc/nginx/ssl.conf;
 
     access_log /var/log/nginx/olc.osm.codes.access_log;
-    # root /var/www/olc.osm.codes/;
     index  index.php index.html index.htm;
 
     location / {

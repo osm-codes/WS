@@ -5,7 +5,7 @@
 # PRODUCAO: dl05s_main em :3105
 server {
     server_name osm.codes www.osm.codes afa.codes www.afa.codes;
-    listen 443 ssl;
+    listen 443 ssl http2;
     include /etc/nginx/ssl.conf;
     root /var/www/osm.codes/;
     index index.php index.html index.htm;
@@ -312,7 +312,7 @@ server {
 # TEST: dl06t_main em :3106
 server {
     server_name test.osm.codes www.test.osm.codes test.afa.codes www.test.afa.codes;
-    listen 443 ssl;
+    listen 443 ssl http2;
     include /etc/nginx/ssl.conf;
     root /var/www/test.osm.codes/;
     index index.php index.html index.htm;
@@ -620,7 +620,7 @@ server {
 # Redirecionando para test.afa.codes
 server {
     server_name old.osm.codes www.old.osm.codes old.afa.codes www.old.afa.codes;
-    listen 443 ssl;
+    listen 443 ssl http2;
     include /etc/nginx/ssl.conf;
     access_log /var/log/nginx/old.osm.codes.access_log;
     # root /var/www/old.osm.codes/;
@@ -630,7 +630,7 @@ server {
 
 server {
     server_name docs.osm.codes docs.afa.codes www.docs.osm.codes www.docs.afa.codes;
-    listen 443 ssl;
+    listen 443 ssl http2;
     include /etc/nginx/ssl.conf;
     # root /var/www/docs.osm.codes/;
     # index index.php index.html index.htm;
@@ -651,7 +651,7 @@ server {
 
 server {
     server_name api.osm.codes api.afa.codes www.api.osm.codes www.api.afa.codes;
-    listen 443 ssl;
+    listen 443 ssl http2;
     include /etc/nginx/ssl.conf;
     access_log /var/log/nginx/api.osm.codes.access_log;
 
@@ -670,7 +670,7 @@ server {
 
 server {
     server_name api.test.osm.codes api.test.afa.codes www.api.test.osm.codes www.api.test.afa.codes;
-    listen 443 ssl;
+    listen 443 ssl http2;
     include /etc/nginx/ssl.conf;
     access_log /var/log/nginx/api.test.osm.codes.access_log;
 
@@ -689,7 +689,7 @@ server {
 
 server {
     server_name git.osm.codes www.git.osm.codes git.afa.codes www.git.afa.codes;
-    listen 443 ssl;
+    listen 443 ssl http2;
     include /etc/nginx/ssl.conf;
 
     location ~ ^/?.+ {
@@ -701,7 +701,7 @@ server {
 
 server {
     server_name git-site.osm.codes git-site.afa.codes;
-    listen 443 ssl;
+    listen 443 ssl http2;
     include /etc/nginx/ssl.conf;
 
     location ~ ^/?.+ {
@@ -712,7 +712,7 @@ server {
 
 server {
     server_name git-raw.osm.codes www.git-raw.osm.codes git-raw.afa.codes www.git-raw.afa.codes;
-    listen 443 ssl;
+    listen 443 ssl http2;
     include /etc/nginx/ssl.conf;
 
     location ~ ^/?.+ {
@@ -724,7 +724,7 @@ server {
 
 server { #OLC para comparar com plus.codes
     server_name olc.osm.codes www.olc.osm.codes olc.afa.codes www.olc.afa.codes;
-    listen 443 ssl;
+    listen 443 ssl http2;
     include /etc/nginx/ssl.conf;
 
     access_log /var/log/nginx/olc.osm.codes.access_log;

@@ -12,7 +12,7 @@ CREATE or replace FUNCTION api.osmcode_encode_postal(
   SELECT
     CASE split_part(p_isolabel_ext,'-',1)
     WHEN 'BR' THEN osmc.encode_postal_br(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),952019),u[4],grid,p_isolabel_ext)
-    WHEN 'CM' THEN osmc.encode_postal_cm(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),102022),u[4],grid,p_isolabel_ext)
+    -- WHEN 'CM' THEN osmc.encode_postal_cm(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),102022),u[4],grid,p_isolabel_ext)
     WHEN 'CO' THEN osmc.encode_postal_co(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),9377)  ,u[4],grid,p_isolabel_ext)
     WHEN 'UY' THEN osmc.encode_postal_uy(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),32721) ,u[4],grid,p_isolabel_ext)
     WHEN 'EC' THEN osmc.encode_postal_ec(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),32717) ,u[4],grid,p_isolabel_ext)

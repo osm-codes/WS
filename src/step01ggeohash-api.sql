@@ -12,6 +12,7 @@ CREATE or replace FUNCTION api.osmcode_encode_postal(
   SELECT
     CASE split_part(p_isolabel_ext,'-',1)
     WHEN 'BR' THEN osmc.encode_postal_br(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),952019),u[4],grid,p_isolabel_ext)
+    WHEN 'CM' THEN osmc.encode_postal_cm(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),102022),u[4],grid,p_isolabel_ext)
     WHEN 'CO' THEN osmc.encode_postal_co(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),9377)  ,u[4],grid,p_isolabel_ext)
     WHEN 'UY' THEN osmc.encode_postal_uy(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),32721) ,u[4],grid,p_isolabel_ext)
     WHEN 'EC' THEN osmc.encode_postal_ec(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),32717) ,u[4],grid,p_isolabel_ext)
@@ -34,6 +35,7 @@ CREATE or replace FUNCTION api.osmcode_encode_scientific(
     CASE split_part(p_isolabel_ext,'-',1)
     WHEN 'BR' THEN osmc.encode_scientific_br(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),952019),u[4],grid)
     WHEN 'CO' THEN osmc.encode_scientific_co(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),  9377),u[4],grid)
+    WHEN 'CM' THEN osmc.encode_scientific_cm(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),102022),u[4],grid)
     WHEN 'UY' THEN osmc.encode_scientific_uy(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326), 32721),u[4],grid)
     WHEN 'EC' THEN osmc.encode_scientific_ec(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326), 32717),u[4],grid)
     END
@@ -43,6 +45,8 @@ COMMENT ON FUNCTION api.osmcode_encode_scientific(text,int,text)
   IS 'Encodes Geo URI to OSMcode. Wrap for osmcode_encode_context(geometry)'
 ;
 -- EXPLAIN ANALYZE SELECT api.osmcode_encode_scientific('geo:-15.5,-47.8;u=6','0','BR');
+-- EXPLAIN ANALYZE SELECT api.osmcode_encode_scientific('geo:5,13;u=6','0','CM');
+
 
 CREATE or replace FUNCTION api.osmcode_encode_sci(
   uri    text,
@@ -98,7 +102,7 @@ CREATE or replace FUNCTION api.osmcode_encode(
   ),
   e AS
   (
-    SELECT id, jurisd_base_id, ST_Transform(ST_SetSRID(d.pt,4326),((('{"CO":9377, "BR":952019, "UY":32721, "EC":32717}'::jsonb)->(isolabel_ext))::int)) AS pt, isolabel_ext
+    SELECT id, jurisd_base_id, ST_Transform(ST_SetSRID(d.pt,4326),((('{"CM":102022, "CO":9377, "BR":952019, "UY":32721, "EC":32717}'::jsonb)->(isolabel_ext))::int)) AS pt, isolabel_ext
     FROM d
   )
   SELECT api.osmcode_encode_postal(uri,grid,g.isolabel_ext)
@@ -110,7 +114,6 @@ COMMENT ON FUNCTION api.osmcode_encode(text,int)
 ;
 -- EXPLAIN ANALYZE SELECT api.osmcode_encode('geo:3.461,-76.577');
 -- EXPLAIN ANALYZE SELECT api.osmcode_encode('geo:-15.5,-47.8');
-
 
 ------------------
 -- api decode:
@@ -142,6 +145,7 @@ CREATE or replace FUNCTION api.osmcode_decode_scientific_absolute(
               CASE
                 WHEN p_base <> 18 AND length(code16h) > 12 AND up_iso IN ('BR')           THEN substring(code16h,1,12)
                 WHEN p_base <> 18 AND length(code16h) > 11 AND up_iso IN ('EC','CO','UY') THEN substring(code16h,1,11)
+                WHEN p_base <> 18 AND length(code16h) > 10 AND up_iso IN ('CM')           THEN substring(code16h,1,10)
                 WHEN p_base =  18 AND length(code)    > 11 AND up_iso IN ('BR')           THEN substring(code,1,11)
                 WHEN p_base =  18 AND length(code)    > 10 AND up_iso IN ('UY')           THEN substring(code,1,10)
                 ELSE (CASE WHEN p_base=18 THEN code ELSE code16h END)
@@ -151,6 +155,7 @@ CREATE or replace FUNCTION api.osmcode_decode_scientific_absolute(
               CASE
                 WHEN p_base <> 18 AND length(code16h) > 12 AND up_iso IN ('BR')           THEN TRUE
                 WHEN p_base <> 18 AND length(code16h) > 11 AND up_iso IN ('EC','CO','UY') THEN TRUE
+                WHEN p_base <> 18 AND length(code16h) > 10 AND up_iso IN ('CM')           THEN TRUE
                 WHEN p_base =  18 AND length(code)    > 11 AND up_iso IN ('BR')           THEN TRUE
                 WHEN p_base =  18 AND length(code)    > 10 AND up_iso IN ('UY')           THEN TRUE
                 ELSE NULL
@@ -160,6 +165,7 @@ CREATE or replace FUNCTION api.osmcode_decode_scientific_absolute(
               CASE
                 WHEN length(code16h) > 12 AND up_iso IN ('BR')           THEN natcod.baseh_to_vbit(substring(code16h,1,12),16)
                 WHEN length(code16h) > 11 AND up_iso IN ('EC','CO','UY') THEN natcod.baseh_to_vbit(substring(code16h,1,11),16)
+                WHEN length(code16h) > 10 AND up_iso IN ('CM')           THEN natcod.baseh_to_vbit(substring(code16h,1,10),16)
                 ELSE natcod.baseh_to_vbit(code16h,16)
               END AS codebits,
 
@@ -182,7 +188,7 @@ CREATE or replace FUNCTION api.osmcode_decode_scientific_absolute(
               WHERE is_country IS TRUE AND isolabel_ext = c.up_iso -- cobertura nacional apenas
                 AND
                 CASE
-                WHEN up_iso = 'CO' THEN ( ( osmc.extract_L0bits(cbits,'CO')   # codebits::bit(4) ) = 0::bit(4) ) -- 1 dígitos base16h
+                WHEN up_iso IN ('CO','CM') THEN ( ( osmc.extract_L0bits(cbits,'CO')   # codebits::bit(4) ) = 0::bit(4) ) -- 1 dígitos base16h
                 ELSE                    ( ( osmc.extract_L0bits(cbits,up_iso) # codebits::bit(8) ) = 0::bit(8) ) -- 2 dígitos base16h
                 END
             ) v
@@ -413,3 +419,59 @@ COMMENT ON FUNCTION api.jurisdiction_coverage(text,int)
   IS 'Returns jurisdiction coverage.'
 ;
 -- EXPLAIN ANALYZE SELECT api.jurisdiction_coverage('BR-SP-Campinas');
+
+-- Add size_shortestprefix in https://github.com/digital-guard/preserv/src/optim-step4-api.sql[api.jurisdiction_geojson_from_isolabel]
+CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel(
+   p_code text
+) RETURNS jsonb AS $f$
+    SELECT jsonb_build_object(
+        'type', 'FeatureCollection',
+        'features',
+            (
+                jsonb_agg(ST_AsGeoJSONb(
+                    geom,
+                    8,0,null,
+                    jsonb_build_object(
+                        'osm_id', osm_id,
+                        'jurisd_base_id', jurisd_base_id,
+                        'jurisd_local_id', jurisd_local_id,
+                        'parent_id', parent_id,
+                        'admin_level', admin_level,
+                        'name', name,
+                        'parent_abbrev', parent_abbrev,
+                        'abbrev', abbrev,
+                        'wikidata_id', wikidata_id,
+                        'lexlabel', lexlabel,
+                        'isolabel_ext', isolabel_ext,
+                        'lex_urn', lex_urn,
+                        'name_en', name_en,
+                        'isolevel', isolevel,
+                        'area', ST_Area(geom,true),
+                        'jurisd_base_id', jurisd_base_id,
+                        'is_multipolygon', CASE WHEN GeometryType(geom) IN ('MULTIPOLYGON') THEN TRUE ELSE FALSE END,
+                        'size_shortestprefix', size_shortestprefix,
+                        'canonical_pathname', CASE WHEN jurisd_base_id=170 THEN 'CO-'|| jurisd_local_id ELSE isolabel_ext END
+                        )
+                    )::jsonb)
+            )
+        )
+    FROM optim.vw01full_jurisdiction_geom g,
+
+    LATERAL
+    (
+      SELECT MIN(LENGTH(kx_prefix)) AS size_shortestprefix
+      FROM osmc.coverage
+      WHERE isolabel_ext = g.isolabel_ext AND is_overlay IS FALSE
+    ) s
+
+    WHERE g.isolabel_ext = (SELECT (str_geocodeiso_decode(p_code))[1])
+$f$ LANGUAGE SQL IMMUTABLE;
+COMMENT ON FUNCTION api.jurisdiction_geojson_from_isolabel(text)
+  IS 'Return jurisdiction geojson from isolabel_ext.'
+;
+/*
+SELECT api.jurisdiction_geojson_from_isolabel('BR-SP-Campinas');
+SELECT api.jurisdiction_geojson_from_isolabel('CO-ANT-Itagui');
+SELECT api.jurisdiction_geojson_from_isolabel('CO-A-Itagui');
+SELECT api.jurisdiction_geojson_from_isolabel('CO-Itagui');
+*/

@@ -467,7 +467,7 @@ CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel(
     WHERE g.isolabel_ext = (SELECT (str_geocodeiso_decode(p_code))[1])
 $f$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.jurisdiction_geojson_from_isolabel(text)
-  IS 'Return jurisdiction geojson from isolabel_ext.'
+  IS 'Return jurisdiction geojson from isolabel_ext. With size_shortestprefix.'
 ;
 /*
 SELECT api.jurisdiction_geojson_from_isolabel('BR-SP-Campinas');

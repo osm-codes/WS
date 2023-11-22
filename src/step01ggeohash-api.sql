@@ -1,8 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE SCHEMA    IF NOT EXISTS api;
 
--- GGEOHASH
--- api encode:
+-- GGEOHASH ENCODE:
 
 CREATE or replace FUNCTION api.osmcode_encode_postal(
   uri    text,
@@ -12,7 +11,7 @@ CREATE or replace FUNCTION api.osmcode_encode_postal(
   SELECT
     CASE split_part(p_isolabel_ext,'-',1)
     WHEN 'BR' THEN osmc.encode_postal_br(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),952019),u[4],grid,p_isolabel_ext)
-    -- WHEN 'CM' THEN osmc.encode_postal_cm(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),102022),u[4],grid,p_isolabel_ext)
+    WHEN 'CM' THEN osmc.encode_postal_cm(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),102022),u[4],grid,p_isolabel_ext)
     WHEN 'CO' THEN osmc.encode_postal_co(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),9377)  ,u[4],grid,p_isolabel_ext)
     WHEN 'UY' THEN osmc.encode_postal_uy(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),32721) ,u[4],grid,p_isolabel_ext)
     WHEN 'EC' THEN osmc.encode_postal_ec(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),32717) ,u[4],grid,p_isolabel_ext)
@@ -116,7 +115,7 @@ COMMENT ON FUNCTION api.osmcode_encode(text,int)
 -- EXPLAIN ANALYZE SELECT api.osmcode_encode('geo:-15.5,-47.8');
 
 ------------------
--- api decode:
+-- GGEOHASH DECODE:
 
 CREATE or replace FUNCTION api.osmcode_decode_scientific_absolute(
    p_code       text, -- e.g.: '645' or list '645,643' in 16h1c
@@ -310,25 +309,25 @@ CREATE or replace FUNCTION api.osmcode_decode_postal(
               SELECT jurisd_local_id, jurisd_base_id, isolabel_ext, country_iso,
               CASE
                 WHEN length(code) > 9 AND country_iso IN ('BR','CO') THEN substring(code,1,9)
-                WHEN length(code) > 8 AND country_iso IN ('EC')      THEN substring(code,1,8)
+                WHEN length(code) > 8 AND country_iso IN ('EC','CM') THEN substring(code,1,8)
                 WHEN length(code) > 7 AND country_iso IN ('UY')      THEN substring(code,1,7)
                 ELSE code
               END AS code,
               CASE
                 WHEN length(code) > 9 AND country_iso IN ('BR','CO') THEN TRUE
-                WHEN length(code) > 8 AND country_iso IN ('EC')      THEN TRUE
+                WHEN length(code) > 8 AND country_iso IN ('EC','CM') THEN TRUE
                 WHEN length(code) > 7 AND country_iso IN ('UY')      THEN TRUE
                 ELSE NULL
               END AS truncated_code,
               CASE
                 WHEN length(code) > 9 AND country_iso IN ('BR','CO') THEN natcod.b32nvu_to_vbit(substring(code,1,9))
-                WHEN length(code) > 8 AND country_iso IN ('EC')      THEN natcod.b32nvu_to_vbit(substring(code,1,8))
+                WHEN length(code) > 8 AND country_iso IN ('EC','CM') THEN natcod.b32nvu_to_vbit(substring(code,1,8))
                 WHEN length(code) > 7 AND country_iso IN ('UY')      THEN natcod.b32nvu_to_vbit(substring(code,1,7))
                 ELSE natcod.b32nvu_to_vbit(code)
               END AS codebits,
               CASE
                 WHEN length(code) > 9 AND country_iso IN ('BR','CO') THEN substring(upper(p_code),1,length(p_code)-length(code)+9)
-                WHEN length(code) > 8 AND country_iso IN ('EC')      THEN substring(upper(p_code),1,length(p_code)-length(code)+8)
+                WHEN length(code) > 8 AND country_iso IN ('EC','CM') THEN substring(upper(p_code),1,length(p_code)-length(code)+8)
                 WHEN length(code) > 7 AND country_iso IN ('UY')      THEN substring(upper(p_code),1,length(p_code)-length(code)+7)
                 ELSE upper(p_code)
               END AS short_code

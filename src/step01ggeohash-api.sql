@@ -339,7 +339,7 @@ CREATE or replace FUNCTION api.osmcode_decode_postal(
                   FROM osmc.coverage co
                   LEFT JOIN optim.jurisdiction ju
                   ON co.isolabel_ext = ju.isolabel_ext
-                  WHERE is_country IS FALSE AND co.isolabel_ext = (osmc.str_geocodeiso_decode(p_iso))[1]
+                  WHERE is_country IS FALSE AND co.isolabel_ext = (str_geocodeiso_decode(p_iso))[1]
                    AND  cindex = substring(upper(p_code),1,1)
               ) u
             ) c,
@@ -410,7 +410,7 @@ CREATE or replace FUNCTION api.jurisdiction_coverage(
                 )
             )),'[]'::jsonb))
       )
-  FROM osmc.coverage, osmc.str_geocodeiso_decode(p_iso) t(x)
+  FROM osmc.coverage, str_geocodeiso_decode(p_iso) t(x)
   WHERE isolabel_ext = x[1]
 
 $f$ LANGUAGE SQL IMMUTABLE;

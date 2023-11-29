@@ -297,6 +297,7 @@ CREATE or replace FUNCTION api.osmcode_decode_postal(
                         'jurisd_local_id', jurisd_local_id,
                         'jurisd_base_id', jurisd_base_id,
                         'isolabel_ext', isolabel_ext,
+                        'isolabel_ext_abbrev', (SELECT abbrev FROM optim.jurisdiction_abbrev_option x WHERE x.isolabel_ext = c.isolabel_ext AND default_abbrev IS TRUE),
                         'truncated_code',truncated_code,
                         'scientic_code', CASE
                                           WHEN country_iso IN ('BR','UY') THEN osmc.encode_16h1c(natcod.vbit_to_baseh(osmc.vbit_from_b32nvu_to_vbit_16h(codebits,jurisd_base_id),16,true),jurisd_base_id)

@@ -100,7 +100,7 @@ CREATE or replace FUNCTION api.osmcode_encode(
   ),
   e AS
   (
-    SELECT id, jurisd_base_id, ST_Transform(ST_SetSRID(d.pt,4326),((('{"CM":102022, "CO":9377, "BR":952019, "UY":32721, "EC":32717}'::jsonb)->(isolabel_ext))::int)) AS pt, isolabel_ext
+    SELECT id, int_country_id, jurisd_base_id, ST_Transform(ST_SetSRID(d.pt,4326),((('{"CM":102022, "CO":9377, "BR":952019, "UY":32721, "EC":32717}'::jsonb)->(isolabel_ext))::int)) AS pt, isolabel_ext
     FROM d
   )
   SELECT api.osmcode_encode_postal(uri,grid,g.isolabel_ext)

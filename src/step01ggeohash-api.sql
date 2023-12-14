@@ -105,7 +105,7 @@ CREATE or replace FUNCTION api.osmcode_encode(
   )
   SELECT api.osmcode_encode_postal(uri,grid,g.isolabel_ext)
   FROM osmc.coverage g, e
-  WHERE is_country IS FALSE AND extract_jurisdbits(cbits) = e.int_country_id::bit(8) AND e.pt && g.geom AND (is_contained IS TRUE OR ST_intersects(e.pt,g.geom))
+  WHERE is_country IS FALSE AND osmc.extract_jurisdbits(cbits) = e.int_country_id::bit(8) AND e.pt && g.geom AND (is_contained IS TRUE OR ST_intersects(e.pt,g.geom))
 $wrap$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.osmcode_encode(text,int)
   IS 'Encodes Geo URI (no context) to logistic OSMcode.'
@@ -246,15 +246,15 @@ CREATE or replace FUNCTION api.osmcode_decode_postal_absolute(
             ) c
             LEFT JOIN LATERAL
             (
-              SELECT (extract_jurisdbits(cbits))::int AS jurisd_base_id, cbits,
-                ggeohash.draw_cell_bybox(ggeohash.decode_box2(osmc.vbit_withoutL0(osmc.vbit_withoutL0((osmc.cbits_b32nvu_to_16h(codebits,(extract_jurisdbits(cbits))::int)),c.upper_p_iso),c.upper_p_iso),bbox, CASE WHEN c.upper_p_iso='EC' THEN TRUE ELSE FALSE END),false,ST_SRID(geom)) AS geom
+              SELECT (osmc.extract_jurisdbits(cbits))::int AS jurisd_base_id, cbits,
+                ggeohash.draw_cell_bybox(ggeohash.decode_box2(osmc.vbit_withoutL0(osmc.vbit_withoutL0((osmc.cbits_b32nvu_to_16h(codebits,(osmc.extract_jurisdbits(cbits))::int)),c.upper_p_iso),c.upper_p_iso),bbox, CASE WHEN c.upper_p_iso='EC' THEN TRUE ELSE FALSE END),false,ST_SRID(geom)) AS geom
               FROM osmc.coverage
-              WHERE is_country IS TRUE AND isolabel_ext = c.upper_p_iso AND ( ( osmc.cbits_16h_to_b32nvu(osmc.extract_L0bits(cbits,c.upper_p_iso),(extract_jurisdbits(cbits))::int) # codebits::bit(5) ) = 0::bit(5) )
+              WHERE is_country IS TRUE AND isolabel_ext = c.upper_p_iso AND ( ( osmc.cbits_16h_to_b32nvu(osmc.extract_L0bits(cbits,c.upper_p_iso),(osmc.extract_jurisdbits(cbits))::int) # codebits::bit(5) ) = 0::bit(5) )
             ) v
              ON TRUE
 
             -- responsável pelo código logístico
-            LEFT JOIN LATERAL ( SELECT * FROM osmc.encode_short_code(c.code,v.extract_jurisdbits(cbits)||c.codebits,null,ST_Centroid(v.geom)) ) t ON TRUE
+            LEFT JOIN LATERAL ( SELECT * FROM osmc.encode_short_code(c.code,v.osmc.extract_jurisdbits(cbits)||c.codebits,null,ST_Centroid(v.geom)) ) t ON TRUE
 
             WHERE
             CASE WHEN upper_p_iso = 'UY' THEN natcod.vbit_to_baseh(osmc.cbits_b32nvu_to_16h(codebits,v.jurisd_base_id),16,true) NOT IN ('0eg','10g','12g','00r','12r','0eh','05q','11q') ELSE TRUE END
@@ -347,7 +347,7 @@ CREATE or replace FUNCTION api.osmcode_decode_postal(
             (
               SELECT ggeohash.draw_cell_bybox(ggeohash.decode_box2(osmc.vbit_withoutL0((osmc.cbits_b32nvu_to_16h(codebits,c.jurisd_base_id)),c.country_iso),bbox, CASE WHEN country_iso = 'EC' THEN TRUE ELSE FALSE END),false,ST_SRID(geom)) AS geom
               FROM osmc.coverage
-              WHERE is_country IS TRUE AND extract_jurisdbits(cbits) = c.jurisd_base_id::bit(10) AND ( ( osmc.cbits_16h_to_b32nvu(osmc.extract_L0bits(cbits,isolabel_ext),c.jurisd_base_id) # codebits::bit(5) ) = 0::bit(5) ) -- 1 dígito  base 32nvu
+              WHERE is_country IS TRUE AND osmc.extract_jurisdbits(cbits) = c.jurisd_base_id::bit(10) AND ( ( osmc.cbits_16h_to_b32nvu(osmc.extract_L0bits(cbits,isolabel_ext),c.jurisd_base_id) # codebits::bit(5) ) = 0::bit(5) ) -- 1 dígito  base 32nvu
             ) v
 
             WHERE
@@ -391,7 +391,7 @@ CREATE or replace FUNCTION api.jurisdiction_coverage(
                   WHEN p_base IN (16,17) THEN                                  natcod.vbit_to_baseh( osmc.extract_L0bits(cbits,x[2]),16,true)
                   WHEN p_base IN (18) AND x[2] IN('BR') THEN osmc.encode_16h1c(natcod.vbit_to_baseh( osmc.extract_L0bits(cbits,x[2]),16,true),76)
                   WHEN p_base IN (18) AND x[2] IN('UY') THEN osmc.encode_16h1c(natcod.vbit_to_baseh( osmc.extract_L0bits(cbits,x[2]),16,true),858)
-                  ELSE                                          natcod.vbit_to_strstd(osmc.cbits_16h_to_b32nvu(osmc.extract_L0bits(cbits,x[2]),(extract_jurisdbits(cbits))::int),'32nvu')
+                  ELSE                                          natcod.vbit_to_strstd(osmc.cbits_16h_to_b32nvu(osmc.extract_L0bits(cbits,x[2]),(osmc.extract_jurisdbits(cbits))::int),'32nvu')
                   END
                 ,
                 'area', ST_Area(ggeohash.draw_cell_bybox(bbox,false,ST_SRID(geom))),

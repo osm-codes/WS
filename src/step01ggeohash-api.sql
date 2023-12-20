@@ -388,10 +388,10 @@ CREATE or replace FUNCTION api.jurisdiction_coverage(
                 'code',
                   CASE
                   WHEN is_country IS FALSE THEN kx_prefix
-                  WHEN p_base IN (16,17) THEN                                  natcod.vbit_to_baseh( osmc.extract_L0bits(cbits),16,true)
-                  WHEN p_base IN (18) AND x[2] IN('BR') THEN osmc.encode_16h1c(natcod.vbit_to_baseh( osmc.extract_L0bits(cbits),16,true),76)
-                  WHEN p_base IN (18) AND x[2] IN('UY') THEN osmc.encode_16h1c(natcod.vbit_to_baseh( osmc.extract_L0bits(cbits),16,true),858)
-                  ELSE                                          natcod.vbit_to_strstd(osmc.cbits_16h_to_b32nvu(osmc.extract_L0bits(cbits),(osmc.extract_jurisdbits(cbits))::int),'32nvu')
+                  WHEN p_base IN (16,17) THEN                                  natcod.vbit_to_baseh(osmc.extract_L0bits(cbits),16,true)
+                  WHEN p_base IN (18) AND x[2] IN('BR') THEN osmc.encode_16h1c(natcod.vbit_to_baseh(osmc.extract_L0bits(cbits),16,true),1)
+                  WHEN p_base IN (18) AND x[2] IN('UY') THEN osmc.encode_16h1c(natcod.vbit_to_baseh(osmc.extract_L0bits(cbits),16,true),4)
+                  ELSE                               natcod.vbit_to_strstd(osmc.cbits_16h_to_b32nvu(osmc.extract_L0bits(cbits),osmc.extract_jurisdbits(cbits)),'32nvu')
                   END
                 ,
                 'area', ST_Area(ggeohash.draw_cell_bybox(bbox,false,ST_SRID(geom))),
@@ -446,7 +446,6 @@ CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel(
                         'name_en', name_en,
                         'isolevel', isolevel,
                         'area', ST_Area(geom,true),
-                        'jurisd_base_id', jurisd_base_id,
                         'is_multipolygon', CASE WHEN GeometryType(geom) IN ('MULTIPOLYGON') THEN TRUE ELSE FALSE END,
                         'size_shortestprefix', size_shortestprefix,
                         'canonical_pathname', CASE WHEN jurisd_base_id=170 THEN 'CO-'|| jurisd_local_id ELSE isolabel_ext END

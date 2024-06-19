@@ -11,10 +11,10 @@ CREATE or replace FUNCTION api.osmcode_encode_postal(
   SELECT
     CASE split_part(p_isolabel_ext,'-',1)
     WHEN 'BR' THEN osmc.encode_postal_br(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),952019),u[4],grid,p_isolabel_ext)
-    WHEN 'CM' THEN osmc.encode_postal_cm(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),102022),u[4],grid,p_isolabel_ext)
-    WHEN 'CO' THEN osmc.encode_postal_co(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),9377)  ,u[4],grid,p_isolabel_ext)
-    WHEN 'UY' THEN osmc.encode_postal_uy(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),32721) ,u[4],grid,p_isolabel_ext)
-    WHEN 'EC' THEN osmc.encode_postal_ec(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),32717) ,u[4],grid,p_isolabel_ext)
+    WHEN 'CM' THEN osmc.encode_postal_cm(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326), 32632),u[4],grid,p_isolabel_ext)
+    WHEN 'CO' THEN osmc.encode_postal_co(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),  9377),u[4],grid,p_isolabel_ext)
+    WHEN 'UY' THEN osmc.encode_postal_uy(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326), 32721),u[4],grid,p_isolabel_ext)
+    WHEN 'EC' THEN osmc.encode_postal_ec(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326), 32717),u[4],grid,p_isolabel_ext)
     END
   FROM (SELECT str_geouri_decode(uri) ) t(u)
 
@@ -33,7 +33,7 @@ CREATE or replace FUNCTION api.osmcode_encode_scientific(
   SELECT
     CASE split_part(p_isolabel_ext,'-',1)
     WHEN 'BR' THEN osmc.encode_scientific_br(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),952019),u[4],grid)
-    WHEN 'CM' THEN osmc.encode_scientific_cm(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),102022),u[4],grid)
+    WHEN 'CM' THEN osmc.encode_scientific_cm(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326), 32632),u[4],grid)
     WHEN 'CO' THEN osmc.encode_scientific_co(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),  9377),u[4],grid)
     WHEN 'UY' THEN osmc.encode_scientific_uy(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326), 32721),u[4],grid)
     WHEN 'EC' THEN osmc.encode_scientific_ec(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326), 32717),u[4],grid)
@@ -230,12 +230,12 @@ CREATE or replace FUNCTION api.osmcode_decode_postal_absolute(
                         'side', SQRT(ST_Area(v.geom)),
                         'base', '32nvu',
                         'jurisd_local_id', t.jurisd_local_id,
-                        'jurisd_base_id', v.jurisd_base_id, -- ***
+                        'jurisd_base_id', v.jurisd_id, -- ***
                         'isolabel_ext', t.isolabel_ext,
                         'short_code', CASE WHEN upper_p_iso IN ('CO') THEN upper_p_iso || '-' || t.jurisd_local_id ELSE t.isolabel_ext END || '~' || t.short_code,
                         'scientic_code', CASE
-                                          WHEN upper_p_iso IN ('BR','UY') THEN osmc.encode_16h1c(natcod.vbit_to_baseh(osmc.cbits_b32nvu_to_16h(codebits,jurisd_base_id),16,true),jurisd_base_id)
-                                          ELSE                                                   natcod.vbit_to_baseh(osmc.cbits_b32nvu_to_16h(codebits,jurisd_base_id),16,true)
+                                          WHEN upper_p_iso IN ('BR','UY') THEN osmc.encode_16h1c(natcod.vbit_to_baseh(osmc.cbits_b32nvu_to_16h(codebits,jurisd_id),16,true),jurisd_id)
+                                          ELSE                                                   natcod.vbit_to_baseh(osmc.cbits_b32nvu_to_16h(codebits,jurisd_id),16,true)
                                          END
                         ))
                     )::jsonb) AS gj
@@ -246,7 +246,7 @@ CREATE or replace FUNCTION api.osmcode_decode_postal_absolute(
             ) c
             LEFT JOIN LATERAL
             (
-              SELECT osmc.extract_jurisdbits(cbits) AS jurisd_base_id, cbits,
+              SELECT osmc.extract_jurisdbits(cbits) AS jurisd_id, cbits,
                 ggeohash.draw_cell_bybox(ggeohash.decode_box2(osmc.vbit_withoutL0(osmc.vbit_withoutL0((osmc.cbits_b32nvu_to_16h(codebits,osmc.extract_jurisdbits(cbits))),osmc.extract_jurisdbits(cbits)),osmc.extract_jurisdbits(cbits)),bbox, CASE WHEN c.upper_p_iso='EC' THEN TRUE ELSE FALSE END),false,ST_SRID(geom)) AS geom
               FROM osmc.coverage
               WHERE is_country IS TRUE AND isolabel_ext = c.upper_p_iso AND ( ( osmc.cbits_16h_to_b32nvu(osmc.extract_L0bits(cbits),osmc.extract_jurisdbits(cbits)) # codebits::bit(5) ) = 0::bit(5) )
@@ -254,10 +254,10 @@ CREATE or replace FUNCTION api.osmcode_decode_postal_absolute(
              ON TRUE
 
             -- responsável pelo código logístico
-            LEFT JOIN LATERAL ( SELECT * FROM osmc.encode_short_code(c.code,osmc.extract_jurisdbits(cbits)::bit(8)||c.codebits,null,ST_Centroid(v.geom)) ) t ON TRUE
+            LEFT JOIN LATERAL ( SELECT * FROM osmc.encode_short_code(c.code,v.jurisd_id::bit(8)||osmc.cbits_b32nvu_to_16h(c.codebits,v.jurisd_id),null,ST_Centroid(v.geom)) ) t ON TRUE
 
             WHERE
-            CASE WHEN upper_p_iso = 'UY' THEN natcod.vbit_to_baseh(osmc.cbits_b32nvu_to_16h(codebits,v.jurisd_base_id),16,true) NOT IN ('0eg','10g','12g','00r','12r','0eh','05q','11q') ELSE TRUE END
+            CASE WHEN upper_p_iso = 'UY' THEN natcod.vbit_to_baseh(osmc.cbits_b32nvu_to_16h(codebits,v.jurisd_id),16,true) NOT IN ('0eg','10g','12g','00r','12r','0eh','05q','11q') ELSE TRUE END
           )
       )
 $f$ LANGUAGE SQL IMMUTABLE;

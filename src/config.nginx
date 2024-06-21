@@ -244,11 +244,9 @@ server {
         rewrite "(?i)^/.+" /select/ break;
     }
 
+
     ### reduzido divipola/ibgegeocodigo 32
-    location ~* "^/(BR|CM)((-[a-z0-9]{2,})(-[a-z0-9]{2,})?)((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ\.]+)?$" {
-        rewrite "(?i)^.*$" /logistic/ break;
-    }
-    location ~* "^/CO((-[a-z0-9]{2,})(-[a-z0-9]{2,})?)((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ\.]+)?$" {
+    location ~* "^/(BR|CM|CO|UY)((-[a-z0-9]{2,})(-[a-z0-9]{2,})?)((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ\.]+)?$" {
         rewrite "(?i)^.*$" /logistic/ break;
     }
 
@@ -552,13 +550,9 @@ server {
     }
 
     ### reduzido divipola/ibgegeocodigo 32
-    location ~* "^/(BR|CM)((-[a-z0-9]{2,})(-[a-z0-9]{2,})?)((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ\.]+)?$" {
+    location ~* "^/(BR|CM|CO|UY)((-[a-z0-9]{2,})(-[a-z0-9]{2,})?)((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ\.]+)?$" {
         rewrite "(?i)^.*$" /logistic/ break;
     }
-    location ~* "^/CO((-[a-z0-9]{2,})(-[a-z0-9]{2,})?)((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ\.]+)?$" {
-        rewrite "(?i)^.*$" /logistic/ break;
-    }
-
 
     location ~* "^/[a-z]{2}((-[a-z0-9]{3,}){1,2})((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ\.]+)?$" {
         rewrite "(?i)^.*$" /logistic/ break;

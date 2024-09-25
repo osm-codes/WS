@@ -3,6 +3,7 @@
 ##
 
 # Define upstreams
+# PRODUCAO: dl05s_main em :3105
 upstream prod_backend {
     server 127.0.0.1:3105;
 }
@@ -11,7 +12,7 @@ upstream test_backend {
     server 127.0.0.1:3106;
 }
 
-# PRODUCAO: dl05s_main em :3105
+# PRODUCAO
 server {
     server_name osm.codes www.osm.codes afa.codes www.afa.codes;
     listen 443 ssl http2;
@@ -38,55 +39,148 @@ server {
         proxy_pass http://prod_backend;
     }
 
-    location ~ ^/?[RrWwNn]?[0-9]+$ {
-        rewrite
-            ^/?[Rr]?([0-9]+)$
-            https://www.openstreetmap.org/relation/$1
-            permanent;
-        rewrite
-            ^/?[Ww]?([0-9]+)$
-            https://www.openstreetmap.org/way/$1
-            permanent;
-        rewrite
-            ^/?[Nn]?([0-9]+)$
-            https://www.openstreetmap.org/node/$1
-            permanent;
-        #ok working - proxy_pass  https://www.openstreetmap.org;
-        #return 301 https://www.openstreetmap.org;
-    }
+    # encode logistics
+    location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?\.json(/[a-z]{2}-[a-z0-9]{1,3}-[a-z0-9]+)?$" {
+        ### sem grid
+        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json$"
+            "/rpc/osmcode_encode?uri=$1%3B$2&grid=0" break;
+        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json$"
+            "/rpc/osmcode_encode?uri=$1&grid=0" break;
 
-    # ibge
-    location /geo:br-ibge2020: {
-        rewrite "^/?(geo:)br-ibge2020:(\-?\d+\.?\d*,\-?\d+\.?\d*)"
-            /rpc/resolver_geo_uri?geouri=$1$2
-            break;
-        rewrite "^/?geo:br-ibge2020:([A-Za-z][A-Za-z0-9]+)[_\-]?([A-Za-z0-9]+)?:([^,]+)$"
-            /rpc/resolver_geocode?code=$3&type=$1&subtype=$2
-            break;
-        rewrite "^/?geo:br-ibge2020:([a-zA-Z]+)[_\-]([^,]+)$"
-            /rpc/resolver_geocode?code=$2&type=$1&subtype=official
-            break;
-
-    proxy_pass http://127.0.0.1:3110;
-    }
-
-    ## olc|ghs
-    location ~* "^/geo:(olc|ghs):\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?\.json$" {
-        rewrite "^/(geo:olc:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json$"
-            "/rpc/olc_encode?uri=$1%3B$2" break;
-        rewrite "^/(geo:olc:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json$"
-            "/rpc/olc_encode?uri=$1" break;
-
-        rewrite "^/(geo:ghs:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json$"
-            "/rpc/ghs_encode?uri=$1%3B$2" break;
-        rewrite "^/(geo:ghs:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json$"
-            "/rpc/ghs_encode?uri=$1" break;
+        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/(.+)$"
+            "/rpc/osmcode_encode_postal?uri=$1%3B$2&grid=0&p_isolabel_ext=$3" break;
+        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/(.+)$"
+            "/rpc/osmcode_encode_postal?uri=$1&grid=0&p_isolabel_ext=$2" break;
 
         proxy_pass http://prod_backend;
     }
 
+    # encode scientific
+    location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?\.json/base16(h|h1c)?(/grid(2|4|8|16|3|5|9|17))?(/[a-z]{2})?$" {
+        # com grid
+        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16(h|h1c)?/grid(\d+)$"
+            "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=$4" break;
+        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16(h|h1c)?/grid(\d+)$"
+            "/rpc/osmcode_encode_scientific?uri=$1&grid=$3" break;
+
+        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16(h|h1c)?/grid(\d+)/(.+)$"
+            "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=$4&p_isolabel_ext=$5" break;
+        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16(h|h1c)?/grid(\d+)/(.+)$"
+            "/rpc/osmcode_encode_scientific?uri=$1&grid=$3&p_isolabel_ext=$4" break;
+
+        # sem grid
+        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16(h|h1c)?$"
+            "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=0" break;
+        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16(h|h1c)?$"
+            "/rpc/osmcode_encode_scientific?uri=$1&grid=0" break;
+
+        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16(h|h1c)?/(.+)$"
+            "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=0&p_isolabel_ext=$4" break;
+        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16(h|h1c)?/(.+)$"
+            "/rpc/osmcode_encode_scientific?uri=$1&grid=0&p_isolabel_ext=$3" break;
+
+        proxy_pass http://prod_backend;
+    }
+
+    # decode
+    location ~* "^/geo:osmcodes:([a-z]{2})(~|\+)([a-z0-9,]+)\.json$" {
+        # scientific absoluto 16h1c
+        rewrite  "(?i)^/geo:osmcodes:((BR)|(UY))\+(([0123456789ABCDEFGHJKLMNPQRSTVZ]([0123456789ABCDEF]{0,}([GQHMRVJKNPSTZY])?)?)(,[0123456789ABCDEFGHJKLMNPQRSTVZ]([0123456789ABCDEF]+([GQHMRVJKNPSTZY])?)?){0,})\.json$"
+            /rpc/osmcode_decode_scientific_absolute?p_code=$4&p_iso=$1&p_base=18 break;
+
+        # scientific absoluto 16h
+        rewrite "(?i)^/geo:osmcodes:([a-z]{2})\+(([0123456789ABCDEF]+([GQHMRVJKNPSTZY])?)(,[0123456789ABCDEF]+([GQHMRVJKNPSTZY])?){0,})\.json$"
+            /rpc/osmcode_decode_scientific_absolute?p_code=$2&p_iso=$1&p_base=16 break;
+
+        # logistic absoluto
+        rewrite "(?i)^/geo:osmcodes:([a-z]{2})~(([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+){0,})\.json$"
+            /rpc/osmcode_decode_postal?p_code=$2&p_iso=$1 break;
+        proxy_pass http://prod_backend;
+    }
+
+    # decode logistic reduzido (CO-ANT-Itagui, CO-A-Itagui) divipola/ibgegeocodigo/cmcode
+    location ~* "^/(geo:osmcodes:)?(([a-z]{2}((-[a-z0-9]+){1,2})))(~|-)([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)\.json$" {
+        rewrite "(?i)^/(geo:osmcodes:)?(.+)(~|-)(.+)\.json$"
+            /rpc/osmcode_decode_postal?p_code=$4&p_iso=$2 break;
+        proxy_pass http://prod_backend;
+    }
+
+    # geo:iso_ext
+    location ~* "^/(geo:iso_ext:)?([a-z]{2}((-[a-z0-9]+){0,2}))\.json(/cover(/base16h(1c)?)?)?$" {
+        rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json$" /rpc/jurisdiction_geojson_from_isolabel?p_code=$2 break;
+        rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json/cover$"           /rpc/jurisdiction_coverage?p_iso=$2           break;
+        rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json/cover/base16h$"   /rpc/jurisdiction_coverage?p_iso=$2&p_base=16 break;
+        rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json/cover/base16h1c$" /rpc/jurisdiction_coverage?p_iso=$2&p_base=18 break;
+        proxy_pass http://prod_backend;
+    }
+
+    # geo:co-divipola|br-geocodigo
+    location ~* "^/(geo:(co-divipola|br-geocodigo|cm-code):[0-9]+)\.json(/cover(/base16h(1c)?)?)?$" {
+        rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json$"
+            /rpc/jurisdiction_geojson_from_isolabel?p_code=$1$3 break;
+        rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json/cover$"
+            /rpc/jurisdiction_coverage?p_iso=$1$3 break;
+        rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json/cover/base16h$"
+            /rpc/jurisdiction_coverage?p_iso=$1$3&p_base=16 break;
+        rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json/cover/base16h1c$"
+            /rpc/jurisdiction_coverage?p_iso=$1$3&p_base=18 break;
+        proxy_pass http://prod_backend;
+    }
+
+    ## leaflet
+    ###
+    location ~* "^/(BR|CM)((-[a-z]{2})|(\+|\-|\~))?$" {
+        rewrite "(?i)^/.+" /select/ break;
+    }
+    location ~* "^/CO((-[a-z]{3})|(\+|\-|\~))?$" {
+        rewrite "(?i)^/.+" /select/ break;
+    }
+
+    ### reduzido divipola/ibgegeocodigo 32
+    location ~* "^/(geo:)?(BR|CM|CO|UY)((-[a-z0-9]{2,})(-[a-z0-9]{2,})?)((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ\.]+)?$" {
+        rewrite "(?i)^.*$" /logistic/ break;
+    }
+
+    location ~* "^/[a-z]{2}((-[a-z0-9]{3,}){1,2})((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ\.]+)?$" {
+        rewrite "(?i)^.*$" /logistic/ break;
+    }
+
+    location ~* "^/[a-z]{2}((-[a-z]{1,3})|(\+|\-|\~))?$" {
+        rewrite "(?i)^/.+" /select/ break;
+    }
+
+    ### decode list absoluto 32, 16
+    location ~* "^/[a-z]{2}(~|\+)([0123456789ABCDEFGHJKLMNPQRSTUVWXYZ\.]+)(,[0123456789ABCDEFGHJKLMNPQRSTUVWXYZ\.]+){0,}$" {
+        rewrite "(?i)^/.+" /scientific/ break;
+    }
+
+    location ~* "^/scientific_full/[a-z]{2}(~|\+)([0123456789ABCDEFGHJKLMNPQRSTUVWXYZ\.]+)(,[0123456789ABCDEFGHJKLMNPQRSTUVWXYZ\.]+){0,}$" {
+        rewrite "(?i)^/.+" /scientific_full/ break;
+    }
+
+    location ~* "^/geo:(ghs:|olc:)?\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?(/base16(h|h1c)?)?(/grid(2|4|8|16|32))?$" {
+        rewrite "(?i)^.*$" /logistic/ break;
+    }
+
+    ### ghs , olc
+    location ~* "^(/scientific_full)?(/[a-z]{2}((-[a-z]{1,3}-[a-z\.]+))?)?/geo:((ghs:([0123456789BCDEFGHJKMNPQRSTUVWXYZ]+))|(olc:(([23456789CFGHJMPQRVWX]+0*){1,8}\+([23456789CFGHJMPQRVWX]+)?)))$" {
+        rewrite "(?i)^/geo.+" /logistic/ break;
+        rewrite "(?i)^/[a-z]{2}/.+" /scientific/ break;
+        rewrite "(?i)^/[a-z]{2}\-.+" /logistic/ break;
+        rewrite "(?i)^/scientific_full.+" /scientific_full/ break;
+    }
+
+    location ~* "^/geo:iso_ext:([a-z]{2}((-[a-z0-9]+){0,2}))$" {
+        rewrite "(?i)^.*$" /logistic/ break;
+    }
+
+    ### (urn|geo):lex
+    location ~* "^/(urn|geo):lex:([a-z]{2}(;[a-z0-9\.]+)?(;[a-z0-9\.]+)?)$" {
+        rewrite "(?i)^/.+" /view_lex/ break;
+    }
+
     # (urn|geo):lex
-    location ~* "^/(urn|geo):lex:([a-z]{2}(;[a-z\.]+)?(;[a-z\.]+)?)\.json(/cover/base16h(1c)?)?$" {
+    location ~* "^/(urn|geo):lex:([a-z]{2}(;[a-z0-9\.]+)?(;[a-z0-9\.]+)?)\.json(/cover/base16h(1c)?)?$" {
         rewrite "(?i)^/(urn|geo):lex:([a-z]{2})\.json$"
             /rpc/jurisdiction_geojson_from_isolabel?p_code=$2  break;
 
@@ -137,178 +231,64 @@ server {
         proxy_pass http://prod_backend;
     }
 
-    # encode
-    ## logistics
-    location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?\.json(/[a-z]{2}-[a-z0-9]{1,3}-[a-z0-9]+)?$" {
-        ### sem grid
-        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json$"
-            "/rpc/osmcode_encode?uri=$1%3B$2&grid=0" break;
-        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json$"
-            "/rpc/osmcode_encode?uri=$1&grid=0" break;
+    # ENCODE OLC|GHS
+    location ~* "^/geo:(olc|ghs):\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?\.json$" {
 
-        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/(.+)$"
-            "/rpc/osmcode_encode_postal?uri=$1%3B$2&grid=0&p_isolabel_ext=$3" break;
-        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/(.+)$"
-            "/rpc/osmcode_encode_postal?uri=$1&grid=0&p_isolabel_ext=$2" break;
+        rewrite "^/(geo:(olc|ghs):\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json$"
+            "/rpc/$2_encode?uri=$1%3B$3" break;
+
+        rewrite "^/(geo:(olc|ghs):\-?\d+\.?\d*,\-?\d+\.?\d*)\.json$"
+            "/rpc/$2_encode?uri=$1" break;
 
         proxy_pass http://prod_backend;
     }
 
-    ## scientific
-    location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?\.json/base16(h|h1c)?(/grid(2|4|8|16|3|5|9|17))?(/[a-z]{2})?$" {
-        ### com grid
-        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16(h|h1c)?/grid(\d+)$"
-            "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=$4" break;
-        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16(h|h1c)?/grid(\d+)$"
-            "/rpc/osmcode_encode_scientific?uri=$1&grid=$3" break;
-
-        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16(h|h1c)?/grid(\d+)/(.+)$"
-            "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=$4&p_isolabel_ext=$5" break;
-        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16(h|h1c)?/grid(\d+)/(.+)$"
-            "/rpc/osmcode_encode_scientific?uri=$1&grid=$3&p_isolabel_ext=$4" break;
-
-        ### sem grid
-        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16(h|h1c)?$"
-            "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=0" break;
-        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16(h|h1c)?$"
-            "/rpc/osmcode_encode_scientific?uri=$1&grid=0" break;
-
-        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*);(u=\d+\.?\d*)\.json/base16(h|h1c)?/(.+)$"
-            "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=0&p_isolabel_ext=$4" break;
-        rewrite "^/(geo:\-?\d+\.?\d*,\-?\d+\.?\d*)\.json/base16(h|h1c)?/(.+)$"
-            "/rpc/osmcode_encode_scientific?uri=$1&grid=0&p_isolabel_ext=$3" break;
-
-        proxy_pass http://prod_backend;
-    }
-
-    # decode
-    ## absoluto 32 (logistic)
-    location ~* "^/geo:osmcodes:([a-z]{2})~([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+){0,}\.json$" {
-        rewrite "(?i)^/geo:osmcodes:([a-z]{2})~(([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)(,[0123456789BCDFGHJKLMNPQRSTUVWXYZ]+){0,})\.json$"
-            /rpc/osmcode_decode_postal?p_code=$2&p_iso=$1 break;
-        proxy_pass http://prod_backend;
-    }
-
-    ## absoluto 16h1c (cientifica)
-    location ~* "^/geo:osmcodes:((BR)|(UY))\+([0123456789ABCDEFGHJKLMNPQRSTVZ]([0123456789ABCDEF]{0,}([GQHMRVJKNPSTZY])?)?)(,[0123456789ABCDEFGHJKLMNPQRSTVZ]([0123456789ABCDEF]+([GQHMRVJKNPSTZY])?)?){0,}\.json" {
-        rewrite  "(?i)^/geo:osmcodes:((BR)|(UY))\+(([0123456789ABCDEFGHJKLMNPQRSTVZ]([0123456789ABCDEF]{0,}([GQHMRVJKNPSTZY])?)?)(,[0123456789ABCDEFGHJKLMNPQRSTVZ]([0123456789ABCDEF]+([GQHMRVJKNPSTZY])?)?){0,})\.json$"
-            /rpc/osmcode_decode_scientific_absolute?p_code=$4&p_iso=$1&p_base=18 break;
-        proxy_pass http://prod_backend;
-    }
-
-    ## absoluto 16h (cientifica)
-        location ~* "^/geo:osmcodes:([a-z]{2})\+([0123456789ABCDEF]+([GQHMRVJKNPSTZY])?)(,[0123456789ABCDEF]+([GQHMRVJKNPSTZY])?){0,}\.json" {
-        rewrite "(?i)^/geo:osmcodes:([a-z]{2})\+(([0123456789ABCDEF]+([GQHMRVJKNPSTZY])?)(,[0123456789ABCDEF]+([GQHMRVJKNPSTZY])?){0,})\.json$"
-            /rpc/osmcode_decode_scientific_absolute?p_code=$2&p_iso=$1&p_base=16 break;
-        proxy_pass http://prod_backend;
-    }
-
-    ## reduzido divipola/ibgegeocodigo
-    ## reduzido 32 (logistic) (CO-ANT-Itagui, CO-A-Itagui)
-    location ~* "^/geo:osmcodes:(([a-z]{2}((-[a-z0-9]+){1,2})))(~|-)([0123456789BCDFGHJKLMNPQRSTUVWXYZ]+)\.json$" {
-        rewrite "(?i)^/geo:osmcodes:(.+)(~|-)(.+)\.json$"
-            /rpc/osmcode_decode_postal?p_code=$3&p_iso=$1 break;
-        proxy_pass http://prod_backend;
-    }
-
-    # geo:iso_ext
-    location ~* "^/(geo:iso_ext:)?([a-z]{2}((-[a-z0-9]+){0,2}))\.json(/cover(/base16h(1c)?)?)?$" {
-        rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json$" /rpc/jurisdiction_geojson_from_isolabel?p_code=$2 break;
-        rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json/cover$"           /rpc/jurisdiction_coverage?p_iso=$2           break;
-        rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json/cover/base16h$"   /rpc/jurisdiction_coverage?p_iso=$2&p_base=16 break;
-        rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json/cover/base16h1c$" /rpc/jurisdiction_coverage?p_iso=$2&p_base=18 break;
-        proxy_pass http://prod_backend;
-    }
-
-    # geo:co-divipola|br-geocodigo
-    location ~* "^/(geo:(co-divipola|br-geocodigo|cm-code):[0-9]+)\.json(/cover(/base16h(1c)?)?)?$" {
-        rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json$"
-            /rpc/jurisdiction_geojson_from_isolabel?p_code=$1$3 break;
-        rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json/cover$"
-            /rpc/jurisdiction_coverage?p_iso=$1$3 break;
-        rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json/cover/base16h$"
-            /rpc/jurisdiction_coverage?p_iso=$1$3&p_base=16 break;
-        rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json/cover/base16h1c$"
-            /rpc/jurisdiction_coverage?p_iso=$1$3&p_base=18 break;
-        proxy_pass http://prod_backend;
-    }
-
-    # ghs
+    # DECODE GHS
     location ~* "^/geo:ghs:([0123456789BCDEFGHJKMNPQRSTUVWXYZ]+).json$" {
         rewrite "(?i)^/geo:ghs:(.*).json$" "/rpc/ghs_decode?code=$1" break;
         proxy_pass http://prod_backend;
     }
 
-    # olc
+    # DECODE OLC
     location ~* "^/geo:olc:(([23456789CFGHJMPQRVWX]+0*){1,8}\+([23456789CFGHJMPQRVWX]+)?).json$" {
         rewrite "(?i)^/geo:olc:([^\.]+).json$" "/rpc/olc_decode?code=$1" break;
         proxy_pass http://prod_backend;
     }
 
-    ## leaflet
-    ###
-    location ~* "^/(BR|CM)((-[a-z]{2})|(\+|\-|\~))?$" {
-        rewrite "(?i)^/.+" /select/ break;
-    }
-    location ~* "^/CO((-[a-z]{3})|(\+|\-|\~))?$" {
-        rewrite "(?i)^/.+" /select/ break;
-    }
-
-
-    ### reduzido divipola/ibgegeocodigo 32
-    location ~* "^/(BR|CM|CO|UY)((-[a-z0-9]{2,})(-[a-z0-9]{2,})?)((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ\.]+)?$" {
-        rewrite "(?i)^.*$" /logistic/ break;
+    location ~ ^/?[RrWwNn]?[0-9]+$ {
+        rewrite ^/?[Rr]?([0-9]+)$ https://www.openstreetmap.org/relation/$1  permanent;
+        rewrite ^/?[Ww]?([0-9]+)$ https://www.openstreetmap.org/way/$1       permanent;
+        rewrite ^/?[Nn]?([0-9]+)$ https://www.openstreetmap.org/node/$1      permanent;
+        #ok working - proxy_pass  https://www.openstreetmap.org;
+        #return 301 https://www.openstreetmap.org;
     }
 
-    location ~* "^/[a-z]{2}((-[a-z0-9]{3,}){1,2})((~|-)[0123456789BCDFGHJKLMNPQRSTUVWXYZ\.]+)?$" {
-        rewrite "(?i)^.*$" /logistic/ break;
-    }
-
-    location ~* "^/[a-z]{2}((-[a-z]{1,3})|(\+|\-|\~))?$" {
-        rewrite "(?i)^/.+" /select/ break;
-    }
-
-    ### decode list absoluto 32, 16
-    location ~* "^/[a-z]{2}(~|\+)([0123456789ABCDEFGHJKLMNPQRSTUVWXYZ\.]+)(,[0123456789ABCDEFGHJKLMNPQRSTUVWXYZ\.]+){0,}$" {
-        rewrite "(?i)^/.+" /scientific/ break;
-    }
-
-    location ~* "^/scientific_full/[a-z]{2}(~|\+)([0123456789ABCDEFGHJKLMNPQRSTUVWXYZ\.]+)(,[0123456789ABCDEFGHJKLMNPQRSTUVWXYZ\.]+){0,}$" {
-        rewrite "(?i)^/.+" /scientific_full/ break;
-    }
-
-    location ~* "^/geo:(ghs:|olc:)?\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?(/base16(h|h1c)?)?(/grid(2|4|8|16|32))?$" {
-        rewrite "(?i)^.*$" /logistic/ break;
-    }
-
-    ### ghs , olc
-    location ~* "^(/scientific_full)?(/[a-z]{2}((-[a-z]{1,3}-[a-z\.]+))?)?/geo:((ghs:([0123456789BCDEFGHJKMNPQRSTUVWXYZ]+))|(olc:(([23456789CFGHJMPQRVWX]+0*){1,8}\+([23456789CFGHJMPQRVWX]+)?)))$" {
-        rewrite "(?i)^/geo.+" /logistic/ break;
-        rewrite "(?i)^/[a-z]{2}/.+" /scientific/ break;
-        rewrite "(?i)^/[a-z]{2}\-.+" /logistic/ break;
-        rewrite "(?i)^/scientific_full.+" /scientific_full/ break;
-    }
-
-    location ~* "^/geo:iso_ext:([a-z]{2}((-[a-z0-9]+){0,2}))$" {
-        rewrite "(?i)^.*$" /logistic/ break;
-    }
-
-    ### (urn|geo):lex
-    location ~* "^/(urn|geo):lex:([a-z]{2}(;[a-z0-9\.]+)?(;[a-z0-9\.]+)?)$" {
-        rewrite "(?i)^/.+" /view_lex/ break;
-    }
-
-    location /_doc {
-        rewrite ^/_doc/(.*) /$1 break;
-            proxy_pass http://127.0.0.1:5001;  #MKDOC1port
-    }
-
-    location /_latlng2olc {
-        rewrite "^/?_latlng2olc/(\-?\d+\.?\d*),(\-?\d+\.?\d*)$"
-            /rpc/latlng_to_olc_city?lat=$1&lng=$2
-            break;
-        proxy_pass http://127.0.0.1:3110;
-    }
+    # # ibge
+    # location /geo:br-ibge2020: {
+    #     rewrite "^/?(geo:)br-ibge2020:(\-?\d+\.?\d*,\-?\d+\.?\d*)"
+    #         /rpc/resolver_geo_uri?geouri=$1$2
+    #         break;
+    #     rewrite "^/?geo:br-ibge2020:([A-Za-z][A-Za-z0-9]+)[_\-]?([A-Za-z0-9]+)?:([^,]+)$"
+    #         /rpc/resolver_geocode?code=$3&type=$1&subtype=$2
+    #         break;
+    #     rewrite "^/?geo:br-ibge2020:([a-zA-Z]+)[_\-]([^,]+)$"
+    #         /rpc/resolver_geocode?code=$2&type=$1&subtype=official
+    #         break;
+    #
+    #     proxy_pass http://127.0.0.1:3110;
+    # }
+    #
+    # location /_doc {
+    #     rewrite ^/_doc/(.*) /$1 break;
+    #         proxy_pass http://127.0.0.1:5001;  #MKDOC1port
+    # }
+    #
+    # location /_latlng2olc {
+    #     rewrite "^/?_latlng2olc/(\-?\d+\.?\d*),(\-?\d+\.?\d*)$"
+    #         /rpc/latlng_to_olc_city?lat=$1&lng=$2
+    #         break;
+    #     proxy_pass http://127.0.0.1:3110;
+    # }
 
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
@@ -317,7 +297,7 @@ server {
 } # \server
 
 
-# TEST: dl06t_main em :3106
+# TEST
 server {
     server_name test.osm.codes www.test.osm.codes test.afa.codes www.test.afa.codes;
     listen 443 ssl http2;

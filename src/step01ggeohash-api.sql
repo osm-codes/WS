@@ -126,7 +126,7 @@ CREATE or replace FUNCTION api.osmcode_decode_scientific_absolute(
       'features',
           (
             SELECT jsonb_agg(
-                ST_AsGeoJSONb(ST_Transform_resilient(v.geom,4326,0.005),8,0,null,
+                ST_AsGeoJSONb(ST_Transform_resilient(v.geom,4326,0.005,0.00000005),8,0,null,
                     jsonb_strip_nulls(jsonb_build_object(
                         'code', TRANSLATE(code_tru,'gqhmrvjknpstzy','GQHMRVJKNPSTZY'),
                         'area', ST_Area(v.geom),
@@ -223,7 +223,7 @@ CREATE or replace FUNCTION api.osmcode_decode_postal_absolute(
       'features',
           (
             SELECT jsonb_agg(
-                ST_AsGeoJSONb(ST_Transform_resilient(v.geom,4326,0.005),8,0,null,
+                ST_AsGeoJSONb(ST_Transform_resilient(v.geom,4326,0.005,0.00000005),8,0,null,
                     jsonb_strip_nulls(jsonb_build_object(
                         'code', code,
                         'area', ST_Area(v.geom),
@@ -286,7 +286,7 @@ CREATE or replace FUNCTION api.osmcode_decode_postal(
       'features',
           (
             SELECT jsonb_agg(
-                ST_AsGeoJSONb(ST_Transform_resilient(v.geom,4326,0.005),8,0,null,
+                ST_AsGeoJSONb(ST_Transform_resilient(v.geom,4326,0.005,0.00000005),8,0,null,
                     jsonb_strip_nulls(jsonb_build_object(
                         'code', code,
                         'short_code', CASE WHEN country_iso IN ('CO') THEN country_iso || '-' || jurisd_local_id ELSE isolabel_ext END || '~' || short_code,

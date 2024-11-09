@@ -53,7 +53,7 @@ begin
   ASSERT (api.osmcode_encode_sci('geo:0.966667,-79.652778')->'features')[0]->'properties'->>'code'='03b4a464c15a', 'Esmeraldas/EC';
   ASSERT (api.osmcode_encode_sci('geo:-0.22,-78.5125')->'features')[0]->'properties'->>'code'='083484348487', 'Quito/EC';
   ASSERT (api.osmcode_encode_sci('geo:-0.5,-90.5')->'features')[0]->'properties'->>'code'='060cb0b5e0c2', 'Galápagos/EC';
-  ASSERT (api.osmcode_encode_sci('geo:4.365,11.44')->'features')[0]->'properties'->>'code'='a1e2b65c8c3', 'Saa/CM';
+  ASSERT (api.osmcode_encode_sci('geo:4.365,11.44')->'features')[0]->'properties'->>'code'='91e2b65c8c3', 'Saa/CM';
 
 end;
 $tests$

@@ -114,6 +114,12 @@ server {
         proxy_pass http://prod_backend;
     }
 
+    # geo:iso_ext2
+    location ~* "^/(geo:iso_ext2:)?([a-z]{2}((-[a-z0-9]+){0,2}))\.json$" {
+        rewrite "(?i)^/(geo:iso_ext2:)?(.+)\.json$" /rpc/jurisdiction_geojson_from_isolabel2?p_code=$2 break;
+        proxy_pass http://prod_backend;
+    }
+
     # geo:co-divipola|br-geocodigo
     location ~* "^/(geo:(co-divipola|br-geocodigo|cm-code):[0-9]+)\.json(/cover(/base16h(1c)?)?)?$" {
         rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json$"

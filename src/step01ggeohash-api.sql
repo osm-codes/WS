@@ -476,6 +476,53 @@ SELECT api.jurisdiction_geojson_from_isolabel('CO-A-Itagui');
 SELECT api.jurisdiction_geojson_from_isolabel('CO-Itagui');
 */
 
+CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel2(
+   p_code text
+) RETURNS jsonb AS $f$
+    SELECT jsonb_build_object(
+        'type', 'FeatureCollection',
+        'features',
+            (
+                jsonb_agg(ST_AsGeoJSONb(
+                    geom,
+                    8,0,null,
+                    jsonb_build_object(
+                        'osm_id', osm_id,
+                        'jurisd_base_id', jurisd_base_id,
+                        'jurisd_local_id', jurisd_local_id,
+                        'parent_id', parent_id,
+                        'admin_level', admin_level,
+                        'name', name,
+                        'parent_abbrev', parent_abbrev,
+                        'abbrev', abbrev,
+                        'wikidata_id', wikidata_id,
+                        'lexlabel', lexlabel,
+                        'isolabel_ext', isolabel_ext,
+                        'lex_urn', lex_urn,
+                        'name_en', name_en,
+                        'isolevel', isolevel,
+                        'area', info->'area_km2'
+                        )
+                    )::jsonb)
+            )
+        )
+    FROM
+    (
+      SELECT j.*, g.geom
+      FROM optim.jurisdiction j
+      LEFT JOIN osmc.jurisdiction_geom_buffer_clipped g
+      ON j.isolabel_ext = g.isolabel_ext
+    ) g
+
+    WHERE g.isolabel_ext = (SELECT (str_geocodeiso_decode(p_code))[1])
+$f$ LANGUAGE SQL IMMUTABLE;
+COMMENT ON FUNCTION api.jurisdiction_geojson_from_isolabel2(text)
+  IS 'Return jurisdiction geojson from isolabel_ext. With size_shortestprefix.'
+;
+/*
+SELECT api.jurisdiction_geojson_from_isolabel2('BR-SP-Campinas');
+*/
+
 ------------------
 -- api hbig:
 

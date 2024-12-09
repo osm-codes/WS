@@ -2,7 +2,7 @@
 -- Library for extended Geo URI protocol
 --
 
--- Pendente testar as geometrias !  
+-- Pendente testar as geometrias !
 
 
 DROP SCHEMA IF EXISTS geouri_ext CASCADE; -- se the
@@ -762,3 +762,253 @@ $wrap$ LANGUAGE SQL IMMUTABLE
 COMMENT ON FUNCTION geouri_ext.olc_geom(geometry,integer)
   IS 'Returns OLC_center as complete cell geometry. Wrap of olc_geom(float,float).'
 ;
+
+------------------------------------------------------------
+-- Tratamento de coberturas (listas em notação científica)
+--
+-- Funções de compactação para deviolver listas  comprimidas
+-- Quando uma lista é fornecida no request da API, fornecer no GeoJSON a lista correspondente em formato reduxseq.
+
+
+CREATE or replace FUNCTION array_subtract(
+  p_a anyarray, p_b anyarray
+  ,p_empty_to_null boolean default true
+) RETURNS anyarray AS $f$
+  SELECT CASE WHEN p_empty_to_null AND x='{}' THEN NULL ELSE x END
+  FROM (
+    SELECT array(  SELECT unnest(p_a) EXCEPT SELECT unnest(p_b)  )
+  ) t(x)
+$f$ language SQL IMMUTABLE;
+
+
+CREATE or replace FUNCTION natcod.b16hSet_normalize (
+  p_b16h_list text[]  -- apesar de lista será tratado como conjunto (elimina repetições)
+) RETURNS text[] AS $f$
+  SELECT CASE WHEN array_length(x,1) IS NULL THEN NULL ELSE x END -- same as  x='{}'::anyarray
+  FROM (
+  	SELECT ARRAY(
+        SELECT DISTINCT translate( lower(trim(x)), 'gqhmrvjknpstzy', 'GQHMRVJKNPSTZY' )
+        FROM unnest(p_b16h_list) t1(x)
+   )
+ ) t2(x)
+$f$ language SQL strict IMMUTABLE;
+COMMENT ON FUNCTION natcod.b16hSet_normalize
+  IS 'Normalize item syntax as canonical Base 16h, and apply DISTINCT into the array items.'
+;
+
+CREATE FUNCTION natcod.base16h_to_order(
+  p_code text -- normalized base16h input (see natcod.b16hSet_normalize)
+) RETURNS text AS $f$
+  SELECT translate(p_code, 'GHJ01K23MN45P67QRS89TabVZcdYef', '0123456789ABCDEFGHIJKLMNOPQRST')
+$f$ language SQL IMMUTABLE;
+COMMENT ON FUNCTION natcod.base16h_to_order
+  IS 'Simulate collation for base 16h, equivalent to bitString lexicographical order.'
+;
+
+CREATE or replace FUNCTION natcod.list_to_reduxseq_prepare(
+  p_list text[],  -- input list
+  p_shift int DEFAULT 1  -- prefix length, shiftinf strings.
+) RETURNS TABLE (
+  prefix text, suffixes text[], n int, score int
+) AS $f$
+  SELECT *,
+         length(prefix || CASE WHEN n=1 THEN suffixes[1] ELSE suffixes::text END) as score
+  FROM (
+    SELECT substring(x,1,p_shift) as prefix,
+           array_agg(substring(x,p_shift+1)) as suffixes,
+           count(*) n
+    FROM (SELECT x FROM unnest($1) t0(x) ORDER BY natcod.base16h_to_order(x)) t1
+    GROUP BY 1 ORDER BY 1
+  ) t2
+$f$ language SQL IMMUTABLE;
+COMMENT ON FUNCTION natcod.list_to_reduxseq_prepare
+  IS 'Used in list_to_reduxseq() function, or for debug analysis. Create reduced sequencies with bitstring lexicographical order.'
+;
+
+
+CREATE or replace FUNCTION natcod.reduxseq_to_list_prepare(
+  p_list text
+) RETURNS TABLE (original text, merged text) AS $f$
+  SELECT CASE WHEN x[1] IS NULL THEN '{'||x[3]||'}' ELSE x[1]||'{'||x[2]||'}' END as original,
+         CASE WHEN x[1] IS NULL THEN x[3]           ELSE translate( array_rebuild_add_prefix( x[1], ('{'||x[2]||'}')::text[], '' )::text, '.', '') END AS merged
+  FROM regexp_matches(p_list, '(?:([^\{\},]+)\{([^\{\}]+)\})|(?:\{([^\{\}]+)\})', 'g') t(x)
+  ORDER BY 1
+$f$ LANGUAGE SQL IMMUTABLE;
+COMMENT ON FUNCTION natcod.reduxseq_to_list_prepare
+  IS '(internal use) Prepare inner parts for reduxseq_to_list functions.'
+;
+
+
+CREATE or replace FUNCTION natcod.reduxseq_to_list_beaulty(
+  p_list text
+) RETURNS text AS $f$
+DECLARE
+    tmp RECORD;
+    s text;
+    s_aux text;
+BEGIN
+  s := p_list;
+	FOR tmp IN
+		SELECT original, merged FROM natcod.reduxseq_to_list_prepare(p_list)
+	LOOP
+     --raise notice '%. s=%', protect, s;
+	   --raise notice '  % = %', tmp.original, tmp.merged;
+     s_aux := replace(s, tmp.original, tmp.merged);
+     IF length(s_aux)-2 < length(s) THEN -- check need expand.
+        s := s_aux;
+     END IF;
+	END LOOP; -- /tmp
+  RETURN regexp_replace(s, '([\{,])\{([^\{\}]+)\}', '\1\2', 'g');
+  -- e.g. a170d14bf,a170d16{{1,11,1M},4{0,6,b,K,S,V},5T,65,70}
+END;
+$f$ language PLpgSQL IMMUTABLE;
+COMMENT ON FUNCTION natcod.reduxseq_to_list_beaulty(text)
+  IS '(internal use) Expands useless-redux after natcod.list_to_reduxseq() core. The beaulty-format for humamns.'
+;
+
+
+CREATE or replace FUNCTION natcod.list_to_reduxseq_recursive_check(
+  p_list text
+) RETURNS text AS $f$
+BEGIN
+	RETURN 'RECURSIVE STUB';
+END;
+$f$ language PLpgSQL IMMUTABLE; -- stub for PostreSQL compiler.
+
+
+CREATE or replace FUNCTION natcod.list_to_reduxseq(
+  p_list text[]  -- input list
+) RETURNS text AS $f$
+  WITH prep AS (
+    SELECT g.i, t2.*
+    FROM ( -- podem ocorrer listas completas (ex. '2,G,H,Q'), e mais de uma simultaneamente: troca a lista completa por "."
+      SELECT CASE WHEN '{0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f}'::text[] <@ i0 THEN '{.}'||array_subtract(i0,'{0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f}'::text[]) ELSE i0 END FROM (
+        SELECT CASE WHEN '{J,K,N,P,S,T,Z,Y}'::text[] <@ i0 THEN '{.}'||array_subtract(i0,'{J,K,N,P,S,T,Z,Y}'::text[]) ELSE i0 END FROM (
+          SELECT CASE WHEN '{H,M,R,V}'::text[] <@ i0 THEN '{.}'||array_subtract(i0,'{H,M,R,V}'::text[]) ELSE i0 END FROM (
+            SELECT CASE WHEN '{G,Q}'::text[] <@ i0 THEN '{.}'||array_subtract(i0,'{G,Q}'::text[]) ELSE i0 END
+            FROM ( SELECT natcod.b16hSet_normalize($1) ) t0i0(i0)
+          ) t0i1(i0)
+        ) t0i2(i0)
+      ) t0i3(i0)
+    ) t1(input),  -- t1 faz todas normalizações sobre o input $1.
+    generate_series( 1, length(input::text)/cardinality(input)-1 ) g(i),
+    natcod.list_to_reduxseq_prepare(input,i) t2 -- i as prefix shift.
+  ),
+  s AS (
+     SELECT i, sum(score)+count(*) - 1 as score FROM prep GROUP BY 1 ORDER BY 1
+  ),
+  find AS (
+    SELECT i
+    FROM s
+    WHERE score=(SELECT MIN(score) FROM s)
+    ORDER BY 1 LIMIT 1
+  ),
+  final AS (
+      SELECT replace( string_agg(
+         prefix||(CASE WHEN cardinality(suffixes)=1 THEN suffixes[1] ELSE suffixes::text END),
+         ',' ORDER BY prefix
+       ),  '""', '.')  AS output
+      FROM prep
+      WHERE i = (SELECT i FROM find)
+  )
+  SELECT natcod.reduxseq_to_list_beaulty(
+    natcod.list_to_reduxseq_recursive_check(output)
+  )
+  FROM final
+$f$ language SQL IMMUTABLE;
+COMMENT ON FUNCTION natcod.list_to_reduxseq(text[],int)
+  IS 'Convert a comma-separated list of codes into reduxseq format. See https://wikifull.addressforall.org/doc/ReduxSeq_format.'
+;
+
+CREATE or replace FUNCTION natcod.list_to_reduxseq_recursive_check(
+  p_list text
+) RETURNS text AS $f$
+DECLARE
+    tmp RECORD;
+    s text;
+    s_before text default '';
+    protect int default 1;
+    need_more int default 1;
+BEGIN
+  s := p_list;
+  WHILE protect<100 AND need_more>0 AND s_before!=s LOOP
+    s_before := s;
+    need_more :=0;
+  	FOR tmp IN
+      SELECT x[1] as original, natcod.list_to_reduxseq(x[1]::text[]) as redux
+      FROM regexp_matches(s, '(\{[^\{\}]+\})', 'g') t(x) ORDER BY 1
+  	LOOP
+       IF tmp.original>'' AND tmp.original!=tmp.redux THEN
+          s := replace(s, tmp.original, '{'||tmp.redux||'}');
+          need_more := need_more+1;
+       END IF;
+  	END LOOP; -- /tmp
+    protect:=protect+1;
+    -- raise notice '  loop: %', s;
+  END LOOP; -- /while
+	RETURN s;
+END;
+$f$ language PLpgSQL IMMUTABLE;
+COMMENT ON FUNCTION natcod.list_to_reduxseq_recursive_check
+  IS '(internal use) Check oppotunities for more reduction after natcod.list_to_reduxseq() core.'
+;
+-- TESTES:
+-- select natcod.list_to_reduxseq( '{a170d161M,a170d164V,a170d164S,a170d164K,a170d165T,a170d1665,a170d1670,a170d1611,a170d1640,a170d164b,a170d1646,a170d14bf}'::text[] );
+--  a170d14bf,a170d16{4V,4S,4K,5T,65,1M,11,40,4b,46,70}
+-- melhor que  a170d1{61M,64V,64S,64K,65T,665,670,611,640,64b,646,4bf}
+-- se ir reduzindo um deles, digamos "a170d164b" para "a170d164" depois "a170d16" ou "a170d" haverão novas otimizações:
+--    a170d1{61M,64V,64S,64K,65T,665,670,611,640,.,646,4bf}
+--    a170d,a170d14bf,a170d16{4S,4K,5T,65,1M,11,40,46,70,4V}
+-- O ponto, ".", significa repetir o prefixo em evidência.
+
+
+/*  deu pau:
+CREATE FUNCTION natcod.list_to_reduxseq(text) RETURNS text AS $wrap$
+ SELECT natcod.list_to_reduxseq('{'||trim($1,'{}')||'}');
+$wrap$ language SQL IMMUTABLE;
+COMMENT ON FUNCTION natcod.list_to_reduxseq(text)
+  IS 'Wrap for natcod.list_to_reduxseq(text[]). Converts comma-separated lists with or without curly brackets.'
+;
+*/
+
+-------
+CREATE or replace FUNCTION array_rebuild_add_prefix(
+  -- function from pubLib01-array.
+  prefix text,
+  a text[],
+  sep text default '#'
+) RETURNS text[] as $f$
+  SELECT array_agg(px)
+  FROM (
+    SELECT prefix||sep||x as px
+    FROM unnest(a) t(x) ORDER BY x
+  ) t
+$f$ LANGUAGE SQL IMMUTABLE;
+COMMENT ON FUNCTION array_rebuild_add_prefix IS 'Rebuild array by adding a prefix in all items.'
+;
+
+CREATE or replace FUNCTION natcod.reduxseq_to_list(
+  p_list text
+) RETURNS text AS $f$
+DECLARE
+    tmp RECORD;
+    s text;
+    s_before text default '';
+    protect int default 1;
+BEGIN
+  s := p_list;
+  WHILE protect<100 AND s_before!=s LOOP
+    s_before := s;
+  	FOR tmp IN
+  		SELECT original, merged FROM natcod.reduxseq_to_list_prepare(s_before)
+  	LOOP
+       -- raise notice '%. s=%', protect, s;
+  	   -- raise notice '  % = %', tmp.original, tmp.merged;
+       s := replace(s, tmp.original, tmp.merged);
+  	END LOOP; -- /tmp
+    protect:=protect+1;
+    -- raise notice '  loop';
+  END LOOP; -- /while
+	RETURN s;
+END;
+$f$ language PLpgSQL IMMUTABLE;

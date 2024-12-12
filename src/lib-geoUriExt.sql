@@ -844,27 +844,26 @@ CREATE or replace FUNCTION natcod.reduxseq_to_list_beaulty(
 ) RETURNS text AS $f$
 DECLARE
     tmp RECORD;
-    s text;
     s_aux text;
 BEGIN
-  s := p_list;
 	FOR tmp IN
 		SELECT original, merged FROM natcod.reduxseq_to_list_prepare(p_list)
 	LOOP
-     --raise notice '%. s=%', protect, s;
-	   --raise notice '  % = %', tmp.original, tmp.merged;
-     s_aux := replace(s, tmp.original, tmp.merged);
-     IF length(s_aux)-2 < length(s) THEN -- check need expand.
-        s := s_aux;
+     s_aux := replace(p_list, tmp.original, tmp.merged);
+     IF length(s_aux)-3 < length(p_list) THEN -- quality control
+        p_list := s_aux;
      END IF;
 	END LOOP; -- /tmp
-  RETURN regexp_replace(s, '([\{,])\{([^\{\}]+)\}', '\1\2', 'g');
-  -- e.g. a170d14bf,a170d16{{1,11,1M},4{0,6,b,K,S,V},5T,65,70}
+  RETURN regexp_replace(p_list, '([\{,])\{([^\{\}]+)\}', '\1\2', 'g');
+  -- replace for e.g. 'a170d14bf,a170d16{{1,11,1M},4{0,6,b,K,S,V},5T,65,70}'
 END;
 $f$ language PLpgSQL IMMUTABLE;
 COMMENT ON FUNCTION natcod.reduxseq_to_list_beaulty(text)
   IS '(internal use) Expands useless-redux after natcod.list_to_reduxseq() core. The beaulty-format for humamns.'
 ;
+-- SELECT natcod.reduxseq_to_list_beaulty('a01fd{8{bM,cV,d{M,R,V},e,f},9{8H,8R,8V,a,bH,bR},a{4{H,M,V},5{H,M,R}},b0H}');
+--  a01fd{8{bM,cV,dM,dR,dV,e,f},9{8H,8R,8V,a,bH,bR},a{4H,4M,4V,5H,5M,5R},b0H}
+--  or quality "-2" results a01fd{8{bM,cV,d{M,R,V},e,f},9{8H,8R,8V,a,bH,bR},a{4{H,M,V},5{H,M,R}},b0H}
 
 
 CREATE or replace FUNCTION natcod.list_to_reduxseq_recursive_check(

@@ -14,15 +14,15 @@ upstream test_backend {
 
 # PRODUCAO
 server {
-    server_name test.osm.codes www.test.osm.codes test.afa.codes www.test.afa.codes;
+    server_name osm.codes www.osm.codes afa.codes www.afa.codes;
     listen 443 ssl http2;
     include /etc/nginx/ssl.conf;
-    root /var/www/test.osm.codes/;
+    root /var/www/osm.codes/;
     index index.php index.html index.htm;
-    access_log /var/log/nginx/test.osm.codes.access_log;
-    error_log  /var/log/nginx/test.osm.codes.error.log;
+    access_log /var/log/nginx/osm.codes.access_log;
+    error_log  /var/log/nginx/osm.codes.error.log;
 
-    # schema api, deve migrar para api.test.osm.codes
+    # schema api, deve migrar para api.osm.codes
     ## return csv
     location /_sql.csv {
         rewrite /_sql.csv/(.*) /$1 break;

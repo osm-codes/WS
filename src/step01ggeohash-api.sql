@@ -176,7 +176,7 @@ CREATE or replace FUNCTION api.osmcode_decode_scientific_absolute(
                           WHEN p_base = 18 THEN osmc.decode_16h1c(code,upper(p_iso))
                           ELSE code
                         END AS code16h
-                FROM regexp_split_to_table(lower(p_code),',') code
+                FROM regexp_split_to_table(natcod.reduxseq_to_list(lower(p_code)),',') code
               ) u
             ) c,
             LATERAL

@@ -37,6 +37,7 @@ CREATE or replace FUNCTION api.osmcode_encode_scientific(
     WHEN 'CO' THEN osmc.encode_scientific_co(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),  9377),u[4],grid)
     WHEN 'UY' THEN osmc.encode_scientific_uy(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326), 32721),u[4],grid)
     WHEN 'EC' THEN osmc.encode_scientific_ec(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326), 32717),u[4],grid)
+    WHEN 'SV' THEN osmc.encode_scientific_sv(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),  5399),u[4],grid)
     END
   FROM ( SELECT str_geouri_decode(uri) ) t(u)
 $wrap$ LANGUAGE SQL IMMUTABLE;
@@ -144,6 +145,7 @@ CREATE or replace FUNCTION api.osmcode_decode_scientific_absolute(
                 WHEN p_base <> 18 AND length(code16h) > 12 AND up_iso IN ('BR')           THEN substring(code16h,1,12)
                 WHEN p_base <> 18 AND length(code16h) > 11 AND up_iso IN ('EC','CO','UY') THEN substring(code16h,1,11)
                 WHEN p_base <> 18 AND length(code16h) > 10 AND up_iso IN ('CM')           THEN substring(code16h,1,10)
+                WHEN p_base <> 18 AND length(code16h) >  9 AND up_iso IN ('SV')           THEN substring(code16h,1,9)
                 WHEN p_base =  18 AND length(code)    > 11 AND up_iso IN ('BR')           THEN substring(code,1,11)
                 WHEN p_base =  18 AND length(code)    > 10 AND up_iso IN ('UY')           THEN substring(code,1,10)
                 ELSE (CASE WHEN p_base=18 THEN code ELSE code16h END)
@@ -154,6 +156,7 @@ CREATE or replace FUNCTION api.osmcode_decode_scientific_absolute(
                 WHEN p_base <> 18 AND length(code16h) > 12 AND up_iso IN ('BR')           THEN TRUE
                 WHEN p_base <> 18 AND length(code16h) > 11 AND up_iso IN ('EC','CO','UY') THEN TRUE
                 WHEN p_base <> 18 AND length(code16h) > 10 AND up_iso IN ('CM')           THEN TRUE
+                WHEN p_base <> 18 AND length(code16h) >  9 AND up_iso IN ('SV')           THEN TRUE
                 WHEN p_base =  18 AND length(code)    > 11 AND up_iso IN ('BR')           THEN TRUE
                 WHEN p_base =  18 AND length(code)    > 10 AND up_iso IN ('UY')           THEN TRUE
                 ELSE NULL
@@ -164,6 +167,7 @@ CREATE or replace FUNCTION api.osmcode_decode_scientific_absolute(
                 WHEN length(code16h) > 12 AND up_iso IN ('BR')           THEN natcod.baseh_to_vbit(substring(code16h,1,12),16)
                 WHEN length(code16h) > 11 AND up_iso IN ('EC','CO','UY') THEN natcod.baseh_to_vbit(substring(code16h,1,11),16)
                 WHEN length(code16h) > 10 AND up_iso IN ('CM')           THEN natcod.baseh_to_vbit(substring(code16h,1,10),16)
+                WHEN length(code16h) > 10 AND up_iso IN ('SV')           THEN natcod.baseh_to_vbit(substring(code16h,1,9),16)
                 ELSE natcod.baseh_to_vbit(code16h,16)
               END AS codebits,
 
@@ -186,8 +190,8 @@ CREATE or replace FUNCTION api.osmcode_decode_scientific_absolute(
               WHERE is_country IS TRUE AND isolabel_ext = c.up_iso -- cobertura nacional apenas
                 AND
                 CASE
-                WHEN up_iso IN ('CO','CM') THEN ( ( osmc.extract_L0bits(cbits) # codebits::bit(4) ) = 0::bit(4) ) -- 1 dígitos base16h
-                ELSE                            ( ( osmc.extract_L0bits(cbits) # codebits::bit(8) ) = 0::bit(8) ) -- 2 dígitos base16h
+                WHEN up_iso IN ('CO','CM','SV') THEN ( ( osmc.extract_L0bits(cbits) # codebits::bit(4) ) = 0::bit(4) ) -- 1 dígitos base16h
+                ELSE                                 ( ( osmc.extract_L0bits(cbits) # codebits::bit(8) ) = 0::bit(8) ) -- 2 dígitos base16h
                 END
             ) v
 

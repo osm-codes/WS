@@ -15,6 +15,7 @@ CREATE or replace FUNCTION api.osmcode_encode_postal(
     WHEN 'CO' THEN osmc.encode_postal_co(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),  9377),u[4],grid,p_isolabel_ext)
     WHEN 'UY' THEN osmc.encode_postal_uy(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326), 32721),u[4],grid,p_isolabel_ext)
     WHEN 'EC' THEN osmc.encode_postal_ec(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326), 32717),u[4],grid,p_isolabel_ext)
+    WHEN 'SV' THEN osmc.encode_postal_sv(ST_Transform(ST_SetSRID(ST_MakePoint(u[2],u[1]),4326),  5399),u[4],grid,p_isolabel_ext)
     END
   FROM (SELECT str_geouri_decode(uri) ) t(u)
 

@@ -189,7 +189,7 @@ server {
     }
 
     ### reduzido divipola/ibgegeocodigo 32
-    location ~* "^/(geo:)?(BR|CM|CO|UY)((-[a-z0-9]{2,})(-[a-z0-9]{2,})?)((~|-)[a-z0-9\.]+)?$" {
+    location ~* "^/(geo:)?(BR|CM|CO|UY|SV)((-[a-z0-9]{2,})(-[a-z0-9]{2,})?)((~|-)[a-z0-9\.]+)?$" {
         rewrite "(?i)^.*$" /logistic/ break;
     }
 
@@ -422,7 +422,7 @@ server {
     }
 
     ### reduzido divipola/ibgegeocodigo 32
-    location ~* "^/(geo:)?(BR|CM|CO|UY)((-[a-z0-9]{2,})(-[a-z0-9]{2,})?)((~|-)[a-z0-9\.]+)?$" {
+    location ~* "^/(geo:)?(BR|CM|CO|UY|SV)((-[a-z0-9]{2,})(-[a-z0-9]{2,})?)((~|-)[a-z0-9\.]+)?$" {
         rewrite "(?i)^.*$" /logistic/ break;
     }
 

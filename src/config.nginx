@@ -10,6 +10,7 @@ upstream prod_backend {
 
 upstream test_backend {
     server 127.0.0.1:3106;
+    keepalive 8;
 }
 
 # PRODUCAO
@@ -255,7 +256,7 @@ server {
     access_log /var/log/nginx/test.osm.codes.access_log;
     error_log  /var/log/nginx/test.osm.codes.error.log;
 
-    # schema api, deve migrar para api.test.osm.codes
+    # schema api, deve migrar para api.test.afa.codes
     ## return csv
     location /_sql.csv {
         rewrite /_sql.csv/(.*) /$1 break;
@@ -282,27 +283,26 @@ server {
     }
 
     # encode scientific
-    location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?\.json/base16(h|h1c)?(/grid(2|4|8|16|3|5|9|17))?(/[a-z]{2})?$" {
-        # com grid
-        rewrite "^/(geo:.*);(u=.*)\.json/base16(h|h1c)?/grid(\d+)$"      "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=$4" break;
-        rewrite "^/(geo:.*)\.json/base16(h|h1c)?/grid(\d+)$"             "/rpc/osmcode_encode_scientific?uri=$1&grid=$3" break;
-        rewrite "^/(geo:.*);(u=.*)\.json/base16(h|h1c)?/grid(\d+)/(.+)$" "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=$4&p_isolabel_ext=$5" break;
-        rewrite "^/(geo:.*)\.json/base16(h|h1c)?/grid(\d+)/(.+)$"        "/rpc/osmcode_encode_scientific?uri=$1&grid=$3&p_isolabel_ext=$4" break;
-
+    location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?\.json/base16h(/grid(2|4|8|16|3|5|9|17))?(/[a-z]{2})?$" {
         # sem grid
-        rewrite "^/(geo:.*);(u=.*)\.json/base16(h|h1c)?$"                "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=0" break;
-        rewrite "^/(geo:.*)\.json/base16(h|h1c)?$"                       "/rpc/osmcode_encode_scientific?uri=$1&grid=0" break;
-        rewrite "^/(geo:.*);(u=.*)\.json/base16(h|h1c)?/(.+)$"           "/rpc/osmcode_encode_scientific?uri=$1%3B$2&grid=0&p_isolabel_ext=$4" break;
-        rewrite "^/(geo:.*)\.json/base16(h|h1c)?/(.+)$"                  "/rpc/osmcode_encode_scientific?uri=$1&grid=0&p_isolabel_ext=$3" break;
+        rewrite "^/(geo:.*);(u=.*)\.json/base16h$"                "/rpc/afacode_encode?p_uri=$1%3B$2&p_grid=0"          break;
+        rewrite "^/(geo:.*)\.json/base16h$"                       "/rpc/afacode_encode?p_uri=$1&p_grid=0"               break;
+        rewrite "^/(geo:.*);(u=.*)\.json/base16h/(.+)$"           "/rpc/afacode_encode?p_uri=$1%3B$2&p_iso=$3&p_grid=0" break;
+        rewrite "^/(geo:.*)\.json/base16h/(.+)$"                  "/rpc/afacode_encode?p_uri=$1&p_grid=0&p_iso=$2"      break;
+
+        # com grid
+        rewrite "^/(geo:.*);(u=.*)\.json/base16h/grid(\d+)$"      "/rpc/afacode_encode?p_uri=$1%3B$2&p_grid=$3"          break;
+        rewrite "^/(geo:.*)\.json/base16h/grid(\d+)$"             "/rpc/afacode_encode?p_uri=$1&p_grid=$3"               break;
+        rewrite "^/(geo:.*);(u=.*)\.json/base16h/grid(\d+)/(.+)$" "/rpc/afacode_encode?p_uri=$1%3B$2&p_iso=$4&p_grid=$3" break;
+        rewrite "^/(geo:.*)\.json/base16h/grid(\d+)/(.+)$"        "/rpc/afacode_encode?p_uri=$1&p_grid=$3&p_iso=$4"      break;
 
         proxy_pass http://test_backend;
     }
 
     # decode
     location ~* "^/geo:afa:([a-z]{2})(~|\+)([a-z0-9,\{\}\.]+)\.json$" {
-        rewrite "(?i)^/geo:afa:(BR|UY)\+(.*)\.json$"     /rpc/osmcode_decode_scientific_absolute?p_code=$2&p_iso=$1&p_base=18 break; # scientific absoluto 16h1c
-        rewrite "(?i)^/geo:afa:([a-z]{2})\+(.*)\.json$"  /rpc/osmcode_decode_scientific_absolute?p_code=$2&p_iso=$1&p_base=16 break; # scientific absoluto 16h
-        rewrite "(?i)^/geo:afa:([a-z]{2})~(.*)\.json$"   /rpc/osmcode_decode_postal?p_code=$2&p_iso=$1 break;                        # logistic absoluto
+        rewrite "(?i)^/geo:afa:([a-z]{2})\+(.*)\.json$"  /rpc/afacode_decode_with_prefix?p_code=$2&p_iso=$1 break; # scientific absoluto 16h
+        rewrite "(?i)^/geo:afa:([a-z]{2})~(.*)\.json$"   /rpc/osmcode_decode_postal?p_code=$2&p_iso=$1 break; # logistic absoluto
         proxy_pass http://test_backend;
     }
 
@@ -313,11 +313,10 @@ server {
     }
 
     # geo:iso_ext
-    location ~* "^/(geo:iso_ext:)?([a-z]{2}((-[a-z0-9]+){0,2}))\.json(/cover(/base16h(1c)?)?)?$" {
+    location ~* "^/(geo:iso_ext:)?([a-z]{2}((-[a-z0-9]+){0,2}))\.json(/cover(/base16h)?)?$" {
         rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json$" /rpc/jurisdiction_geojson_from_isolabel?p_code=$2 break;
         rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json/cover$"           /rpc/jurisdiction_coverage?p_iso=$2           break;
         rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json/cover/base16h$"   /rpc/jurisdiction_coverage?p_iso=$2&p_base=16 break;
-        rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json/cover/base16h1c$" /rpc/jurisdiction_coverage?p_iso=$2&p_base=18 break;
         proxy_pass http://test_backend;
     }
 
@@ -328,16 +327,15 @@ server {
     }
 
     # geo:co-divipola|br-geocodigo
-    location ~* "^/(geo:(co-divipola|br-geocodigo|cm-code):[0-9]+)\.json(/cover(/base16h(1c)?)?)?$" {
+    location ~* "^/(geo:(co-divipola|br-geocodigo|cm-code):[0-9]+)\.json(/cover(/base16h)?)?$" {
         rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json$"                 /rpc/jurisdiction_geojson_from_isolabel?p_code=$1$3 break;
         rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json/cover$"           /rpc/jurisdiction_coverage?p_iso=$1$3 break;
         rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json/cover/base16h$"   /rpc/jurisdiction_coverage?p_iso=$1$3&p_base=16 break;
-        rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json/cover/base16h1c$" /rpc/jurisdiction_coverage?p_iso=$1$3&p_base=18 break;
         proxy_pass http://test_backend;
     }
 
     # (urn|geo):lex
-    location ~* "^/(urn|geo):lex:([a-z]{2}(;[a-z0-9\.]+)?(;[a-z0-9\.]+)?)\.json(/cover/base16h(1c)?)?$" {
+    location ~* "^/(urn|geo):lex:([a-z]{2}(;[a-z0-9\.]+)?(;[a-z0-9\.]+)?)\.json(/cover/base16h)?$" {
         rewrite "(?i)^/(urn|geo):lex:([a-z]{2})\.json$"
             /rpc/jurisdiction_geojson_from_isolabel?p_code=$2  break;
 
@@ -369,21 +367,6 @@ server {
         rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z0-9\.]{3,});([a-z0-9\.]+)?\.json/cover/base16h$"
             /rpc/jurisdiction_coverage?p_iso=$2%3B$3%3B$4&p_base=16  break;
 
-
-        rewrite "(?i)^/(urn|geo):lex:([a-z]{2})\.json/cover/base16h1c$"
-            /rpc/jurisdiction_coverage?p_iso=$2&p_base=18  break;
-
-        rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z0-9]{2})\.json/cover/base16h1c$"
-            /rpc/jurisdiction_coverage?p_iso=$2%3B$3&p_base=18  break;
-
-        rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z0-9]{2});([a-z0-9\.]+)\.json/cover/base16h1c$"
-            /rpc/jurisdiction_coverage?p_iso=$2%3B$3%3B$4&p_base=18  break;
-
-        rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z0-9\.]{3,})\.json/cover/base16h1c$"
-            /rpc/jurisdiction_coverage?p_iso=$2%3B$3&p_base=18  break;
-
-        rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z0-9\.]{3,});([a-z0-9\.]+)?\.json/cover/base16h1c$"
-            /rpc/jurisdiction_coverage?p_iso=$2%3B$3%3B$4&p_base=18  break;
 
         proxy_pass http://test_backend;
     }

@@ -76,6 +76,24 @@ COMMENT ON FUNCTION api.co_afacode_encode(float,float,float)
   IS 'Encodes lat/lon to AFAcode grid in Colombia. Returns a GeoJSON FeatureCollection with cell geometry and metadata.';
 ;
 
+CREATE or replace FUNCTION api.afacode_encode(
+  p_uri  text,
+  p_grid int  DEFAULT 0,
+  p_iso  text DEFAULT NULL
+) RETURNS jsonb AS $wrap$
+  SELECT
+    CASE p_iso
+      WHEN 'BR' THEN api.br_afacode_encode(u[1],u[2],u[3])
+      WHEN 'CM' THEN api.cm_afacode_encode(u[1],u[2],u[3])
+      WHEN 'CO' THEN api.co_afacode_encode(u[1],u[2],u[3])
+    END
+  FROM str_geouri_decode_new(p_uri) t(u)
+$wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
+COMMENT ON FUNCTION api.afacode_encode(text,int,text)
+  IS 'Wrapper for country-specific AFAcode encoders. Decodes a GeoURI and delegates encoding based on ISO country code.';
+;
+
+
 CREATE or replace FUNCTION api.br_afacode_decode(
    p_code text
 ) RETURNS jsonb AS $f$
@@ -167,25 +185,6 @@ CREATE or replace FUNCTION api.co_afacode_decode(
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.co_afacode_decode(text)
   IS 'Decodes a scientific AFAcode into a GeoJSON FeatureCollection for Colombia.';
-;
-
-
-
-CREATE or replace FUNCTION api.afacode_encode(
-  p_uri  text,
-  p_grid int  DEFAULT 0,
-  p_iso  text DEFAULT NULL
-) RETURNS jsonb AS $wrap$
-  SELECT
-    CASE p_iso
-      WHEN 'BR' THEN api.br_afacode_encode(u[1],u[2],u[3])
-      WHEN 'CM' THEN api.cm_afacode_encode(u[1],u[2],u[3])
-      WHEN 'CO' THEN api.co_afacode_encode(u[1],u[2],u[3])
-    END
-  FROM str_geouri_decode_new(p_uri) t(u)
-$wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.afacode_encode(text,int,text)
-  IS 'Wrapper for country-specific AFAcode encoders. Decodes a GeoURI and delegates encoding based on ISO country code.';
 ;
 
 CREATE or replace FUNCTION api.afacode_decode(
@@ -320,7 +319,7 @@ COMMENT ON FUNCTION api.osmcode_encode_postal(text,int,text)
   IS 'Encodes Geo URI to Postal OSMcode. Wrap for osmcode_encode_postal.'
 ;
 
-CREATE or replace FUNCTION api.afacode_encode_log(
+CREATE or replace FUNCTION api.afacode_encode_log_no_context(
   uri  text,
   grid int DEFAULT 0
 ) RETURNS jsonb AS $wrap$
@@ -355,12 +354,12 @@ CREATE or replace FUNCTION api.afacode_encode_log(
   FROM osmc.coverage g, e
   WHERE is_country IS FALSE AND osmc.extract_jurisdbits(cbits) = e.jurisd_base_id AND e.pt && g.geom AND (is_contained IS TRUE OR ST_intersects(e.pt,g.geom))
 $wrap$ LANGUAGE SQL IMMUTABLE;
-COMMENT ON FUNCTION api.afacode_encode_log(text,int)
+COMMENT ON FUNCTION api.afacode_encode_log_no_context(text,int)
   IS 'Encodes Geo URI (no context) to logistic OSMcode.'
 ;
 -- EXPLAIN ANALYZE SELECT api.afacode_encode_log('geo:-15.5,-47.8',0,'BR-GO-Planaltina');
--- EXPLAIN ANALYZE SELECT api.osmcode_encode('geo:3.461,-76.577');
--- EXPLAIN ANALYZE SELECT api.osmcode_encode('geo:-15.5,-47.8');
+-- EXPLAIN ANALYZE SELECT api.afacode_encode_log_no_context('geo:3.461,-76.577');
+-- EXPLAIN ANALYZE SELECT api.afacode_encode_log_no_context('geo:-15.5,-47.8');
 
 
 
@@ -402,8 +401,8 @@ CREATE or replace FUNCTION api.br_afacode_decode_log(
         'geometry', ST_AsGeoJSON(ST_Transform_Resilient(afa.br_decode(hbig),4326,0.005,0.00000005),8,0)::jsonb,
         'id', afa.hBig_to_hex(hbig),
         'properties', jsonb_build_object(
-            'area', afa.br_cell_area((hbig::bit(6))::int-8),
-            'side', afa.br_cell_side((hbig::bit(6))::int-8),
+            'area', afa.br_cell_area((hbig::bit(6))::int-12),
+            'side', afa.br_cell_side((hbig::bit(6))::int-12),
             'base','base32',
             'jurisd_base_id',jurisd_base_id,
             'isolabel_ext', p_isolabel_ext,
@@ -415,7 +414,7 @@ CREATE or replace FUNCTION api.br_afacode_decode_log(
       )))::jsonb
   FROM
   (
-    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.br_hex_to_hBig( kx_prefix || natcod.vbit_to_baseh(natcod.b32nvu_to_vbit(upper(substring(p_code,2))),16) ) AS hbig
+    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
     FROM osmc.coverage c
     LEFT JOIN optim.jurisdiction j
       ON c.isolabel_ext = j.isolabel_ext
@@ -423,7 +422,7 @@ CREATE or replace FUNCTION api.br_afacode_decode_log(
       ON c.isolabel_ext = x.isolabel_ext
     WHERE is_country IS FALSE
       AND c.isolabel_ext = p_isolabel_ext
-      AND cindex = substring(upper(p_code),1,1)
+      AND cindex = substring(p_code,1,1)
   ) c
 $f$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.br_afacode_decode_log(text,text)
@@ -440,8 +439,8 @@ CREATE or replace FUNCTION api.cm_afacode_decode_log(
         'geometry', ST_AsGeoJSON(ST_Transform_Resilient(afa.cm_decode(hbig),4326,0.005,0.00000005),8,0)::jsonb,
         'id', afa.hBig_to_hex(hbig),
         'properties', jsonb_build_object(
-            'area', afa.br_cell_area((hbig::bit(6))::int-8),
-            'side', afa.br_cell_side((hbig::bit(6))::int-8),
+            'area', afa.cm_cell_area((hbig::bit(6))::int-12),
+            'side', afa.cm_cell_side((hbig::bit(6))::int-12),
             'base','base32',
             'jurisd_base_id',jurisd_base_id,
             'isolabel_ext', p_isolabel_ext,
@@ -453,7 +452,7 @@ CREATE or replace FUNCTION api.cm_afacode_decode_log(
       )))::jsonb
   FROM
   (
-    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.cm_hex_to_hBig( kx_prefix || natcod.vbit_to_baseh(natcod.b32nvu_to_vbit(upper(substring(p_code,2))),16) ) AS hbig
+    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
     FROM osmc.coverage c
     LEFT JOIN optim.jurisdiction j
       ON c.isolabel_ext = j.isolabel_ext
@@ -461,7 +460,7 @@ CREATE or replace FUNCTION api.cm_afacode_decode_log(
       ON c.isolabel_ext = x.isolabel_ext
     WHERE is_country IS FALSE
       AND c.isolabel_ext = p_isolabel_ext
-      AND cindex = substring(upper(p_code),1,1)
+      AND cindex = substring(p_code,1,1)
   ) c
 $f$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.cm_afacode_decode_log(text,text)
@@ -478,8 +477,8 @@ CREATE or replace FUNCTION api.co_afacode_decode_log(
         'geometry', ST_AsGeoJSON(ST_Transform_Resilient(afa.co_decode(hbig),4326,0.005,0.00000005),8,0)::jsonb,
         'id', afa.hBig_to_hex(hbig),
         'properties', jsonb_build_object(
-            'area', afa.br_cell_area((hbig::bit(6))::int-8),
-            'side', afa.br_cell_side((hbig::bit(6))::int-8),
+            'area', afa.co_cell_area((hbig::bit(6))::int-12),
+            'side', afa.co_cell_side((hbig::bit(6))::int-12),
             'base','base32',
             'jurisd_base_id',jurisd_base_id,
             'isolabel_ext', p_isolabel_ext,
@@ -491,7 +490,7 @@ CREATE or replace FUNCTION api.co_afacode_decode_log(
       )))::jsonb
   FROM
   (
-    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.co_hex_to_hBig( kx_prefix || natcod.vbit_to_baseh(natcod.b32nvu_to_vbit(upper(substring(p_code,2))),16) ) AS hbig
+    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
     FROM osmc.coverage c
     LEFT JOIN optim.jurisdiction j
       ON c.isolabel_ext = j.isolabel_ext
@@ -499,7 +498,7 @@ CREATE or replace FUNCTION api.co_afacode_decode_log(
       ON c.isolabel_ext = x.isolabel_ext
     WHERE is_country IS FALSE
       AND c.isolabel_ext = p_isolabel_ext
-      AND cindex = substring(upper(p_code),1,1)
+      AND cindex = substring(p_code,1,1)
   ) c
 $f$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.co_afacode_decode_log(text,text)
@@ -511,9 +510,9 @@ CREATE or replace FUNCTION api.afacode_decode_log(
 ) RETURNS jsonb AS $wrap$
   SELECT
     CASE l[2]
-      WHEN 'BR' THEN api.br_afacode_decode_log( REPLACE(u[2],'.',''), l[1] )
-      WHEN 'CM' THEN api.cm_afacode_decode_log( REPLACE(u[2],'.',''), l[1] )
-      WHEN 'CO' THEN api.co_afacode_decode_log( REPLACE(u[2],'.',''), l[1] )
+      WHEN 'BR' THEN api.br_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
+      WHEN 'CM' THEN api.cm_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
+      WHEN 'CO' THEN api.co_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
     END
   FROM regexp_split_to_array(p_code,'~') u,
   LATERAL str_geocodeiso_decode(u[1]) l
@@ -522,7 +521,6 @@ COMMENT ON FUNCTION api.afacode_decode_log(text)
   IS 'Decode Postal OSMcode. Wrap for afacode_decode_log.'
 ;
 -- EXPLAIN ANALYZE SELECT api.afacode_decode_log('CO-BOY-Tunja~44QZNW');
-
 
 ------------------
 -- api jurisdiction coverage:

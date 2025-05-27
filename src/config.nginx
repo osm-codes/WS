@@ -275,10 +275,10 @@ server {
     # encode logistics
     location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?\.json(/[a-z]{2}-[a-z0-9]{1,3}-[a-z0-9]+)?$" {
         ### sem grid
-        rewrite "^/(geo:.*);(u=.*)\.json$"      "/rpc/osmcode_encode?uri=$1%3B$2&grid=0" break;
-        rewrite "^/(geo:.*)\.json$"             "/rpc/osmcode_encode?uri=$1&grid=0" break;
-        rewrite "^/(geo:.*);(u=.*)\.json/(.+)$" "/rpc/osmcode_encode_postal?uri=$1%3B$2&grid=0&p_isolabel_ext=$3" break;
-        rewrite "^/(geo:.*)\.json/(.+)$"        "/rpc/osmcode_encode_postal?uri=$1&grid=0&p_isolabel_ext=$2" break;
+        rewrite "^/(geo:.*);(u=.*)\.json$"      "/rpc/afacode_encode_log_no_context?uri=$1%3B$2&grid=0" break;
+        rewrite "^/(geo:.*)\.json$"             "/rpc/afacode_encode_log_no_context?uri=$1&grid=0" break;
+        rewrite "^/(geo:.*);(u=.*)\.json/(.+)$" "/rpc/afacode_encode_log?uri=$1%3B$2&grid=0&p_isolabel_ext=$3" break;
+        rewrite "^/(geo:.*)\.json/(.+)$"        "/rpc/afacode_encode_log?uri=$1&grid=0&p_isolabel_ext=$2" break;
         proxy_pass http://test_backend;
     }
 
@@ -299,16 +299,15 @@ server {
         proxy_pass http://test_backend;
     }
 
-    # decode
+    # decode scientific
     location ~* "^/geo:afa:([a-z]{2})(~|\+)([a-z0-9,\{\}\.]+)\.json$" {
-        rewrite "(?i)^/geo:afa:([a-z]{2})\+(.*)\.json$"  /rpc/afacode_decode_with_prefix?p_code=$2&p_iso=$1 break; # scientific absoluto 16h
-        rewrite "(?i)^/geo:afa:([a-z]{2})~(.*)\.json$"   /rpc/osmcode_decode_postal?p_code=$2&p_iso=$1 break; # logistic absoluto
+        rewrite "(?i)^/geo:afa:([a-z]{2})\+(.*)\.json$"  /rpc/afacode_decode_with_prefix?p_code=$2&p_iso=$1 break;
         proxy_pass http://test_backend;
     }
 
-    # decode logistic reduzido (CO-ANT-Itagui, CO-A-Itagui) divipola/ibgegeocodigo/cmcode
+    # decode logistic (CO-ANT-Itagui, CO-A-Itagui) divipola/ibgegeocodigo/cmcode
     location ~* "^/(geo:afa:)?(([a-z]{2}((-[a-z0-9]+){1,2})))(~|-)([a-z0-9]+)\.json$" {
-        rewrite "(?i)^/(geo:afa:)?(.+)(~|-)(.+)\.json$" /rpc/osmcode_decode_postal?p_code=$4&p_iso=$2 break;
+        rewrite "(?i)^/(geo:afa:)?(.+)\.json$" /rpc/afacode_decode_log?p_code=$2 break;
         proxy_pass http://test_backend;
     }
 

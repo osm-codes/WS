@@ -313,7 +313,7 @@ server {
 
     # geo:iso_ext
     location ~* "^/(geo:iso_ext:)?([a-z]{2}((-[a-z0-9]+){0,2}))\.json(/cover(/base16h)?)?$" {
-        rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json$" /rpc/jurisdiction_geojson_from_isolabel?p_code=$2 break;
+        rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json$"                 /rpc/jurisdiction_geojson_from_isolabel?p_code=$2 break;
         rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json/cover$"           /rpc/jurisdiction_coverage?p_iso=$2           break;
         rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json/cover/base16h$"   /rpc/jurisdiction_coverage?p_iso=$2&p_base=16 break;
         proxy_pass http://test_backend;

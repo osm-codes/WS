@@ -312,10 +312,9 @@ server {
     }
 
     # geo:iso_ext
-    location ~* "^/(geo:iso_ext:)?([a-z]{2}((-[a-z0-9]+){0,2}))\.json(/cover(/base16h)?)?$" {
+    location ~* "^/(geo:iso_ext:)?([a-z]{2}((-[a-z0-9]+){0,2}))\.json(/cover)?$" {
         rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json$"                 /rpc/jurisdiction_geojson_from_isolabel?p_code=$2 break;
         rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json/cover$"           /rpc/jurisdiction_coverage?p_iso=$2           break;
-        rewrite "(?i)^/(geo:iso_ext:)?(.+)\.json/cover/base16h$"   /rpc/jurisdiction_coverage?p_iso=$2&p_base=16 break;
         proxy_pass http://test_backend;
     }
 
@@ -326,15 +325,14 @@ server {
     }
 
     # geo:co-divipola|br-geocodigo
-    location ~* "^/(geo:(co-divipola|br-geocodigo|cm-code):[0-9]+)\.json(/cover(/base16h)?)?$" {
+    location ~* "^/(geo:(co-divipola|br-geocodigo|cm-code):[0-9]+)\.json(/cover?)?$" {
         rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json$"                 /rpc/jurisdiction_geojson_from_isolabel?p_code=$1$3 break;
         rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json/cover$"           /rpc/jurisdiction_coverage?p_iso=$1$3 break;
-        rewrite "(?i)^/geo:((co|br|cm)-).+:([0-9]+)\.json/cover/base16h$"   /rpc/jurisdiction_coverage?p_iso=$1$3&p_base=16 break;
         proxy_pass http://test_backend;
     }
 
     # (urn|geo):lex
-    location ~* "^/(urn|geo):lex:([a-z]{2}(;[a-z0-9\.]+)?(;[a-z0-9\.]+)?)\.json(/cover/base16h)?$" {
+    location ~* "^/(urn|geo):lex:([a-z]{2}(;[a-z0-9\.]+)?(;[a-z0-9\.]+)?)\.json(/cover)?$" {
         rewrite "(?i)^/(urn|geo):lex:([a-z]{2})\.json$"
             /rpc/jurisdiction_geojson_from_isolabel?p_code=$2  break;
 
@@ -351,20 +349,20 @@ server {
             /rpc/jurisdiction_geojson_from_isolabel?p_code=$2%3B$3%3B$4  break;
 
 
-        rewrite "(?i)^/(urn|geo):lex:([a-z]{2})\.json/cover/base16h$"
-            /rpc/jurisdiction_coverage?p_iso=$2&p_base=16  break;
+        rewrite "(?i)^/(urn|geo):lex:([a-z]{2})\.json/cover$"
+            /rpc/jurisdiction_coverage?p_iso=$2  break;
 
-        rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z0-9]{2})\.json/cover/base16h$"
-            /rpc/jurisdiction_coverage?p_iso=$2%3B$3&p_base=16  break;
+        rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z0-9]{2})\.json/cover$"
+            /rpc/jurisdiction_coverage?p_iso=$2%3B$3  break;
 
-        rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z0-9]{2});([a-z0-9\.]+)\.json/cover/base16h$"
-            /rpc/jurisdiction_coverage?p_iso=$2%3B$3%3B$4&p_base=16  break;
+        rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z0-9]{2});([a-z0-9\.]+)\.json/cover$"
+            /rpc/jurisdiction_coverage?p_iso=$2%3B$3%3B$4  break;
 
-        rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z0-9\.]{3,})\.json/cover/base16h$"
-            /rpc/jurisdiction_coverage?p_iso=$2%3B$3&p_base=16  break;
+        rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z0-9\.]{3,})\.json/cover$"
+            /rpc/jurisdiction_coverage?p_iso=$2%3B$3  break;
 
-        rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z0-9\.]{3,});([a-z0-9\.]+)?\.json/cover/base16h$"
-            /rpc/jurisdiction_coverage?p_iso=$2%3B$3%3B$4&p_base=16  break;
+        rewrite "(?i)^/(urn|geo):lex:([a-z]{2});([a-z0-9\.]{3,});([a-z0-9\.]+)?\.json/cover$"
+            /rpc/jurisdiction_coverage?p_iso=$2%3B$3%3B$4  break;
 
 
         proxy_pass http://test_backend;

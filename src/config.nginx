@@ -275,10 +275,10 @@ server {
     # encode logistics
     location ~* "^/geo:\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?\.json(/[a-z]{2}-[a-z0-9]{1,3}-[a-z0-9]+)?$" {
         ### sem grid
-        rewrite "^/(geo:.*);(u=.*)\.json$"      "/rpc/afacode_encode_log_no_context?uri=$1%3B$2&grid=0" break;
-        rewrite "^/(geo:.*)\.json$"             "/rpc/afacode_encode_log_no_context?uri=$1&grid=0" break;
-        rewrite "^/(geo:.*);(u=.*)\.json/(.+)$" "/rpc/afacode_encode_log?uri=$1%3B$2&grid=0&p_isolabel_ext=$3" break;
-        rewrite "^/(geo:.*)\.json/(.+)$"        "/rpc/afacode_encode_log?uri=$1&grid=0&p_isolabel_ext=$2" break;
+        rewrite "^/(geo:.*);(u=.*)\.json$"      "/rpc/afacode_encode_log_no_context?p_uri=$1%3B$2&p_grid=0" break;
+        rewrite "^/(geo:.*)\.json$"             "/rpc/afacode_encode_log_no_context?p_uri=$1&p_grid=0" break;
+        rewrite "^/(geo:.*);(u=.*)\.json/(.+)$" "/rpc/afacode_encode_log?p_uri=$1%3B$2&p_grid=0&p_isolabel_ext=$3" break;
+        rewrite "^/(geo:.*)\.json/(.+)$"        "/rpc/afacode_encode_log?p_uri=$1&p_grid=0&p_isolabel_ext=$2" break;
         proxy_pass http://test_backend;
     }
 
@@ -301,7 +301,7 @@ server {
 
     # decode scientific
     location ~* "^/geo:afa:([a-z]{2})(~|\+)([a-z0-9,\{\}\.]+)\.json$" {
-        rewrite "(?i)^/geo:afa:([a-z]{2})\+(.*)\.json$"  /rpc/afacode_decode_with_prefix?p_code=$2&p_iso=$1 break;
+        rewrite "(?i)^/geo:afa:([a-z]{2})\+(.*)\.json$"  /rpc/afacode_decode?p_code=$2&p_iso=$1 break;
         proxy_pass http://test_backend;
     }
 

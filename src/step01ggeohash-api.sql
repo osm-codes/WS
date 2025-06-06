@@ -637,7 +637,7 @@ CREATE or replace FUNCTION api.jurisdiction_coverage(
     END
   FROM str_geocodeiso_decode(p_iso) l
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.jurisdiction_coverage(text,int)
+COMMENT ON FUNCTION api.jurisdiction_coverage(text)
   IS 'Returns jurisdiction coverage.'
 ;
 

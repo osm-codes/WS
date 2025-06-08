@@ -66,6 +66,27 @@ $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.co_afacode_encode(float,float,float)
   IS 'Encodes lat/lon to AFAcode grid scientific for Colombia.';
 
+CREATE or replace FUNCTION api.sv_afacode_encode(
+  p_lat   float,
+  p_lon   float,
+  p_level int
+) RETURNS jsonb AS $f$
+  SELECT
+    jsonb_build_object('type','FeatureCollection','features',jsonb_agg(jsonb_build_object(
+      'type','Feature',
+      'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
+      'id',v.id,
+      'properties',jsonb_build_object(
+          'area',l.area,
+          'side',l.side,
+          'jurisd_base_id',222,
+          'isolabel_ext','SV'))))::jsonb
+    FROM (SELECT afa.sv_encode(p_lat,p_lon,p_level), afa.sv_cell_area(p_level), afa.sv_cell_side(p_level)) l(hbig,area,side),
+    LATERAL (SELECT afa.hBig_to_hex(hbig), afa.sv_decode(hbig)) v(id,geom)
+$f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
+COMMENT ON FUNCTION api.sv_afacode_encode(float,float,float)
+  IS 'Encodes lat/lon to AFAcode grid scientific for El Salvador.';
+
 CREATE or replace FUNCTION api.afacode_encode(
   p_uri  text,
   p_grid int  DEFAULT 0,
@@ -76,6 +97,7 @@ CREATE or replace FUNCTION api.afacode_encode(
       WHEN 'BR' THEN api.br_afacode_encode(u[1],u[2],COALESCE(afa.br_cell_nearst_level(u[3]),40))
       WHEN 'CM' THEN api.cm_afacode_encode(u[1],u[2],COALESCE(afa.cm_cell_nearst_level(u[3]),36))
       WHEN 'CO' THEN api.co_afacode_encode(u[1],u[2],COALESCE(afa.co_cell_nearst_level(u[3]),38))
+      WHEN 'SV' THEN api.sv_afacode_encode(u[1],u[2],COALESCE(afa.sv_cell_nearst_level(u[3]),32))
       ELSE jsonb_build_object('error', 'Jurisdiction not supported.')
     END
   FROM str_geouri_decode_new(p_uri) t(u)
@@ -149,6 +171,28 @@ $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.co_afacode_decode(text)
   IS 'Decodes a scientific AFAcode for Colombia.';
 
+CREATE or replace FUNCTION api.sv_afacode_decode(
+   p_code text
+) RETURNS jsonb AS $f$
+  SELECT
+    jsonb_build_object('type','FeatureCollection','features',jsonb_agg(jsonb_build_object(
+      'type','Feature',
+      'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
+      'id',v.id,
+      'properties',jsonb_build_object(
+          'area',l.area,
+          'side',l.side,
+          'jurisd_base_id',222,
+          'isolabel_ext', 'SV',
+          'truncated_code',(CASE WHEN length(id) <> length(code) THEN TRUE ELSE FALSE END)))))::jsonb
+  FROM regexp_split_to_table(p_code,',') code,
+  LATERAL (SELECT afa.sv_hex_to_hBig(substring(code,1,9))) m(hbig),
+  LATERAL (SELECT afa.hBig_to_hex(hbig), afa.sv_decode(hbig), afa.sv_hBig_to_xyLRef(hbig)) v(id,geom,xyL),
+  LATERAL (SELECT afa.sv_cell_area(xyL[3]), afa.sv_cell_side(xyL[3])) l(area,side)
+$f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
+COMMENT ON FUNCTION api.sv_afacode_decode(text)
+  IS 'Decodes a scientific AFAcode for El Salvador.';
+
 CREATE or replace FUNCTION api.afacode_decode(
   p_code text,
   p_iso  text DEFAULT NULL
@@ -158,6 +202,7 @@ CREATE or replace FUNCTION api.afacode_decode(
       WHEN 'BR' THEN api.br_afacode_decode(list)
       WHEN 'CM' THEN api.cm_afacode_decode(list)
       WHEN 'CO' THEN api.co_afacode_decode(list)
+      WHEN 'SV' THEN api.sv_afacode_decode(list)
       ELSE jsonb_build_object('error', 'Jurisdiction not supported.')
     END
   FROM natcod.reduxseq_to_list(p_code) u(list)
@@ -277,6 +322,34 @@ $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.co_afacode_encode_log(float,float,float,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for Colombia.';
 
+CREATE or replace FUNCTION api.sv_afacode_encode_log(
+  p_lat   float,
+  p_lon   float,
+  p_level int,
+  p_isolabel_ext text
+) RETURNS jsonb AS $f$
+    SELECT
+      jsonb_build_object('type','FeatureCollection','features',jsonb_agg(jsonb_build_object(
+        'type','Feature',
+        'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
+        'id',v.id,
+        'properties',jsonb_build_object(
+            'area',l.area,
+            'side',l.side,
+            'jurisd_base_id',170,
+            'isolabel_ext',p_isolabel_ext,
+            'isolabel_ext_abbrev',default_abbrev,
+            'logistic_id', p_isolabel_ext || '~' || cindex || natcod.vbit_to_strstd( substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'32nvu')
+            -- 'jurisd_local_id', jurisd_local_id
+          ))))::jsonb
+    FROM (SELECT afa.sv_encode(p_lat,p_lon,p_level), afa.sv_cell_area(p_level), afa.sv_cell_side(p_level)) l(hbig,area,side),
+    LATERAL (SELECT afa.hBig_to_hex(hbig), afa.sv_decode(hbig)) v(id,geom),
+    LATERAL (SELECT cindex, cbits FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits),
+    LATERAL (SELECT abbrev FROM mvwjurisdiction_synonym_default_abbrev x WHERE x.isolabel_ext = p_isolabel_ext) c(default_abbrev)
+$f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
+COMMENT ON FUNCTION api.sv_afacode_encode_log(float,float,float,text)
+  IS 'Encodes lat/lon to a Logistics AFAcode for El Savador.';
+
 CREATE or replace FUNCTION api.afacode_encode_log(
   p_uri  text,
   p_grid int  DEFAULT 0,
@@ -287,6 +360,7 @@ CREATE or replace FUNCTION api.afacode_encode_log(
       WHEN 'BR' THEN api.br_afacode_encode_log(u[1],u[2],COALESCE(ROUND((      (afa.br_cell_nearst_level(u[3])  )    /5)*5),35),p_isolabel_ext)
       WHEN 'CM' THEN api.cm_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.cm_cell_nearst_level(u[3])+1),36)/5)*5),31),p_isolabel_ext)
       WHEN 'CO' THEN api.co_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.co_cell_nearst_level(u[3])+3),38)/5)*5),33),p_isolabel_ext)
+      WHEN 'SV' THEN api.sv_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.sv_cell_nearst_level(u[3])  ),32)/4)*4),28),p_isolabel_ext)
       ELSE jsonb_build_object('error', 'Jurisdiction not supported.')
     END
   FROM str_geouri_decode_new(p_uri) t(u)
@@ -519,6 +593,42 @@ $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.co_afacode_decode_log(text,text)
   IS 'Decodes a logistic AFAcode for Colombia. Requiring prior jurisdictional context.';
 
+CREATE or replace FUNCTION api.sv_afacode_decode_log(
+   p_code          text,
+   p_isolabel_ext  text
+) RETURNS jsonb AS $f$
+  SELECT
+      jsonb_build_object('type','FeatureCollection','features',jsonb_agg(jsonb_build_object(
+        'type','Feature',
+        'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
+        'id',v.id,
+        'properties',jsonb_build_object(
+            'area',area,
+            'side',side,
+            'jurisd_base_id',jurisd_base_id,
+            'isolabel_ext',p_isolabel_ext,
+            'isolabel_ext_abbrev',abbrev,
+            'logistic_id', abbrev || '~' || p_code,
+            -- 'truncated_code',truncated_code,
+            'jurisd_local_id', jurisd_local_id
+          )
+      )))::jsonb
+  FROM
+  (
+    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
+    FROM osmc.coverage c
+    LEFT JOIN optim.jurisdiction j                     ON c.isolabel_ext = j.isolabel_ext
+    LEFT JOIN mvwjurisdiction_synonym_default_abbrev x ON c.isolabel_ext = x.isolabel_ext
+    WHERE is_country IS FALSE
+      AND c.isolabel_ext = p_isolabel_ext
+      AND cindex = substring(p_code,1,1)
+  ) j,
+  LATERAL (SELECT afa.hBig_to_hex(j.hbig), afa.sv_decode(j.hbig), ((j.hbig)::bit(6))::int - 12) v(id,geom,id_length),
+  LATERAL (SELECT afa.sv_cell_area(v.id_length), afa.sv_cell_side(v.id_length)) l(area,side)
+$f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
+COMMENT ON FUNCTION api.sv_afacode_decode_log(text,text)
+  IS 'Decodes a logistic AFAcode for El Salvador. Requiring prior jurisdictional context.';
+
 CREATE or replace FUNCTION api.afacode_decode_log(
    p_code text
 ) RETURNS jsonb AS $wrap$
@@ -527,6 +637,7 @@ CREATE or replace FUNCTION api.afacode_decode_log(
       WHEN 'BR' THEN api.br_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
       WHEN 'CM' THEN api.cm_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
       WHEN 'CO' THEN api.co_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
+      WHEN 'SV' THEN api.sv_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
       ELSE jsonb_build_object('error', 'Jurisdiction not supported.')
     END
   FROM regexp_split_to_array(p_code,'~') u,
@@ -535,7 +646,6 @@ $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.afacode_decode_log(text)
   IS 'Wrapper for country-specific Logistics AFAcode decoders.';
 -- EXPLAIN ANALYZE SELECT api.afacode_decode_log('CO-BOY-Tunja~44QZNW');
-
 
 ------------------
 -- api jurisdiction coverage:
@@ -647,48 +757,45 @@ COMMENT ON FUNCTION api.jurisdiction_coverage(text)
 CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel(
    p_code text
 ) RETURNS jsonb AS $f$
-    SELECT jsonb_build_object(
-        'type', 'FeatureCollection',
-        'features',
-            (
-                jsonb_agg(ST_AsGeoJSONb(
-                    geom,8,0,null,
-                    jsonb_build_object(
-                        'osm_id', osm_id,
-                        'jurisd_base_id', jurisd_base_id,
-                        'jurisd_local_id', jurisd_local_id,
-                        'parent_id', parent_id,
-                        'admin_level', admin_level,
-                        'name', name,
-                        'parent_abbrev', parent_abbrev,
-                        'abbrev', abbrev,
-                        'wikidata_id', wikidata_id,
-                        'lexlabel', lexlabel,
-                        'isolabel_ext', isolabel_ext,
-                        'lex_urn', lex_urn,
-                        'name_en', name_en,
-                        'isolevel', isolevel,
-                        'area', info->'area_km2',
-                        'shares_border_with', info->'shares_border_with',
-                        'size_shortestprefix', size_shortestprefix,
-                        'canonical_pathname', CASE WHEN jurisd_base_id=170 THEN 'CO-'|| jurisd_local_id ELSE isolabel_ext END
-                        )
-                    )::jsonb)
-            )
-        )
-    FROM optim.vw01full_jurisdiction_geom g,
-
+    SELECT
+      jsonb_build_object('type','FeatureCollection','features',jsonb_build_object(
+        'type','Feature',
+        'geometry',ST_AsGeoJSON(g.geom,8,0)::jsonb,
+        'properties',jsonb_build_object(
+                'osm_id', g.osm_id,
+                'jurisd_base_id', jurisd_base_id,
+                'jurisd_local_id', jurisd_local_id,
+                'parent_id', parent_id,
+                'admin_level', admin_level,
+                'name', name,
+                'parent_abbrev', parent_abbrev,
+                'abbrev', abbrev,
+                'wikidata_id', wikidata_id,
+                'lexlabel', lexlabel,
+                'isolabel_ext', g.isolabel_ext,
+                'lex_urn', lex_urn,
+                'name_en', name_en,
+                'isolevel', isolevel,
+                'area', info->'area_km2',
+                'shares_border_with', info->'shares_border_with',
+                'min_level', min_level,
+                'canonical_pathname', CASE WHEN jurisd_base_id=170 THEN 'CO-'|| jurisd_local_id ELSE g.isolabel_ext END
+          )
+      ))::jsonb
+    FROM str_geocodeiso_decode(p_code) l
+    LEFT JOIN optim.jurisdiction j
+    ON l[1] = j.isolabel_ext
+    LEFT JOIN optim.jurisdiction_geom g
+    ON j.osm_id = g.osm_id,
     LATERAL
     (
-      SELECT MIN(LENGTH(kx_prefix)) AS size_shortestprefix
+      SELECT MIN(((cbits)::bit(6))::int - 12) AS min_level
       FROM osmc.coverage
-      WHERE isolabel_ext = g.isolabel_ext AND is_overlay IS FALSE
+      WHERE isolabel_ext = l[1] AND is_overlay IS FALSE
     ) s
-
-    WHERE g.isolabel_ext = (SELECT (str_geocodeiso_decode(p_code))[1])
 $f$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.jurisdiction_geojson_from_isolabel(text)
-  IS 'Return jurisdiction geojson from isolabel_ext. With size_shortestprefix.'
+  IS 'Return jurisdiction geojson from isolabel_ext. With min_level.'
 ;
 /*
 SELECT api.jurisdiction_geojson_from_isolabel('BR-SP-Campinas');

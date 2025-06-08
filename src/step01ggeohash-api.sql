@@ -21,7 +21,7 @@ CREATE or replace FUNCTION api.br_afacode_encode(
     FROM (SELECT afa.br_encode(p_lat,p_lon,p_level), afa.br_cell_area(p_level), afa.br_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig), afa.br_decode(hbig)) v(id,geom)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.br_afacode_encode(float,float,float)
+COMMENT ON FUNCTION api.br_afacode_encode(float,float,int)
   IS 'Encodes lat/lon to AFAcode grid scientific for Brazil.';
 
 CREATE or replace FUNCTION api.cm_afacode_encode(
@@ -42,7 +42,7 @@ CREATE or replace FUNCTION api.cm_afacode_encode(
     FROM (SELECT afa.cm_encode(p_lat,p_lon,p_level), afa.cm_cell_area(p_level), afa.cm_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig), afa.cm_decode(hbig)) v(id,geom)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.cm_afacode_encode(float,float,float)
+COMMENT ON FUNCTION api.cm_afacode_encode(float,float,int)
   IS 'Encodes lat/lon to AFAcode grid scientific for Cameroon.';
 
 CREATE or replace FUNCTION api.co_afacode_encode(
@@ -63,7 +63,7 @@ CREATE or replace FUNCTION api.co_afacode_encode(
     FROM (SELECT afa.co_encode(p_lat,p_lon,p_level), afa.co_cell_area(p_level), afa.co_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig), afa.co_decode(hbig)) v(id,geom)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.co_afacode_encode(float,float,float)
+COMMENT ON FUNCTION api.co_afacode_encode(float,float,int)
   IS 'Encodes lat/lon to AFAcode grid scientific for Colombia.';
 
 CREATE or replace FUNCTION api.sv_afacode_encode(
@@ -84,7 +84,7 @@ CREATE or replace FUNCTION api.sv_afacode_encode(
     FROM (SELECT afa.sv_encode(p_lat,p_lon,p_level), afa.sv_cell_area(p_level), afa.sv_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig), afa.sv_decode(hbig)) v(id,geom)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.sv_afacode_encode(float,float,float)
+COMMENT ON FUNCTION api.sv_afacode_encode(float,float,int)
   IS 'Encodes lat/lon to AFAcode grid scientific for El Salvador.';
 
 CREATE or replace FUNCTION api.afacode_encode(
@@ -263,7 +263,7 @@ CREATE or replace FUNCTION api.br_afacode_encode_log(
     LATERAL (SELECT cindex, cbits FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits),
     LATERAL (SELECT abbrev FROM mvwjurisdiction_synonym_default_abbrev x WHERE x.isolabel_ext = p_isolabel_ext) c(default_abbrev)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.br_afacode_encode_log(float,float,float,text)
+COMMENT ON FUNCTION api.br_afacode_encode_log(float,float,int,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for Brazil.';
 
 CREATE or replace FUNCTION api.cm_afacode_encode_log(
@@ -291,7 +291,7 @@ CREATE or replace FUNCTION api.cm_afacode_encode_log(
     LATERAL (SELECT cindex, cbits FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits),
     LATERAL (SELECT abbrev FROM mvwjurisdiction_synonym_default_abbrev x WHERE x.isolabel_ext = p_isolabel_ext) c(default_abbrev)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.cm_afacode_encode_log(float,float,float,text)
+COMMENT ON FUNCTION api.cm_afacode_encode_log(float,float,int,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for Cameroon.';
 
 CREATE or replace FUNCTION api.co_afacode_encode_log(
@@ -319,7 +319,7 @@ CREATE or replace FUNCTION api.co_afacode_encode_log(
     LATERAL (SELECT cindex, cbits FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits),
     LATERAL (SELECT abbrev FROM mvwjurisdiction_synonym_default_abbrev x WHERE x.isolabel_ext = p_isolabel_ext) c(default_abbrev)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.co_afacode_encode_log(float,float,float,text)
+COMMENT ON FUNCTION api.co_afacode_encode_log(float,float,int,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for Colombia.';
 
 CREATE or replace FUNCTION api.sv_afacode_encode_log(
@@ -347,7 +347,7 @@ CREATE or replace FUNCTION api.sv_afacode_encode_log(
     LATERAL (SELECT cindex, cbits FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits),
     LATERAL (SELECT abbrev FROM mvwjurisdiction_synonym_default_abbrev x WHERE x.isolabel_ext = p_isolabel_ext) c(default_abbrev)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.sv_afacode_encode_log(float,float,float,text)
+COMMENT ON FUNCTION api.sv_afacode_encode_log(float,float,int,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for El Savador.';
 
 CREATE or replace FUNCTION api.afacode_encode_log(
@@ -360,7 +360,7 @@ CREATE or replace FUNCTION api.afacode_encode_log(
       WHEN 'BR' THEN api.br_afacode_encode_log(u[1],u[2],COALESCE(ROUND((      (afa.br_cell_nearst_level(u[3])  )    /5)*5),35),p_isolabel_ext)
       WHEN 'CM' THEN api.cm_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.cm_cell_nearst_level(u[3])+1),36)/5)*5),31),p_isolabel_ext)
       WHEN 'CO' THEN api.co_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.co_cell_nearst_level(u[3])+3),38)/5)*5),33),p_isolabel_ext)
-      WHEN 'SV' THEN api.sv_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.sv_cell_nearst_level(u[3])  ),32)/4)*4),28),p_isolabel_ext)
+      -- WHEN 'SV' THEN api.sv_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.sv_cell_nearst_level(u[3])  ),32)/4)*4),28),p_isolabel_ext)
       ELSE jsonb_build_object('error', 'Jurisdiction not supported.')
     END
   FROM str_geouri_decode_new(p_uri) t(u)
@@ -615,7 +615,7 @@ CREATE or replace FUNCTION api.sv_afacode_decode_log(
       )))::jsonb
   FROM
   (
-    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
+    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) ||  afa.hex_to_hBig(substring(p_code,2)) ) AS hbig
     FROM osmc.coverage c
     LEFT JOIN optim.jurisdiction j                     ON c.isolabel_ext = j.isolabel_ext
     LEFT JOIN mvwjurisdiction_synonym_default_abbrev x ON c.isolabel_ext = x.isolabel_ext

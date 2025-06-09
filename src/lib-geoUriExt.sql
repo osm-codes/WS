@@ -915,7 +915,7 @@ CREATE or replace FUNCTION natcod.list_to_reduxseq(
   )
   FROM final
 $f$ language SQL IMMUTABLE;
-COMMENT ON FUNCTION natcod.list_to_reduxseq(text[],int)
+COMMENT ON FUNCTION natcod.list_to_reduxseq(text[])
   IS 'Convert a comma-separated list of codes into reduxseq format. See https://wikifull.addressforall.org/doc/ReduxSeq_format.'
 ;
 

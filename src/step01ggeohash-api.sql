@@ -324,7 +324,7 @@ CREATE or replace FUNCTION osmc.sv_afacode_encode_log(
             'jurisd_base_id',170,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',default_abbrev,
-            'logistic_id', p_isolabel_ext || '~' || cindex || natcod.vbit_to_strstd( substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'32nvu')
+            'logistic_id', p_isolabel_ext || '~' || cindex || natcod.vbit_to_baseh( substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'16')
             -- 'jurisd_local_id', jurisd_local_id
           ))))::jsonb
     FROM (SELECT afa.sv_encode(p_lat,p_lon,p_level), afa.sv_cell_area(p_level), afa.sv_cell_side(p_level)) l(hbig,area,side),
@@ -518,7 +518,7 @@ CREATE or replace FUNCTION osmc.co_afacode_decode_log(
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.co_afacode_decode_log(text,text)
   IS 'Decodes a logistic AFAcode for Colombia. Requiring prior jurisdictional context.';
-/*
+
 CREATE or replace FUNCTION osmc.sv_afacode_decode_log(
    p_code          text,
    p_isolabel_ext  text
@@ -534,14 +534,14 @@ CREATE or replace FUNCTION osmc.sv_afacode_decode_log(
             'jurisd_base_id',jurisd_base_id,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbrev,
-            'logistic_id', abbrev || '~' || p_code,
+            'logistic_id', p_isolabel_ext || '~' || p_code,
             -- 'truncated_code',truncated_code,
             'jurisd_local_id', jurisd_local_id
           )
       )))::jsonb
   FROM
   (
-    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) ||  afa.hex_to_hBig(substring(p_code,2)) ) AS hbig
+    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.baseh_to_vbit(substring(p_code,2),'16') ) AS hbig
     FROM osmc.coverage c
     LEFT JOIN optim.jurisdiction j                     ON c.isolabel_ext = j.isolabel_ext
     LEFT JOIN mvwjurisdiction_synonym_default_abbrev x ON c.isolabel_ext = x.isolabel_ext
@@ -554,7 +554,6 @@ CREATE or replace FUNCTION osmc.sv_afacode_decode_log(
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.sv_afacode_decode_log(text,text)
   IS 'Decodes a logistic AFAcode for El Salvador. Requiring prior jurisdictional context.';
-*/
 
 CREATE or replace FUNCTION api.afacode_decode_log(
    p_code text
@@ -564,7 +563,7 @@ CREATE or replace FUNCTION api.afacode_decode_log(
       WHEN 'BR' THEN osmc.br_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
       WHEN 'CM' THEN osmc.cm_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
       WHEN 'CO' THEN osmc.co_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
-      --WHEN 'SV' THEN osmc.sv_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
+      WHEN 'SV' THEN osmc.sv_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
       ELSE jsonb_build_object('error', 'Jurisdiction not supported.')
     END
   FROM regexp_split_to_array(p_code,'~') u,
@@ -662,6 +661,34 @@ COMMENT ON FUNCTION osmc.co_jurisdiction_coverage(text)
   IS 'Returns jurisdiction coverage.'
 ;
 
+CREATE or replace FUNCTION osmc.sv_jurisdiction_coverage(
+   p_iso  text
+) RETURNS jsonb AS $f$
+  SELECT
+      jsonb_build_object('type','FeatureCollection','features',jsonb_agg(jsonb_build_object(
+        'type','Feature',
+        'geometry',ST_AsGeoJSON(ST_Transform(c.geom,4326),8,0)::jsonb,
+        'id', v.id,
+        'properties',jsonb_build_object(
+                'area', area,
+                'side', side,
+                'index', cindex,
+                'is_country', is_country,
+                'is_contained', is_contained,
+                'is_overlay', is_overlay,
+                'level', id_length
+          )
+      )))::jsonb
+
+  FROM osmc.coverage c,
+  LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.sv_decode(c.cbits), ((c.cbits)::bit(6))::int - 12 ) v(id,geom,id_length),
+  LATERAL (SELECT afa.sv_cell_area(v.id_length), afa.sv_cell_side(v.id_length)) l(area,side)
+  WHERE isolabel_ext = p_iso
+$f$ LANGUAGE SQL IMMUTABLE;
+COMMENT ON FUNCTION osmc.sv_jurisdiction_coverage(text)
+  IS 'Returns jurisdiction coverage.'
+;
+
 CREATE or replace FUNCTION api.jurisdiction_coverage(
    p_iso  text
 ) RETURNS jsonb AS $wrap$
@@ -670,6 +697,7 @@ CREATE or replace FUNCTION api.jurisdiction_coverage(
       WHEN 'BR' THEN osmc.br_jurisdiction_coverage( l[1] )
       WHEN 'CM' THEN osmc.cm_jurisdiction_coverage( l[1] )
       WHEN 'CO' THEN osmc.co_jurisdiction_coverage( l[1] )
+      WHEN 'SV' THEN osmc.sv_jurisdiction_coverage( l[1] )
       ELSE jsonb_build_object('error', 'Jurisdiction not supported.')
     END
   FROM str_geocodeiso_decode(p_iso) l

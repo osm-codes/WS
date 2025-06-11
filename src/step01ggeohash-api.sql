@@ -541,7 +541,7 @@ CREATE or replace FUNCTION osmc.sv_afacode_decode_log(
       )))::jsonb
   FROM
   (
-    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.baseh_to_vbit(substring(p_code,2),'16') ) AS hbig
+    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.baseh_to_vbit(substring(lower(p_code),2),'16') ) AS hbig, cbits
     FROM osmc.coverage c
     LEFT JOIN optim.jurisdiction j                     ON c.isolabel_ext = j.isolabel_ext
     LEFT JOIN mvwjurisdiction_synonym_default_abbrev x ON c.isolabel_ext = x.isolabel_ext

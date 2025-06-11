@@ -245,8 +245,8 @@ CREATE or replace FUNCTION osmc.br_afacode_encode_log(
           ))))::jsonb
     FROM (SELECT afa.br_encode(p_lat,p_lon,p_level), afa.br_cell_area(p_level), afa.br_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig), afa.br_decode(hbig)) v(id,geom),
-    LATERAL (SELECT cindex, cbits FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits),
-    LATERAL (SELECT abbrev FROM mvwjurisdiction_synonym_default_abbrev x WHERE x.isolabel_ext = p_isolabel_ext) c(default_abbrev)
+    LATERAL (SELECT cindex, cbits FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits)
+    LEFT JOIN LATERAL (SELECT abbrev FROM mvwjurisdiction_synonym_default_abbrev x WHERE x.isolabel_ext = p_isolabel_ext) c(default_abbrev) ON TRUE
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.br_afacode_encode_log(float,float,int,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for Brazil.';
@@ -361,7 +361,7 @@ CREATE or replace FUNCTION api.afacode_encode_log_no_context(
   decoded_point AS
   (
     SELECT ST_SetSRID(ST_MakePoint(a.udec[2],a.udec[1]),4326) AS pt
-    FROM str_geouri_decode(p_uri) a(udec)
+    FROM osmc.str_geouri_decode(p_uri) a(udec)
   ),
   candidate_bbox AS
   (

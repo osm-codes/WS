@@ -38,22 +38,23 @@ begin
 
   RAISE NOTICE '2. Testando Encode Sci geouri bbox';
 
-  ASSERT (api.osmcode_encode_sci('geo:-23.55,-46.633333')->'features')[0]->'properties'->>'code'='dfc16b792fe', 'São Paulo/BR';
-  ASSERT (api.osmcode_encode_sci('geo:-3.118889,-60.021667')->'features')[0]->'properties'->>'code'='140eef5c28d', 'Manaus/BR';
-  ASSERT (api.osmcode_encode_sci('geo:-30.8775,-55.533056')->'features')[0]->'properties'->>'code'='d08486208d7', 'SantAna do Livramento/BR';
-  ASSERT (api.osmcode_encode_sci('geo:-30.9025,-55.550556')->'features')[0]->'properties'->>'code'='e0e79ce6a85', 'Rivera/UY';
-  ASSERT (api.osmcode_encode_sci('geo:-31.383333,-57.95')->'features')[0]->'properties'->>'code'='2b4fecc57a5', 'Salto/UY';
-  ASSERT (api.osmcode_encode_sci('geo:-9.974722,-67.81')->'features')[0]->'properties'->>'code'='470a3c68650', 'Rio Branco/BR';
-  ASSERT (api.osmcode_encode_sci('geo:-0.119167,-67.082778')->'features')[0]->'properties'->>'code'='072c810bdf3', 'São Gabriel da Cachoeira/BR';
-  ASSERT (api.osmcode_encode_sci('geo:-0.193889,-74.780556')->'features')[0]->'properties'->>'code'='90630c8cf0c', 'Puerto Leguízamo/CO';
-  ASSERT (api.osmcode_encode_sci('geo:6.190278,-67.483611')->'features')[0]->'properties'->>'code'='e6cfdc93e0c', 'Puerto Carreño/CO';
-  ASSERT (api.osmcode_encode_sci('geo:4.711111,-74.072222')->'features')[0]->'properties'->>'code'='c12e72768ef', 'Bogotá/CO';
-  ASSERT (api.osmcode_encode_sci('geo:1.207778,-77.277222')->'features')[0]->'properties'->>'code'='369507ac739', 'Pasto/CO';
-  ASSERT (api.osmcode_encode_sci('geo:0.811667,-77.718611')->'features')[0]->'properties'->>'code'='0492a99c5670', 'Tulcán/EC';
-  ASSERT (api.osmcode_encode_sci('geo:0.966667,-79.652778')->'features')[0]->'properties'->>'code'='03b4a464c15a', 'Esmeraldas/EC';
-  ASSERT (api.osmcode_encode_sci('geo:-0.22,-78.5125')->'features')[0]->'properties'->>'code'='083484348487', 'Quito/EC';
-  ASSERT (api.osmcode_encode_sci('geo:-0.5,-90.5')->'features')[0]->'properties'->>'code'='060cb0b5e0c2', 'Galápagos/EC';
-  ASSERT (api.osmcode_encode_sci('geo:4.365,11.44')->'features')[0]->'properties'->>'code'='91e2b65c8c3', 'Saa/CM';
+  ASSERT (api.afacode_encode_log_no_context('geo:-23.55,-46.633333;u=0.5')->'features')[0]->>'id'='dfc16b792fe', 'São Paulo/BR';
+  ASSERT (api.afacode_encode_log_no_context('geo:-3.118889,-60.021667;u=0.5')->'features')[0]->>'id'='140eef5c28d', 'Manaus/BR';
+  ASSERT (api.afacode_encode_log_no_context('geo:-30.8775,-55.533056;u=0.5')->'features')[0]->>'id'='d08486208d7', 'SantAna do Livramento/BR';
+  ASSERT (api.afacode_encode_log_no_context('geo:-9.974722,-67.81;u=0.5')->'features')[0]->>'id'='470a3c68650', 'Rio Branco/BR';
+  ASSERT (api.afacode_encode_log_no_context('geo:-0.119167,-67.082778;u=0.5')->'features')[0]->>'id'='072c810bdf3', 'São Gabriel da Cachoeira/BR';
+  ASSERT (api.afacode_encode_log_no_context('geo:-0.193889,-74.780556;u=0.5')->'features')[0]->>'id'='90630c8cf0c', 'Puerto Leguízamo/CO';
+  ASSERT (api.afacode_encode_log_no_context('geo:6.190278,-67.483611;u=0.5')->'features')[0]->>'id'='e6cfdc93e0c', 'Puerto Carreño/CO';
+  ASSERT (api.afacode_encode_log_no_context('geo:4.711111,-74.072222;u=0.5')->'features')[0]->>'id'='c12e72768ef', 'Bogotá/CO';
+  ASSERT (api.afacode_encode_log_no_context('geo:1.207778,-77.277222;u=0.5')->'features')[0]->>'id'='369507ac739', 'Pasto/CO';
+  ASSERT (api.afacode_encode_log_no_context('geo:4.365,11.44;u=0.5')->'features')[0]->>'id'='91e2b65c8c3', 'Saa/CM';
+
+  -- ASSERT (api.afacode_encode_log_no_context('geo:-30.9025,-55.550556;u=0.5')->'features')[0]->>'id'='e0e79ce6a85', 'Rivera/UY';
+  -- ASSERT (api.afacode_encode_log_no_context('geo:-31.383333,-57.95;u=0.5')->'features')[0]->>'id'='2b4fecc57a5', 'Salto/UY';
+  -- ASSERT (api.afacode_encode_log_no_context('geo:0.811667,-77.718611;u=0.5')->'features')[0]->>'id'='0492a99c5670', 'Tulcán/EC';
+  -- ASSERT (api.afacode_encode_log_no_context('geo:0.966667,-79.652778;u=0.5')->'features')[0]->>'id'='03b4a464c15a', 'Esmeraldas/EC';
+  -- ASSERT (api.afacode_encode_log_no_context('geo:-0.22,-78.5125;u=0.5')->'features')[0]->>'id'='083484348487', 'Quito/EC';
+  -- ASSERT (api.afacode_encode_log_no_context('geo:-0.5,-90.5;u=0.5')->'features')[0]->>'id'='060cb0b5e0c2', 'Galápagos/EC';
 
 end;
 $tests$

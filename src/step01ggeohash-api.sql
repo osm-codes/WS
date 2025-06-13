@@ -601,8 +601,7 @@ CREATE or replace FUNCTION osmc.br_jurisdiction_coverage(
   WHERE isolabel_ext = p_iso
 $f$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION osmc.br_jurisdiction_coverage(text)
-  IS 'Returns jurisdiction coverage.'
-;
+  IS 'Returns jurisdiction coverage.';
 -- EXPLAIN ANALYZE SELECT osmc.br_jurisdiction_coverage('BR-SP-Campinas');
 
 CREATE or replace FUNCTION osmc.cm_jurisdiction_coverage(
@@ -630,8 +629,7 @@ CREATE or replace FUNCTION osmc.cm_jurisdiction_coverage(
   WHERE isolabel_ext = p_iso
 $f$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION osmc.cm_jurisdiction_coverage(text)
-  IS 'Returns jurisdiction coverage.'
-;
+  IS 'Returns jurisdiction coverage.';
 
 CREATE or replace FUNCTION osmc.co_jurisdiction_coverage(
    p_iso  text
@@ -658,8 +656,7 @@ CREATE or replace FUNCTION osmc.co_jurisdiction_coverage(
   WHERE isolabel_ext = p_iso
 $f$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION osmc.co_jurisdiction_coverage(text)
-  IS 'Returns jurisdiction coverage.'
-;
+  IS 'Returns jurisdiction coverage.';
 
 CREATE or replace FUNCTION osmc.sv_jurisdiction_coverage(
    p_iso  text
@@ -686,8 +683,7 @@ CREATE or replace FUNCTION osmc.sv_jurisdiction_coverage(
   WHERE isolabel_ext = p_iso
 $f$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION osmc.sv_jurisdiction_coverage(text)
-  IS 'Returns jurisdiction coverage.'
-;
+  IS 'Returns jurisdiction coverage.';
 
 CREATE or replace FUNCTION api.jurisdiction_coverage(
    p_iso  text
@@ -703,14 +699,36 @@ CREATE or replace FUNCTION api.jurisdiction_coverage(
   FROM str_geocodeiso_decode(p_iso) l
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.jurisdiction_coverage(text)
-  IS 'Returns jurisdiction coverage.'
-;
+  IS 'Returns jurisdiction coverage.';
+
+DROP MATERIALIZED VIEW IF EXISTS osmc.mvwjurisdiction_coverage;
+CREATE MATERIALIZED VIEW osmc.mvwjurisdiction_coverage AS
+SELECT isolabel_ext, api.jurisdiction_coverage(isolabel_ext) AS json
+FROM
+(
+  SELECT DISTINCT isolabel_ext
+  FROM osmc.coverage
+) c;
+COMMENT ON COLUMN osmc.mvwjurisdiction_coverage.isolabel_ext IS 'ISO and name (camel case); e.g. BR-SP-SaoPaulo.';
+COMMENT ON COLUMN osmc.mvwjurisdiction_coverage.json         IS 'Synonym for isolabel_ext, e.g. br;sao.paulo;sao.paulo br-saopaulo';
+COMMENT ON MATERIALIZED VIEW osmc.mvwjurisdiction_coverage   IS 'Synonymous default abbrev names of jurisdictions.';
+CREATE UNIQUE INDEX mvwjurisdiction_coverage_isolabel_ext ON osmc.mvwjurisdiction_coverage (isolabel_ext);
+
+CREATE or replace FUNCTION api.jurisdiction_coverage_cached(
+   p_iso  text
+) RETURNS jsonb AS $wrap$
+  SELECT json
+  FROM osmc.mvwjurisdiction_coverage
+  WHERE isolabel_ext = (str_geocodeiso_decode(p_iso))[1]
+$wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
+COMMENT ON FUNCTION api.jurisdiction_coverage_cached(text)
+  IS 'Returns jurisdiction coverage.';
 
 ------------------
 
 -- Add size_shortestprefix in https://github.com/digital-guard/preserv/src/optim-step4-api.sql[api.jurisdiction_geojson_from_isolabel]
 CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel(
-   p_code text
+   p_iso text
 ) RETURNS jsonb AS $f$
     SELECT
       jsonb_build_object('type','FeatureCollection','features',jsonb_build_object(
@@ -737,7 +755,7 @@ CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel(
                 'canonical_pathname', CASE WHEN jurisd_base_id=170 THEN 'CO-'|| jurisd_local_id ELSE g.isolabel_ext END
           )
       ))::jsonb
-    FROM str_geocodeiso_decode(p_code) l
+    FROM str_geocodeiso_decode(p_iso) l
     LEFT JOIN optim.jurisdiction j
     ON l[1] = j.isolabel_ext
     LEFT JOIN optim.jurisdiction_geom g
@@ -750,8 +768,7 @@ CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel(
     ) s
 $f$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.jurisdiction_geojson_from_isolabel(text)
-  IS 'Return jurisdiction geojson from isolabel_ext. With min_level.'
-;
+  IS 'Return jurisdiction geojson from isolabel_ext. With min_level.';
 /*
 SELECT api.jurisdiction_geojson_from_isolabel('BR-SP-Campinas');
 SELECT api.jurisdiction_geojson_from_isolabel('CO-ANT-Itagui');
@@ -759,36 +776,55 @@ SELECT api.jurisdiction_geojson_from_isolabel('CO-A-Itagui');
 SELECT api.jurisdiction_geojson_from_isolabel('CO-Itagui');
 */
 
+DROP MATERIALIZED VIEW IF EXISTS osmc.mvwjurisdiction_geojson_from_isolabel;
+CREATE MATERIALIZED VIEW osmc.mvwjurisdiction_geojson_from_isolabel AS
+SELECT isolabel_ext, api.jurisdiction_geojson_from_isolabel(isolabel_ext) AS json
+FROM
+(
+  SELECT DISTINCT isolabel_ext
+  FROM optim.jurisdiction
+) c;
+COMMENT ON COLUMN osmc.mvwjurisdiction_geojson_from_isolabel.isolabel_ext IS 'ISO and name (camel case); e.g. BR-SP-SaoPaulo.';
+COMMENT ON COLUMN osmc.mvwjurisdiction_geojson_from_isolabel.json         IS 'Synonym for isolabel_ext, e.g. br;sao.paulo;sao.paulo br-saopaulo';
+COMMENT ON MATERIALIZED VIEW osmc.mvwjurisdiction_geojson_from_isolabel   IS 'Synonymous default abbrev names of jurisdictions.';
+CREATE UNIQUE INDEX mvwjurisdiction_geojson_from_isolabel_isolabel_ext ON osmc.mvwjurisdiction_geojson_from_isolabel (isolabel_ext);
+
+CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel_cached(
+   p_iso  text
+) RETURNS jsonb AS $wrap$
+  SELECT json
+  FROM osmc.mvwjurisdiction_geojson_from_isolabel
+  WHERE isolabel_ext = (str_geocodeiso_decode(p_iso))[1]
+$wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
+COMMENT ON FUNCTION api.jurisdiction_geojson_from_isolabel_cached(text)
+  IS 'Returns jurisdiction coverage.';
+
+
 CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel2(
-   p_code text
+   p_iso text
 ) RETURNS jsonb AS $f$
-    SELECT jsonb_build_object(
-        'type', 'FeatureCollection',
-        'features',
-            (
-                jsonb_agg(ST_AsGeoJSONb(
-                    geom,
-                    8,0,null,
-                    jsonb_build_object(
-                        'osm_id', osm_id,
-                        'jurisd_base_id', jurisd_base_id,
-                        'jurisd_local_id', jurisd_local_id,
-                        'parent_id', parent_id,
-                        'admin_level', admin_level,
-                        'name', name,
-                        'parent_abbrev', parent_abbrev,
-                        'abbrev', abbrev,
-                        'wikidata_id', wikidata_id,
-                        'lexlabel', lexlabel,
-                        'isolabel_ext', isolabel_ext,
-                        'lex_urn', lex_urn,
-                        'name_en', name_en,
-                        'isolevel', isolevel,
-                        'area', info->'area_km2'
-                        )
-                    )::jsonb)
-            )
-        )
+    SELECT
+      jsonb_build_object('type','FeatureCollection','features',jsonb_build_object(
+        'type','Feature',
+        'geometry',ST_AsGeoJSON(g.geom,8,0)::jsonb,
+        'properties',jsonb_build_object(
+                'osm_id', g.osm_id,
+                'jurisd_base_id', jurisd_base_id,
+                'jurisd_local_id', jurisd_local_id,
+                'parent_id', parent_id,
+                'admin_level', admin_level,
+                'name', name,
+                'parent_abbrev', parent_abbrev,
+                'abbrev', abbrev,
+                'wikidata_id', wikidata_id,
+                'lexlabel', lexlabel,
+                'isolabel_ext', g.isolabel_ext,
+                'lex_urn', lex_urn,
+                'name_en', name_en,
+                'isolevel', isolevel,
+                'area', info->'area_km2'
+          )
+      ))::jsonb
     FROM
     (
       SELECT j.*, g.geom
@@ -796,15 +832,36 @@ CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel2(
       LEFT JOIN osmc.jurisdiction_geom_buffer_clipped g
       ON j.isolabel_ext = g.isolabel_ext
     ) g
-
-    WHERE g.isolabel_ext = (SELECT (str_geocodeiso_decode(p_code))[1])
+    WHERE g.isolabel_ext = (SELECT (str_geocodeiso_decode(p_iso))[1])
 $f$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.jurisdiction_geojson_from_isolabel2(text)
-  IS 'Return jurisdiction geojson from isolabel_ext. With size_shortestprefix.'
-;
+  IS 'Return jurisdiction geojson from isolabel_ext. With size_shortestprefix.';
 /*
 SELECT api.jurisdiction_geojson_from_isolabel2('BR-SP-Campinas');
 */
+
+DROP MATERIALIZED VIEW IF EXISTS osmc.mvwjurisdiction_geojson_from_isolabel2;
+CREATE MATERIALIZED VIEW osmc.mvwjurisdiction_geojson_from_isolabel2 AS
+SELECT isolabel_ext, api.jurisdiction_geojson_from_isolabel2(isolabel_ext) AS json
+FROM
+(
+  SELECT DISTINCT isolabel_ext
+  FROM optim.jurisdiction
+) c;
+COMMENT ON COLUMN osmc.mvwjurisdiction_geojson_from_isolabel2.isolabel_ext IS 'ISO and name (camel case); e.g. BR-SP-SaoPaulo.';
+COMMENT ON COLUMN osmc.mvwjurisdiction_geojson_from_isolabel2.json         IS 'Synonym for isolabel_ext, e.g. br;sao.paulo;sao.paulo br-saopaulo';
+COMMENT ON MATERIALIZED VIEW osmc.mvwjurisdiction_geojson_from_isolabel2   IS 'Synonymous default abbrev names of jurisdictions.';
+CREATE UNIQUE INDEX mvwjurisdiction_geojson_from_isolabel2_isolabel_ext ON osmc.mvwjurisdiction_geojson_from_isolabel2 (isolabel_ext);
+
+CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel2_cached(
+   p_iso  text
+) RETURNS jsonb AS $wrap$
+  SELECT json
+  FROM osmc.mvwjurisdiction_geojson_from_isolabel2
+  WHERE isolabel_ext = (str_geocodeiso_decode(p_iso))[1]
+$wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
+COMMENT ON FUNCTION api.jurisdiction_geojson_from_isolabel2_cached(text)
+  IS 'Returns jurisdiction coverage.';
 
 ------------------
 -- api hbig:
@@ -818,8 +875,7 @@ SELECT afa_id, split_part(isolabel_ext,'-',1) AS iso1, split_part(isolabel_ext,'
        geom_frontparcel, score
 FROM optim.consolidated_data p
 LEFT JOIN optim.vw01full_donated_packcomponent q
-ON p.id = q.id_component
-;
+ON p.id = q.id_component;
 COMMENT ON COLUMN api.consolidated_data.afa_id              IS 'AFAcodes scientific. 64bits format.';
 COMMENT ON COLUMN api.consolidated_data.iso1                IS 'ISO 3166-1 country code.';
 COMMENT ON COLUMN api.consolidated_data.iso2                IS 'ISO 3166-2 country subdivision code.';
@@ -835,7 +891,5 @@ COMMENT ON COLUMN api.consolidated_data.afacodes_scientific IS 'AFAcodes scienti
 -- COMMENT ON COLUMN api.consolidated_data.afacodes_logistic   IS 'AFAcodes logistic.';
 COMMENT ON COLUMN api.consolidated_data.geom_frontparcel    IS 'Flag. Indicates if geometry is in front of the parcel.';
 COMMENT ON COLUMN api.consolidated_data.score               IS '...';
-
 COMMENT ON VIEW api.consolidated_data
-  IS 'Returns consolidated data.'
-;
+  IS 'Returns consolidated data.';

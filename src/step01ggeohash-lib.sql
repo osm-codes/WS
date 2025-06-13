@@ -60,6 +60,7 @@ WHERE b.jurisd_base_id IS NULL
 ;
 ANALYZE osmc.jurisdiction_bbox_border;
 
+------------------------------------
 
 CREATE TABLE osmc.coverage (
   cbits          bigint,
@@ -94,6 +95,7 @@ COMMENT ON COLUMN osmc.coverage.geom             IS 'Coverage cell geometry on d
 COMMENT ON COLUMN osmc.coverage.geom_srid4326    IS 'Coverage cell geometry on 4326 srid. Used only case is_country=true.';
 COMMENT ON TABLE  osmc.coverage IS 'Jurisdictional coverage.';
 
+------------------------------------
 
 CREATE TABLE osmc.jurisdiction_geom_buffer_clipped (
   isolabel_ext text PRIMARY KEY,
@@ -105,6 +107,110 @@ CREATE INDEX osmc_jurisdiction_geom_buffer_clipped_idx1     ON osmc.jurisdiction
 CREATE INDEX osmc_jurisdiction_geom_buffer_clipped_isolabel_ext_idx1 ON osmc.jurisdiction_geom_buffer_clipped USING btree (isolabel_ext);
 COMMENT ON TABLE osmc.jurisdiction_geom_buffer_clipped IS 'OpenStreetMap geometries for optim.jurisdiction.';
 
+
+CREATE OR REPLACE FUNCTION osmc.refresh_jurisdiction_coverage_geom()
+RETURNS text AS $f$
+--TRUNCATE osmc.jurisdiction_geom_buffer_clipped;
+  INSERT INTO osmc.jurisdiction_geom_buffer_clipped
+  SELECT r.isolabel_ext, ST_Intersection(ST_Transform(s.geom,4326),r.geom)
+  FROM optim.jurisdiction_geom_buffer r
+  LEFT JOIN
+  (
+    SELECT isolabel_ext,
+      ST_Union(CASE split_part(isolabel_ext,'-',1)
+      WHEN 'BR' THEN afa.br_decode(cbits)
+      WHEN 'CM' THEN afa.cm_decode(cbits)
+      WHEN 'CO' THEN afa.co_decode(cbits)
+      WHEN 'SV' THEN afa.sv_decode(cbits)
+      END) AS geom
+    FROM osmc.coverage
+    GROUP BY isolabel_ext
+  ) s
+  ON r.isolabel_ext  = s.isolabel_ext
+
+  ON CONFLICT (isolabel_ext)
+  DO UPDATE SET geom = EXCLUDED.geom
+
+  RETURNING 'Ok.';
+$f$ LANGUAGE SQL;
+COMMENT ON FUNCTION osmc.refresh_jurisdiction_coverage_geom()
+  IS 'Atualiza as geometrias de cobertura por jurisdição a partir dos dados decodificados.';
+
+------------------------------------
+
+CREATE TABLE osmc.citycover_raw (
+  isolabel_ext text NOT NULL,
+  status int NOT NULL,
+  base_intlevel int,
+  cover text NOT NULL,
+  overlay text,
+  UNIQUE (isolabel_ext)
+);
+
+CREATE TABLE osmc.citycover_dust_raw (
+  dust_b16h text NOT NULL, -- PK. from gid
+  dust_city int NOT NULL,  -- PK. jurisd_local_id
+  dust_city_label text,  -- redundant. isolabel_ext
+  merge_score int,   -- redundant.
+  receptor_b16h text NOT NULL, -- important
+  receptor_city int NOT NULL, -- important
+  UNIQUE (dust_b16h,dust_city)
+);
+
+DROP VIEW IF EXISTS osmc.vw_citycover_dust_cell;
+CREATE VIEW osmc.vw_citycover_dust_cell AS
+  WITH dust2 AS
+  (
+    SELECT d.*,
+        g.isolabel_ext AS receptor_city_isolabel_ext,
+        split_part(dust_city_label,'-',1),
+        CASE split_part(dust_city_label,'-',1)
+          WHEN 'BR' THEN afa.br_decode(afa.br_hex_to_hBig(dust_b16h))
+          WHEN 'CM' THEN afa.cm_decode(afa.cm_hex_to_hBig(dust_b16h))
+          WHEN 'CO' THEN afa.co_decode(afa.co_hex_to_hBig(dust_b16h))
+          WHEN 'SV' THEN afa.sv_decode(afa.sv_hex_to_hBig(dust_b16h))
+        END AS cell_geom,
+        j.geom AS city_geom
+    FROM osmc.citycover_dust_raw d
+    LEFT JOIN optim.vw01full_jurisdiction_geom j
+    ON d.dust_city=j.jurisd_local_id AND d.dust_city_label = j.isolabel_ext AND j.isolevel=3
+    LEFT JOIN optim.vw01full_jurisdiction_geom g
+    ON d.receptor_city=g.jurisd_local_id AND split_part(d.dust_city_label,'-',1)  = split_part(g.isolabel_ext,'-',1) AND g.isolevel=3
+  )
+  SELECT dust2.dust_b16h,
+         dust2.dust_city,
+         dust2.receptor_city,
+         dust2.receptor_b16h,
+         dust2.dust_city_label,
+         dust2.receptor_city_isolabel_ext,
+         cell_geom,
+         ST_Intersection(dust2.cell_geom,ST_Transform(dust2.city_geom,ST_SRID(dust2.cell_geom))) as dust_geom
+ FROM dust2
+;
+
+CREATE OR REPLACE FUNCTION osmc.update_citycover_dust_cell()
+RETURNS text AS $f$
+  UPDATE osmc.coverage  -- aglutina a poeira ao receptor:
+  SET geom = t.newgeom
+  FROM
+  (
+    SELECT receptor_city_isolabel_ext, receptor_b16h, ST_Union(newgeom) AS newgeom
+    FROM
+    (
+      SELECT d.receptor_city, c.kx_prefix, d.receptor_b16h, d.receptor_city_isolabel_ext, ST_Union(c.geom,d.dust_geom) as newgeom
+      FROM osmc.coverage c -- celula receptora
+      INNER JOIN osmc.vw_citycover_dust_cell d
+      ON d.receptor_b16h=c.kx_prefix AND c.isolabel_ext = d.receptor_city_isolabel_ext
+    ) a
+    GROUP BY receptor_city_isolabel_ext, receptor_b16h
+  ) t
+  WHERE coverage.kx_prefix=t.receptor_b16h AND coverage.isolabel_ext=t.receptor_city_isolabel_ext
+  RETURNING 'Ok.';
+$f$ LANGUAGE SQL;
+COMMENT ON FUNCTION osmc.update_citycover_dust_cell()
+  IS '';
+
+------------------------------------
 
 CREATE OR REPLACE FUNCTION osmc.str_geouri_decode(uri TEXT) RETURNS float[] AS $f$
   SELECT regexp_match(uri,'^geo:(?:olc:|ghs:)?([-0-9\.]+),([-0-9\.]+)(?:;u=([-0-9\.]+))?','i')::float[]
@@ -137,7 +243,6 @@ CREATE or replace FUNCTION osmc.upsert_coverage(
 ) RETURNS text AS $f$
   DELETE FROM osmc.coverage WHERE isolabel_ext = p_isolabel_ext;
   INSERT INTO osmc.coverage(cbits,isolabel_ext,cindex,status,is_country,is_contained,is_overlay,kx_prefix,geom,geom_srid4326)
-
   SELECT cbits, isolabel_ext, cindex, status, is_country, is_contained, is_overlay, kx_prefix, geom, ST_Transform(geom,4326) AS geom_srid4326
   FROM
   (
@@ -156,10 +261,10 @@ CREATE or replace FUNCTION osmc.upsert_coverage(
     (
       SELECT is_overlay, prefix, hBig,
           CASE split_part(p_isolabel_ext,'-',1)
-            WHEN 'BR' THEN afa.br_decode(hbig)
-            WHEN 'CM' THEN afa.cm_decode(hbig)
-            WHEN 'CO' THEN afa.co_decode(hbig)
-            WHEN 'SV' THEN afa.sv_decode(hbig)
+            WHEN 'BR' THEN afa.br_decode(hBig)
+            WHEN 'CM' THEN afa.cm_decode(hBig)
+            WHEN 'CO' THEN afa.co_decode(hBig)
+            WHEN 'SV' THEN afa.sv_decode(hBig)
           END AS geom_cell
       FROM
       (

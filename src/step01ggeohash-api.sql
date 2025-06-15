@@ -401,7 +401,7 @@ CREATE or replace FUNCTION api.afacode_encode_log_no_context(
     FROM resolved_jurisdiction rj
   )
   SELECT api.afacode_encode_log(p_uri,p_grid,g.isolabel_ext)
-  FROM osmc.coverage g
+  FROM osmc.mvwcoverage g
   JOIN transformed_point e
   ON e.pt && g.geom
      AND g.isolabel_ext LIKE split_part(e.isolabel_ext,'-',1) || '%'
@@ -434,7 +434,7 @@ CREATE or replace FUNCTION osmc.br_afacode_decode_log(
   FROM
   (
     SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
-    FROM osmc.coverage c
+    FROM osmc.mvwcoverage c
     LEFT JOIN optim.jurisdiction j                     ON c.isolabel_ext = j.isolabel_ext
     LEFT JOIN mvwjurisdiction_synonym_default_abbrev x ON c.isolabel_ext = x.isolabel_ext
     WHERE is_country IS FALSE
@@ -470,7 +470,7 @@ CREATE or replace FUNCTION osmc.cm_afacode_decode_log(
   FROM
   (
     SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
-    FROM osmc.coverage c
+    FROM osmc.mvwcoverage c
     LEFT JOIN optim.jurisdiction j                     ON c.isolabel_ext = j.isolabel_ext
     LEFT JOIN mvwjurisdiction_synonym_default_abbrev x ON c.isolabel_ext = x.isolabel_ext
     WHERE is_country IS FALSE
@@ -506,7 +506,7 @@ CREATE or replace FUNCTION osmc.co_afacode_decode_log(
   FROM
   (
     SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
-    FROM osmc.coverage c
+    FROM osmc.mvwcoverage c
     LEFT JOIN optim.jurisdiction j                     ON c.isolabel_ext = j.isolabel_ext
     LEFT JOIN mvwjurisdiction_synonym_default_abbrev x ON c.isolabel_ext = x.isolabel_ext
     WHERE is_country IS FALSE
@@ -542,7 +542,7 @@ CREATE or replace FUNCTION osmc.sv_afacode_decode_log(
   FROM
   (
     SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.baseh_to_vbit(substring(lower(p_code),2),'16') ) AS hbig, cbits
-    FROM osmc.coverage c
+    FROM osmc.mvwcoverage c
     LEFT JOIN optim.jurisdiction j                     ON c.isolabel_ext = j.isolabel_ext
     LEFT JOIN mvwjurisdiction_synonym_default_abbrev x ON c.isolabel_ext = x.isolabel_ext
     WHERE is_country IS FALSE
@@ -595,7 +595,7 @@ CREATE or replace FUNCTION osmc.br_jurisdiction_coverage(
           )
       )))::jsonb
 
-  FROM osmc.coverage c,
+  FROM osmc.mvwcoverage c,
   LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.br_decode(c.cbits), ((c.cbits)::bit(6))::int - 12 ) v(id,geom,id_length),
   LATERAL (SELECT afa.br_cell_area(v.id_length), afa.br_cell_side(v.id_length)) l(area,side)
   WHERE isolabel_ext = p_iso
@@ -623,7 +623,7 @@ CREATE or replace FUNCTION osmc.cm_jurisdiction_coverage(
           )
       )))::jsonb
 
-  FROM osmc.coverage c,
+  FROM osmc.mvwcoverage c,
   LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.cm_decode(c.cbits), ((c.cbits)::bit(6))::int - 12 ) v(id,geom,id_length),
   LATERAL (SELECT afa.cm_cell_area(v.id_length), afa.cm_cell_side(v.id_length)) l(area,side)
   WHERE isolabel_ext = p_iso
@@ -650,7 +650,7 @@ CREATE or replace FUNCTION osmc.co_jurisdiction_coverage(
           )
       )))::jsonb
 
-  FROM osmc.coverage c,
+  FROM osmc.mvwcoverage c,
   LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.co_decode(c.cbits), ((c.cbits)::bit(6))::int - 12 ) v(id,geom,id_length),
   LATERAL (SELECT afa.co_cell_area(v.id_length), afa.co_cell_side(v.id_length)) l(area,side)
   WHERE isolabel_ext = p_iso
@@ -677,7 +677,7 @@ CREATE or replace FUNCTION osmc.sv_jurisdiction_coverage(
           )
       )))::jsonb
 
-  FROM osmc.coverage c,
+  FROM osmc.mvwcoverage c,
   LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.sv_decode(c.cbits), ((c.cbits)::bit(6))::int - 12 ) v(id,geom,id_length),
   LATERAL (SELECT afa.sv_cell_area(v.id_length), afa.sv_cell_side(v.id_length)) l(area,side)
   WHERE isolabel_ext = p_iso
@@ -707,7 +707,7 @@ SELECT isolabel_ext, api.jurisdiction_coverage(isolabel_ext) AS json
 FROM
 (
   SELECT DISTINCT isolabel_ext
-  FROM osmc.coverage
+  FROM osmc.mvwcoverage
 ) c;
 COMMENT ON COLUMN osmc.mvwjurisdiction_coverage.isolabel_ext IS 'ISO and name (camel case); e.g. BR-SP-SaoPaulo.';
 COMMENT ON COLUMN osmc.mvwjurisdiction_coverage.json         IS 'Synonym for isolabel_ext, e.g. br;sao.paulo;sao.paulo br-saopaulo';
@@ -763,7 +763,7 @@ CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel(
     LATERAL
     (
       SELECT MIN(((cbits)::bit(6))::int - 12) AS min_level
-      FROM osmc.coverage
+      FROM osmc.mvwcoverage
       WHERE isolabel_ext = l[1] AND is_overlay IS FALSE
     ) s
 $f$ LANGUAGE SQL IMMUTABLE;

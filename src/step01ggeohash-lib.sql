@@ -53,67 +53,6 @@ CREATE UNIQUE INDEX mvjurisdiction_bbox_border_id ON osmc.mvjurisdiction_bbox_bo
 
 ------------------------------------
 
-CREATE TABLE osmc.coverage (
-  cbits          bigint,
-  isolabel_ext   text,
-  cindex         text,
-  bbox           int[],
-  status         smallint DEFAULT 0 CHECK (status IN (0,1,2)), -- 0: generated, 1: revised, 2: homologated
-  is_country     boolean  DEFAULT FALSE,
-  is_contained   boolean  DEFAULT FALSE,
-  is_overlay     boolean  DEFAULT FALSE,
-  kx_prefix      text,
-  geom           geometry,
-  geom_srid4326  geometry
-);
-CREATE INDEX osm_coverage_geom_idx1              ON osmc.coverage USING gist (geom);
-CREATE INDEX osm_coverage_geom4326_idx1          ON osmc.coverage USING gist (geom_srid4326);
-CREATE INDEX osm_coverage_isolabel_ext_idx1      ON osmc.coverage USING btree (isolabel_ext);
-CREATE INDEX osm_coverage_cbits10true_idx        ON osmc.coverage ((cbits::bit(8))) WHERE is_country IS TRUE;
-CREATE INDEX osm_coverage_isolabel_ext_true_idx  ON osmc.coverage (isolabel_ext) WHERE is_country IS TRUE;
-CREATE INDEX osm_coverage_isolabel_ext_false_idx ON osmc.coverage (isolabel_ext) WHERE is_country IS FALSE;
-CREATE INDEX osm_coverage_cbits15false_idx       ON osmc.coverage ((cbits::bit(12)),isolabel_ext) WHERE is_country IS FALSE;
-
-COMMENT ON COLUMN osmc.coverage.cbits            IS 'Coverage cell identifier.';
-COMMENT ON COLUMN osmc.coverage.isolabel_ext     IS 'ISO 3166-1 alpha-2 code and name (camel case); e.g. BR-SP-SaoPaulo.';
-COMMENT ON COLUMN osmc.coverage.cindex           IS 'Coverage cell prefix index. Used only case is_country=false.';
-COMMENT ON COLUMN osmc.coverage.bbox             IS 'Coverage cell bbox.';
-COMMENT ON COLUMN osmc.coverage.status           IS 'Coverage status. Convention: 0: generated, 1: revised, 2: homologated.';
-COMMENT ON COLUMN osmc.coverage.is_country       IS 'True if it is a cell of national coverage..';
-COMMENT ON COLUMN osmc.coverage.is_contained     IS 'True if it is a cell contained in the jurisdiction..';
-COMMENT ON COLUMN osmc.coverage.is_overlay       IS 'True if it is an overlay cell.';
-COMMENT ON COLUMN osmc.coverage.geom             IS 'Coverage cell geometry on default srid.';
-COMMENT ON COLUMN osmc.coverage.geom_srid4326    IS 'Coverage cell geometry on 4326 srid. Used only case is_country=true.';
-COMMENT ON TABLE  osmc.coverage IS 'Jurisdictional coverage.';
-
-------------------------------------
-
--- DROP MATERIALIZED VIEW IF EXISTS osmc.mvwjurisdiction_geom_buffer_clipped;
-CREATE MATERIALIZED VIEW osmc.mvwjurisdiction_geom_buffer_clipped AS
-  SELECT r.isolabel_ext AS isolabel_ext,
-         ST_Intersection(ST_Transform(s.geom,4326),r.geom) AS geom
-  FROM optim.jurisdiction_geom_buffer r
-  LEFT JOIN
-  (
-    SELECT isolabel_ext,
-      ST_Union(CASE split_part(isolabel_ext,'-',1)
-      WHEN 'BR' THEN afa.br_decode(cbits)
-      WHEN 'CM' THEN afa.cm_decode(cbits)
-      WHEN 'CO' THEN afa.co_decode(cbits)
-      WHEN 'SV' THEN afa.sv_decode(cbits)
-      END) AS geom
-    FROM osmc.coverage
-    GROUP BY isolabel_ext
-  ) s
-  ON r.isolabel_ext  = s.isolabel_ext
-  ;
-COMMENT ON COLUMN osmc.mvwjurisdiction_geom_buffer_clipped.isolabel_ext IS 'ISO 3166-1 alpha-2 code and name (camel case); e.g. BR-SP-SaoPaulo.';
-COMMENT ON COLUMN osmc.mvwjurisdiction_geom_buffer_clipped.geom         IS 'Synonym for isolabel_ext, e.g. br;sao.paulo;sao.paulo br-saopaulo';
-COMMENT ON MATERIALIZED VIEW osmc.mvwjurisdiction_geom_buffer_clipped   IS 'OpenStreetMap geometries for optim.jurisdiction.';
-CREATE UNIQUE INDEX mvwjurisdiction_geom_buffer_clipped_isolabel_ext ON osmc.mvwjurisdiction_geom_buffer_clipped (isolabel_ext);
-
-------------------------------------
-
 CREATE TABLE osmc.citycover_raw (
   isolabel_ext text NOT NULL,
   status int NOT NULL,
@@ -164,27 +103,134 @@ CREATE VIEW osmc.vw_citycover_dust_cell AS
  FROM dust2
 ;
 
-CREATE OR REPLACE FUNCTION osmc.update_citycover_dust_cell()
-RETURNS text AS $f$
-  UPDATE osmc.coverage  -- aglutina a poeira ao receptor:
-  SET geom = t.newgeom
+-- DROP MATERIALIZED VIEW IF EXISTS osmc.mvwcoverage;
+CREATE MATERIALIZED VIEW osmc.mvwcoverage AS
+WITH raw_prefixes AS (
+  SELECT *
   FROM
   (
-    SELECT receptor_city_isolabel_ext, receptor_b16h, ST_Union(newgeom) AS newgeom
-    FROM
-    (
-      SELECT d.receptor_city, c.kx_prefix, d.receptor_b16h, d.receptor_city_isolabel_ext, ST_Union(c.geom,d.dust_geom) as newgeom
-      FROM osmc.coverage c -- celula receptora
-      INNER JOIN osmc.vw_citycover_dust_cell d
-      ON d.receptor_b16h=c.kx_prefix AND c.isolabel_ext = d.receptor_city_isolabel_ext
-    ) a
-    GROUP BY receptor_city_isolabel_ext, receptor_b16h
-  ) t
-  WHERE coverage.kx_prefix=t.receptor_b16h AND coverage.isolabel_ext=t.receptor_city_isolabel_ext
-  RETURNING 'Ok.';
-$f$ LANGUAGE SQL;
-COMMENT ON FUNCTION osmc.update_citycover_dust_cell()
-  IS '';
+    SELECT isolabel_ext, status, unnest(string_to_array(cover, ' ')) AS prefix, FALSE AS is_overlay,
+           (CASE WHEN array_position(string_to_array(cover, ' '), 'NULL') = 1 THEN 0 ELSE 1 END) AS firts_null
+    FROM osmc.citycover_raw
+  ) x
+  WHERE prefix IS NOT NULL
+
+  UNION ALL
+
+  SELECT  isolabel_ext, status, unnest(string_to_array(overlay, ' ')) AS prefix,  TRUE AS is_overlay,
+          (CASE WHEN array_position(string_to_array(cover, ' '), 'NULL') = 1 THEN 0 ELSE 1 END) AS firts_null
+  FROM osmc.citycover_raw
+),
+prefix_hbig AS (
+  SELECT
+    isolabel_ext, status,prefix, is_overlay,
+    split_part(isolabel_ext, '-', 1) AS country_code, firts_null,
+    CASE split_part(isolabel_ext, '-', 1)
+      WHEN 'BR' THEN afa.br_hex_to_hBig(prefix)
+      WHEN 'CM' THEN afa.cm_hex_to_hBig(prefix)
+      WHEN 'CO' THEN afa.co_hex_to_hBig(prefix)
+      WHEN 'SV' THEN afa.sv_hex_to_hBig(prefix)
+    END AS hBig
+  FROM raw_prefixes
+),
+decoded_geom AS (
+  SELECT isolabel_ext, status,prefix, is_overlay, hBig, country_code,
+    (ROW_NUMBER() OVER (PARTITION BY isolabel_ext  ORDER BY is_overlay ASC, hBig ASC) - firts_null) AS order_id,
+    CASE country_code
+      WHEN 'BR' THEN afa.br_decode(hBig)
+      WHEN 'CM' THEN afa.cm_decode(hBig)
+      WHEN 'CO' THEN afa.co_decode(hBig)
+      WHEN 'SV' THEN afa.sv_decode(hBig)
+    END AS geom_cell
+  FROM prefix_hBig
+),
+geom_isolabel AS (
+  SELECT isolabel_ext, geom
+  FROM optim.mvwjurisdiction_geomeez
+  UNION
+  SELECT isolabel_ext, geom
+  FROM optim.vw01full_jurisdiction_geom
+  WHERE isolabel_ext LIKE '%-%-%'
+),
+datas AS (
+  SELECT
+        d.hBig AS cbits,
+        d.isolabel_ext,
+          CASE country_code
+          WHEN 'SV' THEN natcod.vbit_to_baseh(order_id::bit(4),16)
+          ELSE natcod.vbit_to_strstd(order_id::bit(5),'32nvu')
+          END AS cindex,
+        status,
+        (CASE WHEN d.isolabel_ext IN ('BR','CM','CO','SV') THEN TRUE ELSE FALSE END) AS is_country,
+        ST_ContainsProperly(ST_Transform(g.geom,ST_SRID(geom_cell)),geom_cell) AS is_contained,
+        is_overlay AS is_overlay,
+        prefix AS kx_prefix,
+        ST_Intersection(ST_Transform(g.geom,ST_SRID(geom_cell)),geom_cell) AS geom
+  FROM decoded_geom d
+  LEFT JOIN geom_isolabel g ON g.isolabel_ext = d.isolabel_ext
+),
+dust AS (
+  SELECT d.receptor_b16h, d.receptor_city_isolabel_ext, ST_Union(d.dust_geom) as dust_union
+  FROM osmc.vw_citycover_dust_cell d
+  GROUP BY receptor_city_isolabel_ext, receptor_b16h
+),
+final AS
+(
+  SELECT cbits, isolabel_ext, cindex, status, is_country, is_contained, is_overlay, kx_prefix, receptor_b16h,
+        --ST_Union(r.geom, s.dust_union) AS geom
+        CASE WHEN s.dust_union IS NULL THEN r.geom ELSE ST_Union(r.geom, s.dust_union) END AS geom
+  FROM datas r
+  LEFT JOIN dust s
+  ON r.kx_prefix=s.receptor_b16h AND r.isolabel_ext=s.receptor_city_isolabel_ext
+)
+SELECT cbits, isolabel_ext, cindex, status, is_country, is_contained, is_overlay, kx_prefix, geom, ST_Transform(geom,4326) AS geom_srid4326
+FROM final
+;
+CREATE INDEX osmc_mvwcoverage_geom_idx1              ON osmc.mvwcoverage USING gist (geom);
+CREATE INDEX osmc_mvwcoverage_geom4326_idx1          ON osmc.mvwcoverage USING gist (geom_srid4326);
+CREATE INDEX osmc_mvwcoverage_isolabel_ext_idx1      ON osmc.mvwcoverage USING btree (isolabel_ext);
+CREATE INDEX osmc_mvwcoverage_cbits10true_idx        ON osmc.mvwcoverage ((cbits::bit(8))) WHERE is_country IS TRUE;
+CREATE INDEX osmc_mvwcoverage_isolabel_ext_true_idx  ON osmc.mvwcoverage (isolabel_ext) WHERE is_country IS TRUE;
+CREATE INDEX osmc_mvwcoverage_isolabel_ext_false_idx ON osmc.mvwcoverage (isolabel_ext) WHERE is_country IS FALSE;
+CREATE INDEX osmc_mvwcoverage_cbits15false_idx       ON osmc.mvwcoverage ((cbits::bit(12)),isolabel_ext) WHERE is_country IS FALSE;
+COMMENT ON COLUMN osmc.mvwcoverage.cbits         IS 'Coverage cell identifier.';
+COMMENT ON COLUMN osmc.mvwcoverage.isolabel_ext  IS 'ISO 3166-1 alpha-2 code and name (camel case); e.g. BR-SP-SaoPaulo.';
+COMMENT ON COLUMN osmc.mvwcoverage.cindex        IS 'Coverage cell prefix index. Used only case is_country=false.';
+--COMMENT ON COLUMN osmc.mvwcoverage.bbox          IS 'Coverage cell bbox.';
+COMMENT ON COLUMN osmc.mvwcoverage.status        IS 'Coverage status. Convention: 0: generated, 1: revised, 2: homologated.';
+COMMENT ON COLUMN osmc.mvwcoverage.is_country    IS 'True if it is a cell of national coverage..';
+COMMENT ON COLUMN osmc.mvwcoverage.is_contained  IS 'True if it is a cell contained in the jurisdiction..';
+COMMENT ON COLUMN osmc.mvwcoverage.is_overlay    IS 'True if it is an overlay cell.';
+COMMENT ON COLUMN osmc.mvwcoverage.kx_prefix     IS '';
+COMMENT ON COLUMN osmc.mvwcoverage.geom          IS 'Coverage cell geometry on default srid.';
+COMMENT ON COLUMN osmc.mvwcoverage.geom_srid4326 IS 'Coverage cell geometry on 4326 srid. Used only case is_country=true.';
+COMMENT ON MATERIALIZED VIEW  osmc.mvwcoverage   IS 'Jurisdictional coverage.';
+
+------------------------------------
+
+-- DROP MATERIALIZED VIEW IF EXISTS osmc.mvwjurisdiction_geom_buffer_clipped;
+CREATE MATERIALIZED VIEW osmc.mvwjurisdiction_geom_buffer_clipped AS
+  SELECT r.isolabel_ext AS isolabel_ext,
+         ST_Intersection(ST_Transform(s.geom,4326),r.geom) AS geom
+  FROM optim.jurisdiction_geom_buffer r
+  LEFT JOIN
+  (
+    SELECT isolabel_ext,
+      ST_Union(CASE split_part(isolabel_ext,'-',1)
+      WHEN 'BR' THEN afa.br_decode(cbits)
+      WHEN 'CM' THEN afa.cm_decode(cbits)
+      WHEN 'CO' THEN afa.co_decode(cbits)
+      WHEN 'SV' THEN afa.sv_decode(cbits)
+      END) AS geom
+    FROM osmc.coverage
+    GROUP BY isolabel_ext
+  ) s
+  ON r.isolabel_ext  = s.isolabel_ext
+  ;
+COMMENT ON COLUMN osmc.mvwjurisdiction_geom_buffer_clipped.isolabel_ext IS 'ISO 3166-1 alpha-2 code and name (camel case); e.g. BR-SP-SaoPaulo.';
+COMMENT ON COLUMN osmc.mvwjurisdiction_geom_buffer_clipped.geom         IS 'Synonym for isolabel_ext, e.g. br;sao.paulo;sao.paulo br-saopaulo';
+COMMENT ON MATERIALIZED VIEW osmc.mvwjurisdiction_geom_buffer_clipped   IS 'OpenStreetMap geometries for optim.jurisdiction.';
+CREATE UNIQUE INDEX mvwjurisdiction_geom_buffer_clipped_isolabel_ext ON osmc.mvwjurisdiction_geom_buffer_clipped (isolabel_ext);
 
 ------------------------------------
 
@@ -192,8 +238,7 @@ CREATE OR REPLACE FUNCTION osmc.str_geouri_decode(uri TEXT) RETURNS float[] AS $
   SELECT regexp_match(uri,'^geo:(?:olc:|ghs:)?([-0-9\.]+),([-0-9\.]+)(?:;u=([-0-9\.]+))?','i')::float[]
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION str_geouri_decode(text)
-  IS 'Decodes standard GeoURI of latitude and longitude into float array.'
-;
+  IS 'Decodes standard GeoURI of latitude and longitude into float array.';
 
 CREATE or replace FUNCTION osmc.encode_short_code(
   p_hbig           bigint,
@@ -209,96 +254,6 @@ CREATE or replace FUNCTION osmc.encode_short_code(
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.encode_short_code(bigint,text)
   IS 'Computes the short code representation of a hierarchical grid cell for a given jurisdiction.';
-
-
-CREATE or replace FUNCTION osmc.upsert_coverage(
-  p_isolabel_ext text,
-  p_status       smallint, -- 0: generated, 1: revised, 2: homologated, 3: official
-  p_cover        text[],
-  p_overlay      text[] DEFAULT array[]::text[]
-) RETURNS text AS $f$
-  DELETE FROM osmc.coverage WHERE isolabel_ext = p_isolabel_ext;
-  INSERT INTO osmc.coverage(cbits,isolabel_ext,cindex,status,is_country,is_contained,is_overlay,kx_prefix,geom,geom_srid4326)
-  SELECT cbits, isolabel_ext, cindex, status, is_country, is_contained, is_overlay, kx_prefix, geom, ST_Transform(geom,4326) AS geom_srid4326
-  FROM
-  (
-    SELECT
-          hBig AS cbits, p_isolabel_ext AS isolabel_ext,
-
-          CASE split_part(p_isolabel_ext,'-',1)
-          WHEN 'SV' THEN natcod.vbit_to_baseh((ROW_NUMBER() OVER (ORDER BY is_overlay ASC, hBig ASC) - (CASE WHEN array_position(p_cover, NULL) = 1 THEN 0 ELSE 1 END))::bit(4),16)
-          ELSE natcod.vbit_to_strstd((ROW_NUMBER() OVER (ORDER BY is_overlay ASC, hBig ASC) - (CASE WHEN array_position(p_cover, NULL) = 1 THEN 0 ELSE 1 END))::bit(5),'32nvu') END AS cindex,
-
-          p_status AS status, (CASE WHEN p_isolabel_ext IN ('BR','CM','CO','SV') THEN TRUE ELSE FALSE END) AS is_country,
-          ST_ContainsProperly(ST_Transform(geom_isolabel,ST_SRID(geom_cell)),geom_cell) AS is_contained,
-          is_overlay AS is_overlay, prefix AS kx_prefix,
-          ST_Intersection(ST_Transform(geom_isolabel,ST_SRID(geom_cell)),geom_cell) AS geom
-    FROM
-    (
-      SELECT is_overlay, prefix, hBig,
-          CASE split_part(p_isolabel_ext,'-',1)
-            WHEN 'BR' THEN afa.br_decode(hBig)
-            WHEN 'CM' THEN afa.cm_decode(hBig)
-            WHEN 'CO' THEN afa.co_decode(hBig)
-            WHEN 'SV' THEN afa.sv_decode(hBig)
-          END AS geom_cell
-      FROM
-      (
-        SELECT FALSE AS is_overlay, prefix,
-          CASE split_part(p_isolabel_ext,'-',1)
-            WHEN 'BR' THEN afa.br_hex_to_hBig(prefix)
-            WHEN 'CM' THEN afa.cm_hex_to_hBig(prefix)
-            WHEN 'CO' THEN afa.co_hex_to_hBig(prefix)
-            WHEN 'SV' THEN afa.sv_hex_to_hBig(prefix)
-          END AS hBig
-        FROM unnest(p_cover) t(prefix)
-        WHERE prefix IS NOT NULL
-
-        UNION
-
-        SELECT TRUE  AS is_overlay, prefix_overlay AS prefix,
-          CASE split_part(p_isolabel_ext,'-',1)
-            WHEN 'BR' THEN afa.br_hex_to_hBig(prefix_overlay)
-            WHEN 'CM' THEN afa.cm_hex_to_hBig(prefix_overlay)
-            WHEN 'CO' THEN afa.co_hex_to_hBig(prefix_overlay)
-            WHEN 'SV' THEN afa.sv_hex_to_hBig(prefix_overlay)
-          END AS hBig
-        FROM unnest(p_overlay) s(prefix_overlay)
-      ) a
-    ) p
-    LEFT JOIN LATERAL
-    (
-      SELECT ST_UNION(geom) AS geom_isolabel
-      FROM
-      (
-        SELECT geom
-        FROM optim.jurisdiction_eez
-        WHERE p_isolabel_ext IN ('CO','CO/JM')
-
-        UNION
-
-        SELECT geom
-        FROM optim.vw01full_jurisdiction_geom
-        WHERE isolabel_ext = p_isolabel_ext
-      ) x
-      WHERE
-        (
-          CASE
-            WHEN p_isolabel_ext IN ('CO') THEN TRUE
-            ELSE geom IS NOT NULL
-          END
-        )
-    ) s
-    ON TRUE
-
-    ORDER BY cindex
-  ) z
-  RETURNING 'Ok.'
-$f$ LANGUAGE SQL;
-COMMENT ON FUNCTION osmc.upsert_coverage(text,smallint,text[],text[])
-  IS 'Upsert coverage.'
-;
--- SELECT osmc.upsert_coverage('CO-BOY-Tunja',0::smallint,'{NULL,c347g,c347q,c34dg,c34dq,c352g,c352q,c358g,c358q,c359q,c35ag,c35bg}'::text[],'{c3581r,c3581v,c3583h,c3583m,c3583r,c3583v,c3589h,c3589m,c3589v,c358ch,c358cr}'::text[]);
 
 CREATE or replace VIEW osmc.jurisdictions_select AS
   SELECT jsonb_object_agg(isolabel_ext,ll) AS gg
@@ -342,8 +297,7 @@ CREATE or replace VIEW osmc.jurisdictions_select AS
   ) c
 ;
 COMMENT ON VIEW osmc.jurisdictions_select
-  IS 'Generates json for select from AFA.codes website.'
-;
+  IS 'Generates json for select from AFA.codes website.';
 
 CREATE or replace FUNCTION osmc.generate_cover_csv(
   p_isolabel_ext text,
@@ -397,8 +351,7 @@ BEGIN
 END
 $f$ LANGUAGE PLpgSQL;
 COMMENT ON FUNCTION osmc.generate_cover_csv(text,text)
-  IS 'Generate csv with isolevel=3 coverage and overlay in separate array.'
-;
+  IS 'Generate csv with isolevel=3 coverage and overlay in separate array.';
 /*
 SELECT osmc.generate_cover_csv('BR','/tmp/pg_io/coveragebr.csv');
 SELECT osmc.generate_cover_csv('CO','/tmp/pg_io/coverageco.csv');

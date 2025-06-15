@@ -34,31 +34,22 @@ INSERT INTO osmc.jurisdiction_bbox(id,jurisd_base_id,isolabel_ext,geom) VALUES
 (15, 5,   'EC', ST_SetSRID(ST_MakeBox2D(ST_POINT(-81.3443465, -0.1251374),        ST_POINT(-79.2430285,  1.4695853)),4326)),
 (16, 6,   'SV', ST_SetSRID(ST_MakeBox2D(ST_POINT(-90.2209042, 12.9518017),        ST_POINT(-87.5971467, 14.4510488)),4326));
 
---DROP TABLE osmc.jurisdiction_bbox_border;
-CREATE TABLE osmc.jurisdiction_bbox_border (
-  id             int PRIMARY KEY,
-  bbox_id        int NOT NULL REFERENCES osmc.jurisdiction_bbox(id),
-  jurisd_base_id int,
-  isolabel_ext   text NOT NULL,
-  geom           Geometry
-);
-COMMENT ON COLUMN osmc.jurisdiction_bbox_border.id             IS 'Gid.';
-COMMENT ON COLUMN osmc.jurisdiction_bbox_border.bbox_id        IS 'id of osmc.jurisdiction_bbox.';
-COMMENT ON COLUMN osmc.jurisdiction_bbox_border.jurisd_base_id IS 'Numeric official ID.';
-COMMENT ON COLUMN osmc.jurisdiction_bbox_border.isolabel_ext   IS 'ISO code';
-COMMENT ON COLUMN osmc.jurisdiction_bbox_border.geom           IS 'Geometry of intersection of box with country.';
-COMMENT ON TABLE  osmc.jurisdiction_bbox_border                IS 'Stores actual geographic intersections between undefined/shared BBOX regions (from `jurisdiction_bbox`) and countries, using their official jurisdiction geometry. This table helps resolve ambiguous or shared BBOX areas by mapping them to one or more valid countries.';
-
--- DELETE FROM osmc.jurisdiction_bbox_border;
-INSERT INTO osmc.jurisdiction_bbox_border
-SELECT ROW_NUMBER() OVER() as id, b.id AS bbox_id, g.jurisd_base_id AS jurisd_base_id, g.isolabel_ext AS isolabel_ext, ST_Intersection(b.geom,g.geom)
-FROM osmc.jurisdiction_bbox b
-LEFT JOIN optim.vw01full_jurisdiction_geom g
-ON ST_Intersects(b.geom,g.geom) IS TRUE
-WHERE b.jurisd_base_id IS NULL
-  AND g.isolabel_ext IN ('CM','CO','BR','UY','EC')
-;
-ANALYZE osmc.jurisdiction_bbox_border;
+-- DROP MATERIALIZED VIEW IF EXISTS osmc.mvjurisdiction_bbox_border;
+CREATE MATERIALIZED VIEW osmc.mvjurisdiction_bbox_border AS
+  SELECT ROW_NUMBER() OVER() as id, b.id AS bbox_id, g.jurisd_base_id AS jurisd_base_id, g.isolabel_ext AS isolabel_ext, ST_Intersection(b.geom,g.geom) AS geom
+  FROM osmc.jurisdiction_bbox b
+  LEFT JOIN optim.vw01full_jurisdiction_geom g
+  ON ST_Intersects(b.geom,g.geom) IS TRUE
+  WHERE b.jurisd_base_id IS NULL
+    AND g.isolabel_ext IN ('CM','CO','BR','UY','EC')
+  ;
+COMMENT ON COLUMN osmc.mvjurisdiction_bbox_border.id             IS 'Gid.';
+COMMENT ON COLUMN osmc.mvjurisdiction_bbox_border.bbox_id        IS 'id of osmc.jurisdiction_bbox.';
+COMMENT ON COLUMN osmc.mvjurisdiction_bbox_border.jurisd_base_id IS 'Numeric official ID.';
+COMMENT ON COLUMN osmc.mvjurisdiction_bbox_border.isolabel_ext   IS 'ISO code';
+COMMENT ON COLUMN osmc.mvjurisdiction_bbox_border.geom           IS 'Geometry of intersection of box with country.';
+COMMENT ON MATERIALIZED VIEW  osmc.mvjurisdiction_bbox_border                IS 'Stores actual geographic intersections between undefined/shared BBOX regions (from `jurisdiction_bbox`) and countries, using their official jurisdiction geometry. This table helps resolve ambiguous or shared BBOX areas by mapping them to one or more valid countries.';
+CREATE UNIQUE INDEX mvjurisdiction_bbox_border_id ON osmc.mvjurisdiction_bbox_border (id);
 
 ------------------------------------
 

@@ -380,7 +380,7 @@ CREATE or replace FUNCTION api.afacode_encode_log_no_context(
     LEFT JOIN LATERAL
     (
       SELECT b.jurisd_base_id, b.isolabel_ext
-      FROM osmc.jurisdiction_bbox_border b
+      FROM osmc.mvjurisdiction_bbox_border b
       WHERE b.bbox_id = cb.id
         AND ST_Intersects(b.geom,cb.pt)
       LIMIT 1

@@ -97,22 +97,10 @@ COMMENT ON TABLE  osmc.coverage IS 'Jurisdictional coverage.';
 
 ------------------------------------
 
-CREATE TABLE osmc.jurisdiction_geom_buffer_clipped (
-  isolabel_ext text PRIMARY KEY,
-  geom geometry(Geometry,4326)
-);
-COMMENT ON COLUMN osmc.jurisdiction_geom_buffer_clipped.isolabel_ext       IS 'ISO 3166-1 alpha-2 code and name (camel case); e.g. BR-SP-SaoPaulo.';
-COMMENT ON COLUMN osmc.jurisdiction_geom_buffer_clipped.geom               IS 'Geometry for osm_id identifier';
-CREATE INDEX osmc_jurisdiction_geom_buffer_clipped_idx1     ON osmc.jurisdiction_geom_buffer_clipped USING gist (geom);
-CREATE INDEX osmc_jurisdiction_geom_buffer_clipped_isolabel_ext_idx1 ON osmc.jurisdiction_geom_buffer_clipped USING btree (isolabel_ext);
-COMMENT ON TABLE osmc.jurisdiction_geom_buffer_clipped IS 'OpenStreetMap geometries for optim.jurisdiction.';
-
-
-CREATE OR REPLACE FUNCTION osmc.refresh_jurisdiction_coverage_geom()
-RETURNS text AS $f$
---TRUNCATE osmc.jurisdiction_geom_buffer_clipped;
-  INSERT INTO osmc.jurisdiction_geom_buffer_clipped
-  SELECT r.isolabel_ext, ST_Intersection(ST_Transform(s.geom,4326),r.geom)
+-- DROP MATERIALIZED VIEW IF EXISTS osmc.mvwjurisdiction_geom_buffer_clipped;
+CREATE MATERIALIZED VIEW osmc.mvwjurisdiction_geom_buffer_clipped AS
+  SELECT r.isolabel_ext AS isolabel_ext,
+         ST_Intersection(ST_Transform(s.geom,4326),r.geom) AS geom
   FROM optim.jurisdiction_geom_buffer r
   LEFT JOIN
   (
@@ -127,14 +115,11 @@ RETURNS text AS $f$
     GROUP BY isolabel_ext
   ) s
   ON r.isolabel_ext  = s.isolabel_ext
-
-  ON CONFLICT (isolabel_ext)
-  DO UPDATE SET geom = EXCLUDED.geom
-
-  RETURNING 'Ok.';
-$f$ LANGUAGE SQL;
-COMMENT ON FUNCTION osmc.refresh_jurisdiction_coverage_geom()
-  IS 'Atualiza as geometrias de cobertura por jurisdição a partir dos dados decodificados.';
+  ;
+COMMENT ON COLUMN osmc.mvwjurisdiction_geom_buffer_clipped.isolabel_ext IS 'ISO 3166-1 alpha-2 code and name (camel case); e.g. BR-SP-SaoPaulo.';
+COMMENT ON COLUMN osmc.mvwjurisdiction_geom_buffer_clipped.geom         IS 'Synonym for isolabel_ext, e.g. br;sao.paulo;sao.paulo br-saopaulo';
+COMMENT ON MATERIALIZED VIEW osmc.mvwjurisdiction_geom_buffer_clipped   IS 'OpenStreetMap geometries for optim.jurisdiction.';
+CREATE UNIQUE INDEX mvwjurisdiction_geom_buffer_clipped_isolabel_ext ON osmc.mvwjurisdiction_geom_buffer_clipped (isolabel_ext);
 
 ------------------------------------
 

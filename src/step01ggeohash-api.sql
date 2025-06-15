@@ -829,7 +829,7 @@ CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel2(
     (
       SELECT j.*, g.geom
       FROM optim.jurisdiction j
-      LEFT JOIN osmc.jurisdiction_geom_buffer_clipped g
+      LEFT JOIN osmc.mvwjurisdiction_geom_buffer_clipped g
       ON j.isolabel_ext = g.isolabel_ext
     ) g
     WHERE g.isolabel_ext = (SELECT (str_geocodeiso_decode(p_iso))[1])

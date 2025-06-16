@@ -342,10 +342,10 @@ CREATE or replace FUNCTION api.afacode_encode_log(
 ) RETURNS jsonb AS $wrap$
   SELECT
     CASE split_part(p_isolabel_ext,'-',1)
-      WHEN 'BR' THEN osmc.br_afacode_encode_log(u[1],u[2],COALESCE(ROUND((      (afa.br_cell_nearst_level(u[3])  )    /5)*5)::int,35),p_isolabel_ext)
-      WHEN 'CM' THEN osmc.cm_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.cm_cell_nearst_level(u[3])+1),36)/5)*5)::int,31),p_isolabel_ext)
-      WHEN 'CO' THEN osmc.co_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.co_cell_nearst_level(u[3])+3),38)/5)*5)::int,33),p_isolabel_ext)
-      WHEN 'SV' THEN osmc.sv_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.sv_cell_nearst_level(u[3])  ),32)/4)*4)::int,28),p_isolabel_ext)
+      WHEN 'BR' THEN osmc.br_afacode_encode_log(u[1],u[2],COALESCE(ROUND((      (afa.br_cell_nearst_level(u[3])    )/5)*5  )::int,35),p_isolabel_ext)
+      WHEN 'CM' THEN osmc.cm_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.cm_cell_nearst_level(u[3])),36)/5)*5+1)::int,31),p_isolabel_ext)
+      WHEN 'CO' THEN osmc.co_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.co_cell_nearst_level(u[3])),38)/5)*5+3)::int,33),p_isolabel_ext)
+      WHEN 'SV' THEN osmc.sv_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.sv_cell_nearst_level(u[3])),32)/4)*4  )::int,28),p_isolabel_ext)
       ELSE jsonb_build_object('error', 'Jurisdiction not supported.')
     END
   FROM osmc.str_geouri_decode(p_uri) t(u)

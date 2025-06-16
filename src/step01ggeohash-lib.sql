@@ -222,7 +222,7 @@ CREATE MATERIALIZED VIEW osmc.mvwjurisdiction_geom_buffer_clipped AS
       WHEN 'CO' THEN afa.co_decode(cbits)
       WHEN 'SV' THEN afa.sv_decode(cbits)
       END) AS geom
-    FROM osmc.coverage
+    FROM osmc.mvwcoverage
     GROUP BY isolabel_ext
   ) s
   ON r.isolabel_ext  = s.isolabel_ext
@@ -245,7 +245,7 @@ CREATE or replace FUNCTION osmc.encode_short_code(
   p_isolabel_ext   text
 ) RETURNS TABLE(cindex text, cbits bigint) AS $f$
   SELECT cindex, cbits
-  FROM osmc.coverage r,
+  FROM osmc.mvwcoverage r,
   LATERAL (SELECT afa.hBig_to_vbit(p_hbig) AS hbitstr) v,
   LATERAL (SELECT (cbits::bit(6))::int AS prefixlen) l
   WHERE isolabel_ext = p_isolabel_ext
@@ -269,7 +269,7 @@ CREATE or replace VIEW osmc.jurisdictions_select AS
         FROM
         (
           SELECT DISTINCT isolabel_ext, status
-          FROM osmc.coverage
+          FROM osmc.mvwcoverage
           WHERE is_country IS FALSE AND status <> 0
           ORDER BY 1
         ) a
@@ -282,7 +282,7 @@ CREATE or replace VIEW osmc.jurisdictions_select AS
         FROM
         (
           SELECT DISTINCT isolabel_ext, status
-          FROM osmc.coverage
+          FROM osmc.mvwcoverage
           WHERE is_country IS FALSE AND status = 0
           ORDER BY 1
         ) a
@@ -316,7 +316,7 @@ BEGIN
       FROM
       (
         SELECT isolabel_ext, status, kx_prefix AS prefix
-        FROM osmc.coverage
+        FROM osmc.mvwcoverage
         WHERE is_country IS FALSE -- isolevel3 cover
           AND is_overlay IS FALSE
           AND isolabel_ext = '%s'
@@ -331,7 +331,7 @@ BEGIN
       FROM
       (
         SELECT isolabel_ext, status, kx_prefix AS prefix
-        FROM osmc.coverage
+        FROM osmc.mvwcoverage
         WHERE is_country IS FALSE -- isolevel3 cover
           AND is_overlay IS TRUE
           AND isolabel_ext = '%s'

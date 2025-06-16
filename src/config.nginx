@@ -252,7 +252,7 @@ server {
     include /etc/nginx/ssl.conf;
     root /var/www/test.osm.codes/;
     index index.php index.html index.htm;
-    access_log /var/log/nginx/test.osm.codes.access_log;
+    access_log /var/log/nginx/test.osm.codes.access_log ; # with_time;
     error_log  /var/log/nginx/test.osm.codes.error.log;
 
     ## return csv, schema api, deve migrar para api.test.afa.codes

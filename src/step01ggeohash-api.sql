@@ -239,14 +239,13 @@ CREATE or replace FUNCTION osmc.br_afacode_encode_log(
             'side',l.side,
             'jurisd_base_id',76,
             'isolabel_ext',p_isolabel_ext,
-            'isolabel_ext_abbrev',default_abbrev,
-            'logistic_id', p_isolabel_ext || '~' || cindex || natcod.vbit_to_strstd( substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'32nvu')
-            -- 'jurisd_local_id', jurisd_local_id
+            'isolabel_ext_abbrev',abbreviations,
+            'logistic_id', canonical_prefix_with_cindex || natcod.vbit_to_strstd( substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'32nvu'),
+            'jurisd_local_id', jurisd_local_id
           ))))::jsonb
     FROM (SELECT afa.br_encode(p_lat,p_lon,p_level), afa.br_cell_area(p_level), afa.br_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig), afa.br_decode(hbig)) v(id,geom),
-    LATERAL (SELECT cindex, cbits FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits)
-    LEFT JOIN LATERAL (SELECT abbrev FROM mvwjurisdiction_synonym_default_abbrev x WHERE x.isolabel_ext = p_isolabel_ext) c(default_abbrev) ON TRUE
+    LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.br_afacode_encode_log(float,float,int,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for Brazil.';
@@ -267,14 +266,13 @@ CREATE or replace FUNCTION osmc.cm_afacode_encode_log(
             'side',l.side,
             'jurisd_base_id',120,
             'isolabel_ext',p_isolabel_ext,
-            'isolabel_ext_abbrev',default_abbrev,
-            'logistic_id',p_isolabel_ext || '~' || cindex || natcod.vbit_to_strstd( substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'32nvu')
-            -- 'jurisd_local_id', jurisd_local_id
+            'isolabel_ext_abbrev',abbreviations,
+            'logistic_id',canonical_prefix_with_cindex || natcod.vbit_to_strstd( substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'32nvu'),
+            'jurisd_local_id', jurisd_local_id
           ))))::jsonb
     FROM (SELECT afa.cm_encode(p_lat,p_lon,p_level), afa.cm_cell_area(p_level), afa.cm_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig), afa.cm_decode(hbig)) v(id,geom),
-    LATERAL (SELECT cindex, cbits FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits),
-    LATERAL (SELECT abbrev FROM mvwjurisdiction_synonym_default_abbrev x WHERE x.isolabel_ext = p_isolabel_ext) c(default_abbrev)
+    LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.cm_afacode_encode_log(float,float,int,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for Cameroon.';
@@ -295,14 +293,13 @@ CREATE or replace FUNCTION osmc.co_afacode_encode_log(
             'side',l.side,
             'jurisd_base_id',170,
             'isolabel_ext',p_isolabel_ext,
-            'isolabel_ext_abbrev',default_abbrev,
-            'logistic_id', p_isolabel_ext || '~' || cindex || natcod.vbit_to_strstd( substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'32nvu')
-            -- 'jurisd_local_id', jurisd_local_id
+            'isolabel_ext_abbrev',abbreviations,
+            'logistic_id', canonical_prefix_with_cindex || natcod.vbit_to_strstd( substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'32nvu'),
+            'jurisd_local_id', jurisd_local_id
           ))))::jsonb
     FROM (SELECT afa.co_encode(p_lat,p_lon,p_level), afa.co_cell_area(p_level), afa.co_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig), afa.co_decode(hbig)) v(id,geom),
-    LATERAL (SELECT cindex, cbits FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits),
-    LATERAL (SELECT abbrev FROM mvwjurisdiction_synonym_default_abbrev x WHERE x.isolabel_ext = p_isolabel_ext) c(default_abbrev)
+    LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.co_afacode_encode_log(float,float,int,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for Colombia.';
@@ -323,14 +320,13 @@ CREATE or replace FUNCTION osmc.sv_afacode_encode_log(
             'side',l.side,
             'jurisd_base_id',170,
             'isolabel_ext',p_isolabel_ext,
-            'isolabel_ext_abbrev',default_abbrev,
-            'logistic_id', p_isolabel_ext || '~' || cindex || natcod.vbit_to_baseh( substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'16')
-            -- 'jurisd_local_id', jurisd_local_id
+            'isolabel_ext_abbrev',abbreviations,
+            'logistic_id', canonical_prefix_with_cindex || natcod.vbit_to_baseh( substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'16'),
+            'jurisd_local_id', jurisd_local_id
           ))))::jsonb
     FROM (SELECT afa.sv_encode(p_lat,p_lon,p_level), afa.sv_cell_area(p_level), afa.sv_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig), afa.sv_decode(hbig)) v(id,geom),
-    LATERAL (SELECT cindex, cbits FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits),
-    LATERAL (SELECT abbrev FROM mvwjurisdiction_synonym_default_abbrev x WHERE x.isolabel_ext = p_isolabel_ext) c(default_abbrev)
+    LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.sv_afacode_encode_log(float,float,int,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for El Savador.';
@@ -425,18 +421,16 @@ CREATE or replace FUNCTION osmc.br_afacode_decode_log(
             'side',side,
             'jurisd_base_id',jurisd_base_id,
             'isolabel_ext',p_isolabel_ext,
-            'isolabel_ext_abbrev',abbrev,
-            'logistic_id',p_isolabel_ext || '~' || p_code,
+            'isolabel_ext_abbrev',abbreviations,
+            'logistic_id',canonical_prefix_with_separator || p_code,
             -- 'truncated_code',truncated_code,
             'jurisd_local_id',jurisd_local_id
           )
       )))::jsonb
   FROM
   (
-    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
+    SELECT jurisd_local_id, jurisd_base_id, abbreviations, canonical_prefix_with_separator, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
     FROM osmc.mvwcoverage c
-    LEFT JOIN optim.jurisdiction j                     ON c.isolabel_ext = j.isolabel_ext
-    LEFT JOIN mvwjurisdiction_synonym_default_abbrev x ON c.isolabel_ext = x.isolabel_ext
     WHERE is_country IS FALSE
       AND c.isolabel_ext = p_isolabel_ext
       AND cindex = substring(p_code,1,1)
@@ -461,18 +455,16 @@ CREATE or replace FUNCTION osmc.cm_afacode_decode_log(
             'side',side,
             'jurisd_base_id',jurisd_base_id,
             'isolabel_ext',p_isolabel_ext,
-            'isolabel_ext_abbrev',abbrev,
-            'logistic_id', p_isolabel_ext || '~' || p_code,
+            'isolabel_ext_abbrev',abbreviations,
+            'logistic_id', canonical_prefix_with_separator || p_code,
             -- 'truncated_code',truncated_code,
             'jurisd_local_id', jurisd_local_id
           )
       )))::jsonb
   FROM
   (
-    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
+    SELECT jurisd_local_id, jurisd_base_id, abbreviations, canonical_prefix_with_separator, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
     FROM osmc.mvwcoverage c
-    LEFT JOIN optim.jurisdiction j                     ON c.isolabel_ext = j.isolabel_ext
-    LEFT JOIN mvwjurisdiction_synonym_default_abbrev x ON c.isolabel_ext = x.isolabel_ext
     WHERE is_country IS FALSE
       AND c.isolabel_ext = p_isolabel_ext
       AND cindex = substring(p_code,1,1)
@@ -497,18 +489,16 @@ CREATE or replace FUNCTION osmc.co_afacode_decode_log(
             'side',side,
             'jurisd_base_id',jurisd_base_id,
             'isolabel_ext',p_isolabel_ext,
-            'isolabel_ext_abbrev',abbrev,
-            'logistic_id', abbrev || '~' || p_code,
+            'isolabel_ext_abbrev',abbreviations,
+            'logistic_id', canonical_prefix_with_separator || p_code,
             -- 'truncated_code',truncated_code,
             'jurisd_local_id', jurisd_local_id
           )
       )))::jsonb
   FROM
   (
-    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
+    SELECT jurisd_local_id, jurisd_base_id, abbreviations, canonical_prefix_with_separator, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
     FROM osmc.mvwcoverage c
-    LEFT JOIN optim.jurisdiction j                     ON c.isolabel_ext = j.isolabel_ext
-    LEFT JOIN mvwjurisdiction_synonym_default_abbrev x ON c.isolabel_ext = x.isolabel_ext
     WHERE is_country IS FALSE
       AND c.isolabel_ext = p_isolabel_ext
       AND cindex = substring(p_code,1,1)
@@ -533,18 +523,16 @@ CREATE or replace FUNCTION osmc.sv_afacode_decode_log(
             'side',side,
             'jurisd_base_id',jurisd_base_id,
             'isolabel_ext',p_isolabel_ext,
-            'isolabel_ext_abbrev',abbrev,
-            'logistic_id', p_isolabel_ext || '~' || p_code,
+            'isolabel_ext_abbrev',abbreviations,
+            'logistic_id', canonical_prefix_with_separator || p_code,
             -- 'truncated_code',truncated_code,
             'jurisd_local_id', jurisd_local_id
           )
       )))::jsonb
   FROM
   (
-    SELECT jurisd_local_id, jurisd_base_id, x.abbrev, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.baseh_to_vbit(substring(lower(p_code),2),'16') ) AS hbig, cbits
+    SELECT jurisd_local_id, jurisd_base_id, abbreviations, canonical_prefix_with_separator, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.baseh_to_vbit(substring(lower(p_code),2),'16') ) AS hbig, cbits
     FROM osmc.mvwcoverage c
-    LEFT JOIN optim.jurisdiction j                     ON c.isolabel_ext = j.isolabel_ext
-    LEFT JOIN mvwjurisdiction_synonym_default_abbrev x ON c.isolabel_ext = x.isolabel_ext
     WHERE is_country IS FALSE
       AND c.isolabel_ext = p_isolabel_ext
       AND cindex = substring(p_code,1,1)

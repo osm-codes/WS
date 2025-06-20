@@ -103,7 +103,7 @@ CREATE VIEW osmc.vw_citycover_dust_cell AS
  FROM dust2
 ;
 
--- DROP MATERIALIZED VIEW IF EXISTS osmc.mvwcoverage;
+-- DROP MATERIALIZED VIEW IF EXISTS osmc.mvwcoverage CASCADE;
 CREATE MATERIALIZED VIEW osmc.mvwcoverage AS
 WITH raw_prefixes AS (
   SELECT *
@@ -183,8 +183,23 @@ final AS
   LEFT JOIN dust s
   ON r.kx_prefix=s.receptor_b16h AND r.isolabel_ext=s.receptor_city_isolabel_ext
 )
-SELECT cbits, isolabel_ext, cindex, status, is_country, is_contained, is_overlay, kx_prefix, geom, ST_Transform(geom,4326) AS geom_srid4326
-FROM final
+SELECT f.cbits, f.isolabel_ext, f.cindex, f.status, f.is_country, f.is_contained, f.is_overlay, f.kx_prefix,
+       x.abbrev AS abbreviations,
+       CASE WHEN j.jurisd_base_id = 170 THEN x.abbrev || '~' || cindex ELSE f.isolabel_ext || '~' || cindex END AS canonical_prefix_with_cindex,
+       CASE WHEN j.jurisd_base_id = 170 THEN x.abbrev || '~'           ELSE f.isolabel_ext || '~'           END AS canonical_prefix_with_separator,
+       CASE WHEN j.jurisd_base_id = 170 THEN x.abbrev                  ELSE f.isolabel_ext                  END AS canonical_prefix,
+       j.jurisd_local_id, j.jurisd_base_id,
+       f.geom, ST_Transform(f.geom,4326) AS geom_srid4326
+FROM final f
+LEFT JOIN
+(
+  SELECT DISTINCT abbrev, isolabel_ext
+  FROM optim.jurisdiction_abbrev_option
+  WHERE default_abbrev IS TRUE
+) x
+  ON x.isolabel_ext = f.isolabel_ext
+LEFT JOIN optim.jurisdiction j
+  ON j.isolabel_ext = f.isolabel_ext
 ;
 CREATE INDEX osmc_mvwcoverage_geom_idx1              ON osmc.mvwcoverage USING gist (geom);
 CREATE INDEX osmc_mvwcoverage_geom4326_idx1          ON osmc.mvwcoverage USING gist (geom_srid4326);
@@ -243,8 +258,8 @@ COMMENT ON FUNCTION str_geouri_decode(text)
 CREATE or replace FUNCTION osmc.encode_short_code(
   p_hbig           bigint,
   p_isolabel_ext   text
-) RETURNS TABLE(cindex text, cbits bigint) AS $f$
-  SELECT cindex, cbits
+) RETURNS TABLE(cindex text, cbits bigint, abbreviations text, jurisd_local_id int, canonical_prefix_with_cindex text) AS $f$
+  SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex
   FROM osmc.mvwcoverage r,
   LATERAL (SELECT afa.hBig_to_vbit(p_hbig) AS hbitstr) v,
   LATERAL (SELECT (cbits::bit(6))::int AS prefixlen) l

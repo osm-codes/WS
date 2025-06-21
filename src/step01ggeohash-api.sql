@@ -241,8 +241,7 @@ CREATE or replace FUNCTION osmc.br_afacode_encode_log(
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id', canonical_prefix_with_cindex || natcod.vbit_to_strstd( substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'32nvu'),
-            'jurisd_local_id', jurisd_local_id
-          ))))::jsonb
+            'jurisd_local_id', jurisd_local_id))))::jsonb
     FROM (SELECT afa.br_encode(p_lat,p_lon,p_level), afa.br_cell_area(p_level), afa.br_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig), afa.br_decode(hbig)) v(id,geom),
     LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
@@ -268,8 +267,7 @@ CREATE or replace FUNCTION osmc.cm_afacode_encode_log(
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id',canonical_prefix_with_cindex || natcod.vbit_to_strstd( substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'32nvu'),
-            'jurisd_local_id', jurisd_local_id
-          ))))::jsonb
+            'jurisd_local_id', jurisd_local_id))))::jsonb
     FROM (SELECT afa.cm_encode(p_lat,p_lon,p_level), afa.cm_cell_area(p_level), afa.cm_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig), afa.cm_decode(hbig)) v(id,geom),
     LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
@@ -295,8 +293,7 @@ CREATE or replace FUNCTION osmc.co_afacode_encode_log(
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id', canonical_prefix_with_cindex || natcod.vbit_to_strstd( substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'32nvu'),
-            'jurisd_local_id', jurisd_local_id
-          ))))::jsonb
+            'jurisd_local_id', jurisd_local_id))))::jsonb
     FROM (SELECT afa.co_encode(p_lat,p_lon,p_level), afa.co_cell_area(p_level), afa.co_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig), afa.co_decode(hbig)) v(id,geom),
     LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
@@ -322,8 +319,7 @@ CREATE or replace FUNCTION osmc.sv_afacode_encode_log(
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id', canonical_prefix_with_cindex || natcod.vbit_to_baseh( substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'16'),
-            'jurisd_local_id', jurisd_local_id
-          ))))::jsonb
+            'jurisd_local_id', jurisd_local_id))))::jsonb
     FROM (SELECT afa.sv_encode(p_lat,p_lon,p_level), afa.sv_cell_area(p_level), afa.sv_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig), afa.sv_decode(hbig)) v(id,geom),
     LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
@@ -424,9 +420,7 @@ CREATE or replace FUNCTION osmc.br_afacode_decode_log(
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id',canonical_prefix_with_separator || p_code,
             -- 'truncated_code',truncated_code,
-            'jurisd_local_id',jurisd_local_id
-          )
-      )))::jsonb
+            'jurisd_local_id',jurisd_local_id))))::jsonb
   FROM
   (
     SELECT jurisd_local_id, jurisd_base_id, abbreviations, canonical_prefix_with_separator, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
@@ -458,9 +452,7 @@ CREATE or replace FUNCTION osmc.cm_afacode_decode_log(
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id', canonical_prefix_with_separator || p_code,
             -- 'truncated_code',truncated_code,
-            'jurisd_local_id', jurisd_local_id
-          )
-      )))::jsonb
+            'jurisd_local_id', jurisd_local_id))))::jsonb
   FROM
   (
     SELECT jurisd_local_id, jurisd_base_id, abbreviations, canonical_prefix_with_separator, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
@@ -492,9 +484,7 @@ CREATE or replace FUNCTION osmc.co_afacode_decode_log(
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id', canonical_prefix_with_separator || p_code,
             -- 'truncated_code',truncated_code,
-            'jurisd_local_id', jurisd_local_id
-          )
-      )))::jsonb
+            'jurisd_local_id', jurisd_local_id))))::jsonb
   FROM
   (
     SELECT jurisd_local_id, jurisd_base_id, abbreviations, canonical_prefix_with_separator, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.b32nvu_to_vbit(substring(p_code,2)) ) AS hbig
@@ -526,9 +516,7 @@ CREATE or replace FUNCTION osmc.sv_afacode_decode_log(
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id', canonical_prefix_with_separator || p_code,
             -- 'truncated_code',truncated_code,
-            'jurisd_local_id', jurisd_local_id
-          )
-      )))::jsonb
+            'jurisd_local_id', jurisd_local_id))))::jsonb
   FROM
   (
     SELECT jurisd_local_id, jurisd_base_id, abbreviations, canonical_prefix_with_separator, afa.vbit_to_hBig( afa.hBig_to_vbit(cbits) || natcod.baseh_to_vbit(substring(lower(p_code),2),'16') ) AS hbig, cbits
@@ -579,10 +567,7 @@ CREATE or replace FUNCTION osmc.br_jurisdiction_coverage(
                 'is_country', is_country,
                 'is_contained', is_contained,
                 'is_overlay', is_overlay,
-                'level', id_length
-          )
-      )))::jsonb
-
+                'level', id_length))))::jsonb
   FROM osmc.mvwcoverage c,
   LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.br_decode(c.cbits), ((c.cbits)::bit(6))::int - 12 ) v(id,geom,id_length),
   LATERAL (SELECT afa.br_cell_area(v.id_length), afa.br_cell_side(v.id_length)) l(area,side)
@@ -607,10 +592,7 @@ CREATE or replace FUNCTION osmc.cm_jurisdiction_coverage(
                 'is_country', is_country,
                 'is_contained', is_contained,
                 'is_overlay', is_overlay,
-                'level', id_length
-          )
-      )))::jsonb
-
+                'level', id_length))))::jsonb
   FROM osmc.mvwcoverage c,
   LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.cm_decode(c.cbits), ((c.cbits)::bit(6))::int - 12 ) v(id,geom,id_length),
   LATERAL (SELECT afa.cm_cell_area(v.id_length), afa.cm_cell_side(v.id_length)) l(area,side)
@@ -634,10 +616,7 @@ CREATE or replace FUNCTION osmc.co_jurisdiction_coverage(
                 'is_country', is_country,
                 'is_contained', is_contained,
                 'is_overlay', is_overlay,
-                'level', id_length
-          )
-      )))::jsonb
-
+                'level', id_length))))::jsonb
   FROM osmc.mvwcoverage c,
   LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.co_decode(c.cbits), ((c.cbits)::bit(6))::int - 12 ) v(id,geom,id_length),
   LATERAL (SELECT afa.co_cell_area(v.id_length), afa.co_cell_side(v.id_length)) l(area,side)
@@ -661,10 +640,7 @@ CREATE or replace FUNCTION osmc.sv_jurisdiction_coverage(
                 'is_country', is_country,
                 'is_contained', is_contained,
                 'is_overlay', is_overlay,
-                'level', id_length
-          )
-      )))::jsonb
-
+                'level', id_length))))::jsonb
   FROM osmc.mvwcoverage c,
   LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.sv_decode(c.cbits), ((c.cbits)::bit(6))::int - 12 ) v(id,geom,id_length),
   LATERAL (SELECT afa.sv_cell_area(v.id_length), afa.sv_cell_side(v.id_length)) l(area,side)
@@ -719,7 +695,7 @@ CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel(
    p_iso text
 ) RETURNS jsonb AS $f$
     SELECT
-      jsonb_build_object('type','FeatureCollection','features',jsonb_build_object(
+      jsonb_build_object('type','FeatureCollection','features',jsonb_agg(jsonb_build_object(
         'type','Feature',
         'geometry',ST_AsGeoJSON(g.geom,8,0)::jsonb,
         'properties',jsonb_build_object(
@@ -740,9 +716,7 @@ CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel(
                 'area', info->'area_km2',
                 'shares_border_with', info->'shares_border_with',
                 'min_level', min_level,
-                'canonical_pathname', CASE WHEN jurisd_base_id=170 THEN 'CO-'|| jurisd_local_id ELSE g.isolabel_ext END
-          )
-      ))::jsonb
+                'canonical_pathname', CASE WHEN jurisd_base_id=170 THEN 'CO-'|| jurisd_local_id ELSE g.isolabel_ext END))))::jsonb
     FROM str_geocodeiso_decode(p_iso) l
     LEFT JOIN optim.jurisdiction j
     ON l[1] = j.isolabel_ext
@@ -787,12 +761,11 @@ $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.jurisdiction_geojson_from_isolabel_cached(text)
   IS 'Returns jurisdiction coverage.';
 
-
 CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel2(
    p_iso text
 ) RETURNS jsonb AS $f$
     SELECT
-      jsonb_build_object('type','FeatureCollection','features',jsonb_build_object(
+      jsonb_build_object('type','FeatureCollection','features',jsonb_agg(jsonb_build_object(
         'type','Feature',
         'geometry',ST_AsGeoJSON(g.geom,8,0)::jsonb,
         'properties',jsonb_build_object(
@@ -810,9 +783,7 @@ CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel2(
                 'lex_urn', lex_urn,
                 'name_en', name_en,
                 'isolevel', isolevel,
-                'area', info->'area_km2'
-          )
-      ))::jsonb
+                'area', info->'area_km2'))))::jsonb
     FROM
     (
       SELECT j.*, g.geom
@@ -824,9 +795,7 @@ CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel2(
 $f$ LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION api.jurisdiction_geojson_from_isolabel2(text)
   IS 'Return jurisdiction geojson from isolabel_ext. With size_shortestprefix.';
-/*
-SELECT api.jurisdiction_geojson_from_isolabel2('BR-SP-Campinas');
-*/
+-- SELECT api.jurisdiction_geojson_from_isolabel2('BR-SP-Campinas');
 
 DROP MATERIALIZED VIEW IF EXISTS osmc.mvwjurisdiction_geojson_from_isolabel2;
 CREATE MATERIALIZED VIEW osmc.mvwjurisdiction_geojson_from_isolabel2 AS

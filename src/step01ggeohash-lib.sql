@@ -184,7 +184,7 @@ final AS
   ON r.kx_prefix=s.receptor_b16h AND r.isolabel_ext=s.receptor_city_isolabel_ext
 )
 SELECT f.cbits, f.isolabel_ext, f.cindex, f.status, f.is_country, f.is_contained, f.is_overlay, f.kx_prefix,
-       x.abbrev AS abbreviations,
+       xx.abbreviations AS abbreviations,
        CASE WHEN j.jurisd_base_id = 170 THEN x.abbrev || '~' || cindex ELSE f.isolabel_ext || '~' || cindex END AS canonical_prefix_with_cindex,
        CASE WHEN j.jurisd_base_id = 170 THEN x.abbrev || '~'           ELSE f.isolabel_ext || '~'           END AS canonical_prefix_with_separator,
        CASE WHEN j.jurisd_base_id = 170 THEN x.abbrev                  ELSE f.isolabel_ext                  END AS canonical_prefix,
@@ -200,6 +200,23 @@ LEFT JOIN
   ON x.isolabel_ext = f.isolabel_ext
 LEFT JOIN optim.jurisdiction j
   ON j.isolabel_ext = f.isolabel_ext
+LEFT JOIN
+(
+  SELECT isolabel_ext, array_agg(abbrev) AS abbreviations
+  FROM optim.jurisdiction_abbrev_option
+  WHERE isolabel_ext IN
+  (
+      SELECT MAX(isolabel_ext) AS isolabel_ext
+      FROM optim.jurisdiction_abbrev_option
+      WHERE selected IS TRUE
+      GROUP BY abbrev
+      HAVING count(*) = 1
+  )
+  AND abbrev NOT LIKE '%;%'
+  AND (CASE WHEN isolabel_ext like 'CO%' THEN default_abbrev is false ELSE TRUE END)
+  GROUP BY isolabel_ext
+) xx
+  ON xx.isolabel_ext = f.isolabel_ext
 ;
 CREATE INDEX osmc_mvwcoverage_geom_idx1              ON osmc.mvwcoverage USING gist (geom);
 CREATE INDEX osmc_mvwcoverage_geom4326_idx1          ON osmc.mvwcoverage USING gist (geom_srid4326);
@@ -258,7 +275,7 @@ COMMENT ON FUNCTION str_geouri_decode(text)
 CREATE or replace FUNCTION osmc.encode_short_code(
   p_hbig           bigint,
   p_isolabel_ext   text
-) RETURNS TABLE(cindex text, cbits bigint, abbreviations text, jurisd_local_id int, canonical_prefix_with_cindex text) AS $f$
+) RETURNS TABLE(cindex text, cbits bigint, abbreviations text[], jurisd_local_id int, canonical_prefix_with_cindex text) AS $f$
   SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex
   FROM osmc.mvwcoverage r,
   LATERAL (SELECT afa.hBig_to_vbit(p_hbig) AS hbitstr) v,

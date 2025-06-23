@@ -315,7 +315,7 @@ CREATE or replace FUNCTION osmc.sv_afacode_encode_log(
         'properties',jsonb_build_object(
             'area',l.area,
             'side',l.side,
-            'jurisd_base_id',170,
+            'jurisd_base_id',222,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id', canonical_prefix_with_cindex || COALESCE(natcod.vbit_to_baseh(substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'16'),''),

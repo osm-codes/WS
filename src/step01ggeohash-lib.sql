@@ -341,43 +341,29 @@ BEGIN
   q_copy := $$
     COPY (
 
-    SELECT a.isolabel_ext, LEAST(a.status,b.status) AS status, a.cover, b.overlay
-    FROM
-    (
-      SELECT isolabel_ext, MIN(status) AS status, string_agg(prefix,' ') AS cover
-      FROM
-      (
-        SELECT isolabel_ext, status, kx_prefix AS prefix
+      WITH base AS (
+        SELECT
+          isolabel_ext,
+          status,
+          kx_prefix,
+          is_overlay
         FROM osmc.mvwcoverage
-        WHERE is_country IS FALSE -- isolevel3 cover
-          AND is_overlay IS FALSE
-          AND isolabel_ext = '%s'
-        ORDER BY isolabel_ext, cbits ASC
-      ) r
+        WHERE is_country IS FALSE
+          AND isolabel_ext LIKE '%s%%'
+      )
+      SELECT
+        isolabel_ext,
+        MIN(status) AS status,
+        STRING_AGG(kx_prefix, ' ') FILTER (WHERE is_overlay IS FALSE) AS cover,
+        STRING_AGG(kx_prefix, ' ') FILTER (WHERE is_overlay IS TRUE) AS overlay
+      FROM base
       GROUP BY isolabel_ext
-      ORDER BY 1
-    ) a
-    LEFT JOIN
-    (
-      SELECT isolabel_ext, MIN(status) AS status, string_agg(prefix,' ') AS overlay
-      FROM
-      (
-        SELECT isolabel_ext, status, kx_prefix AS prefix
-        FROM osmc.mvwcoverage
-        WHERE is_country IS FALSE -- isolevel3 cover
-          AND is_overlay IS TRUE
-          AND isolabel_ext = '%s'
-        ORDER BY isolabel_ext, cbits ASC
-      ) r
-      GROUP BY isolabel_ext
-      ORDER BY 1
-    ) b
-    ON a.isolabel_ext = b.isolabel_ext
+      ORDER BY isolabel_ext
 
     ) TO '%s' CSV HEADER
   $$;
 
-  EXECUTE format(q_copy,p_isolabel_ext,p_isolabel_ext,p_path);
+  EXECUTE format(q_copy,p_isolabel_ext,p_path);
 
   RETURN 'Ok.';
 END

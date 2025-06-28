@@ -44,19 +44,19 @@ map $iso $encode_log_route {
 }
 
 map $cover $iso_route {
-    default  "/rpc/jurisdiction_geojson_from_isolabel_cached";
-    "cover"  "/rpc/jurisdiction_coverage_cached";
-    "buffer" "/rpc/jurisdiction_geojson_from_isolabel2_cached";
+    default  "/rpc/jurisdiction_geojson_from_isolabel";
+    "cover"  "/rpc/jurisdiction_coverage";
+    "buffer" "/rpc/jurisdiction_geojson_from_isolabel2";
 }
 
 log_format postgrest_debug '$remote_addr - $time_local "$request" $status '
                             '"$request_uri => $uri => $args" '
                             '"$http_user_agent"';
 
-log_format with_time '$remote_addr - $remote_user [$time_local] '
-                        '"$request" $status $body_bytes_sent '
-                        '"$http_referer" "$http_user_agent" '
-                        'rt=$request_time ut=$upstream_response_time';
+log_format with_time       '$remote_addr - $remote_user [$time_local] '
+                            '"$request" $status $body_bytes_sent '
+                            '"$http_referer" "$http_user_agent" '
+                            'rt=$request_time ut=$upstream_response_time';
 
 # prod_backend
 server {

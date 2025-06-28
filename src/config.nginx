@@ -349,7 +349,7 @@ server {
     }
 
     # geo:co-divipola|br-geocodigo|cm-code
-    location ~* ^/geo:(?<prefix>co|br|cm)-(?:divipola|geocodigo|code):(?<code>[0-9]+)\.json(?:/(?<cover>cover))?$" {
+    location ~* "^/geo:(?<prefix>co|br|cm)-(?:divipola|geocodigo|code):(?<code>[0-9]+)\.json(?:/(?<cover>cover))?$" {
         rewrite "^" "$iso_route?p_iso=$prefix-$code" break;
         proxy_pass http://test_backend;
     }

@@ -344,7 +344,7 @@ COMMENT ON FUNCTION api.afacode_encode_log(text,text)
   IS 'Wrapper for country-specific Logistics AFAcode encoders. Includes logic for rounding and bounding grid levels per country.';
 
 CREATE or replace FUNCTION api.afacode_encode_log_no_context(
-  p_uri  text,
+  p_uri  text
 ) RETURNS jsonb AS $wrap$
   WITH
   decoded_point AS
@@ -733,9 +733,10 @@ CREATE MATERIALIZED VIEW osmc.mvwjurisdiction_geojson_from_isolabel AS
     FROM osmc.mvwcoverage
     WHERE isolabel_ext = j.isolabel_ext AND is_overlay IS FALSE
   ) s;
-COMMENT ON COLUMN osmc.mvwjurisdiction_geojson_from_isolabel.isolabel_ext IS 'ISO and name (camel case); e.g. BR-SP-SaoPaulo.';
-COMMENT ON COLUMN osmc.mvwjurisdiction_geojson_from_isolabel.json         IS 'Synonym for isolabel_ext, e.g. br;sao.paulo;sao.paulo br-saopaulo';
-COMMENT ON MATERIALIZED VIEW osmc.mvwjurisdiction_geojson_from_isolabel   IS 'Synonymous default abbrev names of jurisdictions.';
+COMMENT ON COLUMN osmc.mvwjurisdiction_geojson_from_isolabel.isolabel_ext   IS 'ISO and name (camel case); e.g. BR-SP-SaoPaulo.';
+COMMENT ON COLUMN osmc.mvwjurisdiction_geojson_from_isolabel.json_nonbuffer IS 'Synonym for isolabel_ext, e.g. br;sao.paulo;sao.paulo br-saopaulo';
+COMMENT ON COLUMN osmc.mvwjurisdiction_geojson_from_isolabel.json_buffer    IS 'Synonym for isolabel_ext, e.g. br;sao.paulo;sao.paulo br-saopaulo';
+COMMENT ON MATERIALIZED VIEW osmc.mvwjurisdiction_geojson_from_isolabel     IS 'Synonymous default abbrev names of jurisdictions.';
 CREATE UNIQUE INDEX mvwjurisdiction_geojson_from_isolabel_isolabel_ext ON osmc.mvwjurisdiction_geojson_from_isolabel (isolabel_ext);
 /*
 SELECT osmc.mvwjurisdiction_geojson_from_isolabel('BR-SP-Campinas');

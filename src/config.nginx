@@ -68,6 +68,14 @@ server {
     access_log /var/log/nginx/osm.codes.access_log;
     error_log  /var/log/nginx/osm.codes.error.log;
 
+    location /swagger {
+        alias /var/www/swagger;
+        index index.html;
+        try_files $uri $uri/ =404;
+        access_log /var/log/nginx/osm.codes.swagger.access.log;
+        error_log  /var/log/nginx/osm.codes.swagger.error.log warn;
+    }
+
     # schema api, deve migrar para api.osm.codes
     ## return csv
     location /_sql.csv {
@@ -300,6 +308,14 @@ server {
     index index.php index.html index.htm;
     access_log /var/log/nginx/test.osm.codes.access_log ; # with_time postgrest_debug;
     error_log  /var/log/nginx/test.osm.codes.error.log ;  # notice;
+
+    location /swagger {
+        alias /var/www/swagger;
+        index index.html;
+        try_files $uri $uri/ =404;
+        access_log /var/log/nginx/test.osm.codes.swagger.access.log;
+        error_log  /var/log/nginx/test.osm.codes.swagger.error.log warn;
+    }
 
     # return csv, schema api, deve migrar para api.test.afa.codes
     location /_sql.csv {

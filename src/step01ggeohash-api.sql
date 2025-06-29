@@ -745,24 +745,24 @@ SELECT osmc.mvwjurisdiction_geojson_from_isolabel('CO-A-Itagui');
 SELECT osmc.mvwjurisdiction_geojson_from_isolabel('CO-Itagui');
 */
 
-CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel(
+CREATE or replace FUNCTION api.jurisdiction_geojson(
    p_iso  text
 ) RETURNS jsonb AS $wrap$
   SELECT json_nonbuffer AS json
   FROM osmc.mvwjurisdiction_geojson_from_isolabel
   WHERE isolabel_ext = (str_geocodeiso_decode(p_iso))[1]
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.jurisdiction_geojson_from_isolabel(text)
+COMMENT ON FUNCTION api.jurisdiction_geojson(text)
   IS 'Returns jurisdiction coverage.';
 
-CREATE or replace FUNCTION api.jurisdiction_geojson_from_isolabel2(
+CREATE or replace FUNCTION api.jurisdiction_buffer(
    p_iso  text
 ) RETURNS jsonb AS $wrap$
   SELECT json_buffer AS json
   FROM osmc.mvwjurisdiction_geojson_from_isolabel
   WHERE isolabel_ext = (str_geocodeiso_decode(p_iso))[1]
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.jurisdiction_geojson_from_isolabel2(text)
+COMMENT ON FUNCTION api.jurisdiction_buffer(text)
   IS 'Returns jurisdiction coverage.';
 
 ------------------

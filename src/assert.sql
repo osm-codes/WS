@@ -38,16 +38,16 @@ begin
 
   RAISE NOTICE '2. Testando Encode Sci geouri bbox';
 
-  ASSERT (api.afacode_encode_log_no_context('geo:-23.55,-46.633333;u=0.5')->'features')[0]->>'id'='dfc16b792fe', 'São Paulo/BR';
-  ASSERT (api.afacode_encode_log_no_context('geo:-3.118889,-60.021667;u=0.5')->'features')[0]->>'id'='140eef5c28d', 'Manaus/BR';
-  ASSERT (api.afacode_encode_log_no_context('geo:-30.8775,-55.533056;u=0.5')->'features')[0]->>'id'='d08486208d7', 'SantAna do Livramento/BR';
-  ASSERT (api.afacode_encode_log_no_context('geo:-9.974722,-67.81;u=0.5')->'features')[0]->>'id'='470a3c68650', 'Rio Branco/BR';
-  ASSERT (api.afacode_encode_log_no_context('geo:-0.119167,-67.082778;u=0.5')->'features')[0]->>'id'='072c810bdf3', 'São Gabriel da Cachoeira/BR';
-  ASSERT (api.afacode_encode_log_no_context('geo:-0.193889,-74.780556;u=0.5')->'features')[0]->>'id'='90630c8cf0V', 'Puerto Leguízamo/CO';
-  ASSERT (api.afacode_encode_log_no_context('geo:6.190278,-67.483611;u=0.5')->'features')[0]->>'id'='e6cfdc93e0V', 'Puerto Carreño/CO';
-  ASSERT (api.afacode_encode_log_no_context('geo:4.711111,-74.072222;u=0.5')->'features')[0]->>'id'='c12e72768eV', 'Bogotá/CO';
-  ASSERT (api.afacode_encode_log_no_context('geo:1.207778,-77.277222;u=0.5')->'features')[0]->>'id'='369507ac73R', 'Pasto/CO';
-  ASSERT (api.afacode_encode_log_no_context('geo:4.365,11.44;u=0.5')->'features')[0]->>'id'='91e2b65c8c', 'Saa/CM';
+  ASSERT (api.afacode_encode_log_no_context('geo:-23.55,-46.633333;u=0.5')->'features')[0]->>'id'='BR+dfc16b792fe', 'São Paulo/BR';
+  ASSERT (api.afacode_encode_log_no_context('geo:-3.118889,-60.021667;u=0.5')->'features')[0]->>'id'='BR+140eef5c28d', 'Manaus/BR';
+  ASSERT (api.afacode_encode_log_no_context('geo:-30.8775,-55.533056;u=0.5')->'features')[0]->>'id'='BR+d08486208d7', 'SantAna do Livramento/BR';
+  ASSERT (api.afacode_encode_log_no_context('geo:-9.974722,-67.81;u=0.5')->'features')[0]->>'id'='BR+470a3c68650', 'Rio Branco/BR';
+  ASSERT (api.afacode_encode_log_no_context('geo:-0.119167,-67.082778;u=0.5')->'features')[0]->>'id'='BR+072c810bdf3', 'São Gabriel da Cachoeira/BR';
+  ASSERT (api.afacode_encode_log_no_context('geo:-0.193889,-74.780556;u=0.5')->'features')[0]->>'id'='CO+90630c8cf0V', 'Puerto Leguízamo/CO';
+  ASSERT (api.afacode_encode_log_no_context('geo:6.190278,-67.483611;u=0.5')->'features')[0]->>'id'='CO+e6cfdc93e0V', 'Puerto Carreño/CO';
+  ASSERT (api.afacode_encode_log_no_context('geo:4.711111,-74.072222;u=0.5')->'features')[0]->>'id'='CO+c12e72768eV', 'Bogotá/CO';
+  ASSERT (api.afacode_encode_log_no_context('geo:1.207778,-77.277222;u=0.5')->'features')[0]->>'id'='CO+369507ac73R', 'Pasto/CO';
+  ASSERT (api.afacode_encode_log_no_context('geo:4.365,11.44;u=0.5')->'features')[0]->>'id'='CM+91e2b65c8c', 'Saa/CM';
 
   -- ASSERT (api.afacode_encode_log_no_context('geo:-30.9025,-55.550556;u=0.5')->'features')[0]->>'id'='e0e79ce6a85', 'Rivera/UY';
   -- ASSERT (api.afacode_encode_log_no_context('geo:-31.383333,-57.95;u=0.5')->'features')[0]->>'id'='2b4fecc57a5', 'Salto/UY';

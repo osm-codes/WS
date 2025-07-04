@@ -308,77 +308,13 @@ server {
         try_files $uri $uri/ =404;
     }
 
-    # return csv, schema api, deve migrar para api.test.afa.codes
-    location /_sql.csv {
-        rewrite /_sql.csv/(.*) /$1 break;
-        proxy_set_header Accept 'text/csv';
-        proxy_pass http://test_backend;
+    # Redireciona csv/json para o novo subdomínio
+    location ~ ^/_sql\.csv(/.*)?$ {
+        return 301 https://api-csv.test.afa.codes/$1;
     }
 
-    # return json default postgrest
-    location /_sql {
-        rewrite ^/_sql/(.*) /$1 break;
-        proxy_pass http://test_backend;
-    }
-
-    # encode logistics
-    location ~* "^/(?<coords>geo:\-?\d+\.?\d*,\-?\d+\.?\d*)(?:;(?<unit>u=\d+\.?\d*))?\.json(?:/(?<iso>[a-z]{2}-[a-z0-9]{1,3}-[a-z0-9]+))?$" {
-        rewrite "^" "$encode_log_route?p_uri=$coords$unit_suffix$iso_param" break;
-        proxy_pass http://test_backend;
-    }
-
-    # encode scientific
-    location ~* "^/(?<coords>geo:\-?\d+\.?\d*,\-?\d+\.?\d*)(?:;(?<unit>u=\d+\.?\d*))?\.json/base16h(?:/(?<iso>[a-z]{2}))?$" {
-        rewrite "^" "/rpc/afacode_encode?p_uri=$coords$unit_suffix$iso_param" break;
-        proxy_pass http://test_backend;
-    }
-
-    # geo:iso_ext
-    location ~* "^/(?:geo:iso_ext:)?(?<iso>[a-z]{2}(-[a-z0-9]+){0,2})\.json(?:/(?<cover>cover|buffer))?$" {
-        rewrite "^" "$iso_route?p_iso=$iso" break;
-        proxy_pass http://test_backend;
-    }
-
-    # geo:co-divipola|br-geocodigo|cm-code
-    location ~* "^/geo:(?<prefix>co|br|cm)-(?:divipola|geocodigo|code):(?<code>[0-9]+)\.json(?:/(?<cover>cover))?$" {
-        rewrite "^" "$iso_route?p_iso=$prefix-$code" break;
-        proxy_pass http://test_backend;
-    }
-
-    # decode scientific
-    location ~* "^/geo:afa:(?<iso>[a-z]{2})(?:~|\+)(?<code>[a-z0-9,\{\}\.]+)\.json$" {
-        rewrite "^" "/rpc/afacode_decode?p_code=$code&p_iso=$iso" break;
-        proxy_pass http://test_backend;
-    }
-
-    # decode logistic (CO-ANT-Itagui, CO-A-Itagui) divipola/ibgegeocodigo/cmcode
-    location ~* "^/(?:geo:afa:)?(?<code>[a-z]{2}(?:-[a-z0-9]+){1,2}(?:~|-)[a-z0-9]+)\.json$" {
-        rewrite "^" "/rpc/afacode_decode_log?p_code=$code" break;
-        proxy_pass http://test_backend;
-    }
-
-    # urn|geo:lex
-    location ~* "^/(?:urn|geo):lex:(?<iso>[a-z]{2}(?:;[a-z0-9\.]+){0,2})\.json(?:/(?<cover>cover))?$" {
-        rewrite "^" "$iso_route?p_iso=$iso" break;
-        proxy_pass http://test_backend;
-    }
-
-    # encode olc|ghs
-    location ~* "^/geo(?<type>olc|ghs):(?<coords>\-?\d+\.?\d*,\-?\d+\.?\d*)(?:;(?<unit>u=\d+\.?\d*))?\.json$" {
-        rewrite "^" "/rpc/${type}_encode?uri=geo${type}:$coords$unit_suffix" break;
-        proxy_pass http://test_backend;
-    }
-
-    # decode ghs
-    location ~* "^/geo:ghs:(?<code>[0123456789BCDEFGHJKMNPQRSTUVWXYZ]+)\.json$" {
-        rewrite "^" "/rpc/ghs_decode?code=$code" break;
-        proxy_pass http://test_backend;
-    }
-
-    # decode olc
-    location ~* "^/geo:olc:(?<code>([23456789CFGHJMPQRVWX]+0*){1,8}\+([23456789CFGHJMPQRVWX]+)?).json$" {
-        rewrite "^" "/rpc/olc_decode?code=$code" break;
-        proxy_pass http://test_backend;
+    location ~ ^/_sql(/.*)?$ {
+        return 301 https://api.test.afa.codes/$1;
     }
 
     # website
@@ -447,29 +383,8 @@ server {
     }
 } # \server
 
-# OLD
 server {
-    server_name old.afa.codes www.old.afa.codes;
-    listen 443 ssl http2;
-    include /etc/nginx/ssl.conf;
-    access_log /var/log/nginx/old.afa.codes.access.log;
-    error_log  /var/log/nginx/old.afa.codes.error.log;
-
-    return 302 https://test.afa.codes$request_uri;
-} # \server
-
-server {
-    server_name docs.afa.codes www.docs.afa.codes;
-    listen 443 ssl http2;
-    include /etc/nginx/ssl.conf;
-    access_log /var/log/nginx/docs.afa.codes.access.log;
-    error_log  /var/log/nginx/docs.afa.codes.error.log;
-
-    return 302 https://wiki.addressforall.org/doc/Documenta%C3%A7%C3%A3o_AFA.codes;
-} # \server
-
-server {
-    server_name api.afa.codes www.api.afa.codes;
+    server_name api.afa.codes;
     listen 443 ssl http2;
     include /etc/nginx/ssl.conf;
     access_log /var/log/nginx/api.afa.codes.access.log;
@@ -487,7 +402,100 @@ server {
 } # \server
 
 server {
-    server_name api.test.afa.codes www.api.test.afa.codes;
+    server_name api-csv.afa.codes;
+    listen 443 ssl http2;
+    include /etc/nginx/ssl.conf;
+    access_log /var/log/nginx/api.afa.codes.access.log;
+    error_log  /var/log/nginx/api.afa.codes.error.log;
+
+    ## return jurisdiction to autocomplete
+    location / {
+        rewrite "(?i)^/jurisdiction_autocomplete/?$"
+            /rpc/jurisdiction_autocomplete break;
+        rewrite "(?i)^/jurisdiction_autocomplete/(([a-z]{2}(-[a-z]{1,3})?)(/[a-z]{2})?)$"
+            /rpc/jurisdiction_autocomplete?p_code=$1 break;
+
+        proxy_pass http://prod_backend;
+    }
+} # \server
+
+server {
+    server_name api.test.afa.codes;
+    listen 443 ssl http2;
+    include /etc/nginx/ssl.conf;
+    access_log /var/log/nginx/api.test.afa.codes.access.log;
+    error_log  /var/log/nginx/api.test.afa.codes.error.log;
+
+    ## return jurisdiction to autocomplete
+    location / {
+        rewrite "(?i)^/jurisdiction_autocomplete/?$"  /rpc/jurisdiction_autocomplete break;
+        rewrite "(?i)^/jurisdiction_autocomplete/(([a-z]{2}(-[a-z]{1,3})?)(/[a-z]{2})?)$"  /rpc/jurisdiction_autocomplete?p_code=$1 break;
+        proxy_pass http://test_backend;
+    }
+
+    # encode logistics
+    location ~* "^/(?<coords>geo:\-?\d+\.?\d*,\-?\d+\.?\d*)(?:;(?<unit>u=\d+\.?\d*))?(?:/(?<iso>[a-z]{2}-[a-z0-9]{1,3}-[a-z0-9]+))?$" {
+        rewrite "^" "$encode_log_route?p_uri=$coords$unit_suffix$iso_param" break;
+        proxy_pass http://test_backend;
+    }
+
+    # encode scientific
+    location ~* "^/(?<coords>geo:\-?\d+\.?\d*,\-?\d+\.?\d*)(?:;(?<unit>u=\d+\.?\d*))?/base16h(?:/(?<iso>[a-z]{2}))?$" {
+        rewrite "^" "/rpc/afacode_encode?p_uri=$coords$unit_suffix$iso_param" break;
+        proxy_pass http://test_backend;
+    }
+
+    # geo:iso_ext
+    location ~* "^/(?:geo:iso_ext:)?(?<iso>[a-z]{2}(-[a-z0-9]+){0,2})(?:/(?<cover>cover|buffer))?$" {
+        rewrite "^" "$iso_route?p_iso=$iso" break;
+        proxy_pass http://test_backend;
+    }
+
+    # geo:co-divipola|br-geocodigo|cm-code
+    location ~* "^/geo:(?<prefix>co|br|cm)-(?:divipola|geocodigo|code):(?<code>[0-9]+)(?:/(?<cover>cover))?$" {
+        rewrite "^" "$iso_route?p_iso=$prefix-$code" break;
+        proxy_pass http://test_backend;
+    }
+
+    # decode scientific
+    location ~* "^/geo:afa:(?<iso>[a-z]{2})(?:~|\+)(?<code>[a-z0-9,\{\}\.]+)$" {
+        rewrite "^" "/rpc/afacode_decode?p_code=$code&p_iso=$iso" break;
+        proxy_pass http://test_backend;
+    }
+
+    # decode logistic (CO-ANT-Itagui, CO-A-Itagui) divipola/ibgegeocodigo/cmcode
+    location ~* "^/(?:geo:afa:)?(?<code>[a-z]{2}(?:-[a-z0-9]+){1,2}(?:~|-)[a-z0-9]+)$" {
+        rewrite "^" "/rpc/afacode_decode_log?p_code=$code" break;
+        proxy_pass http://test_backend;
+    }
+
+    # urn|geo:lex
+    location ~* "^/(?:urn|geo):lex:(?<iso>[a-z]{2}(?:;[a-z0-9\.]+){0,2})(?:/(?<cover>cover))?$" {
+        rewrite "^" "$iso_route?p_iso=$iso" break;
+        proxy_pass http://test_backend;
+    }
+
+    # encode olc|ghs
+    location ~* "^/geo(?<type>olc|ghs):(?<coords>\-?\d+\.?\d*,\-?\d+\.?\d*)(?:;(?<unit>u=\d+\.?\d*))?$" {
+        rewrite "^" "/rpc/${type}_encode?uri=geo${type}:$coords$unit_suffix" break;
+        proxy_pass http://test_backend;
+    }
+
+    # decode ghs
+    location ~* "^/geo:ghs:(?<code>[0123456789BCDEFGHJKMNPQRSTUVWXYZ]+)$" {
+        rewrite "^" "/rpc/ghs_decode?code=$code" break;
+        proxy_pass http://test_backend;
+    }
+
+    # decode olc
+    location ~* "^/geo:olc:(?<code>([23456789CFGHJMPQRVWX]+0*){1,8}\+([23456789CFGHJMPQRVWX]+)?)$" {
+        rewrite "^" "/rpc/olc_decode?code=$code" break;
+        proxy_pass http://test_backend;
+    }
+} # \server
+
+server {
+    server_name api-csv.test.afa.codes;
     listen 443 ssl http2;
     include /etc/nginx/ssl.conf;
     access_log /var/log/nginx/api.test.afa.codes.access.log;
@@ -500,6 +508,7 @@ server {
         rewrite "(?i)^/jurisdiction_autocomplete/(([a-z]{2}(-[a-z]{1,3})?)(/[a-z]{2})?)$"
             /rpc/jurisdiction_autocomplete?p_code=$1 break;
 
+        proxy_set_header Accept 'text/csv';
         proxy_pass http://test_backend;
     }
 } # \server
@@ -564,4 +573,25 @@ server { #OLC para comparar com plus.codes
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/run/php/php-fpm.sock;
     }
+} # \server
+
+# OLD
+server {
+    server_name old.afa.codes www.old.afa.codes;
+    listen 443 ssl http2;
+    include /etc/nginx/ssl.conf;
+    access_log /var/log/nginx/old.afa.codes.access.log;
+    error_log  /var/log/nginx/old.afa.codes.error.log;
+
+    return 302 https://test.afa.codes$request_uri;
+} # \server
+
+server {
+    server_name docs.afa.codes www.docs.afa.codes;
+    listen 443 ssl http2;
+    include /etc/nginx/ssl.conf;
+    access_log /var/log/nginx/docs.afa.codes.access.log;
+    error_log  /var/log/nginx/docs.afa.codes.error.log;
+
+    return 302 https://wiki.addressforall.org/doc/Documenta%C3%A7%C3%A3o_AFA.codes;
 } # \server

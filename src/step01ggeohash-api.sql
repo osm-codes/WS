@@ -13,13 +13,12 @@ CREATE or replace FUNCTION osmc.br_afacode_encode(
         'type','Feature',
         'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
         'id',v.id,
+        'jurisd_base_id',76,
         'properties', jsonb_build_object(
             'area',l.area,
-            'side',l.side,
-            'jurisd_base_id',76,
-            'isolabel_ext','BR'))))::jsonb
+            'side',l.side))))::jsonb
     FROM (SELECT afa.br_encode(p_lat,p_lon,p_level), afa.br_cell_area(p_level), afa.br_cell_side(p_level)) l(hbig,area,side),
-    LATERAL (SELECT afa.hBig_to_hex(hbig), afa.br_decode(hbig)) v(id,geom)
+    LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.br_decode(hbig)) v(id,geom)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.br_afacode_encode(float,float,int)
   IS 'Encodes lat/lon to AFAcode grid scientific for Brazil.';
@@ -34,13 +33,12 @@ CREATE or replace FUNCTION osmc.cm_afacode_encode(
         'type','Feature',
         'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
         'id',v.id,
+        'jurisd_base_id',120,
         'properties',jsonb_build_object(
             'area',l.area,
-            'side',l.side,
-            'jurisd_base_id',120,
-            'isolabel_ext','CM'))))::jsonb
+            'side',l.side))))::jsonb
     FROM (SELECT afa.cm_encode(p_lat,p_lon,p_level), afa.cm_cell_area(p_level), afa.cm_cell_side(p_level)) l(hbig,area,side),
-    LATERAL (SELECT afa.hBig_to_hex(hbig), afa.cm_decode(hbig)) v(id,geom)
+    LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.cm_decode(hbig)) v(id,geom)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.cm_afacode_encode(float,float,int)
   IS 'Encodes lat/lon to AFAcode grid scientific for Cameroon.';
@@ -55,13 +53,12 @@ CREATE or replace FUNCTION osmc.co_afacode_encode(
       'type','Feature',
       'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
       'id',v.id,
+      'jurisd_base_id',170,
       'properties',jsonb_build_object(
           'area',l.area,
-          'side',l.side,
-          'jurisd_base_id',170,
-          'isolabel_ext','CO'))))::jsonb
+          'side',l.side))))::jsonb
     FROM (SELECT afa.co_encode(p_lat,p_lon,p_level), afa.co_cell_area(p_level), afa.co_cell_side(p_level)) l(hbig,area,side),
-    LATERAL (SELECT afa.hBig_to_hex(hbig), afa.co_decode(hbig)) v(id,geom)
+    LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.co_decode(hbig)) v(id,geom)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.co_afacode_encode(float,float,int)
   IS 'Encodes lat/lon to AFAcode grid scientific for Colombia.';
@@ -76,13 +73,12 @@ CREATE or replace FUNCTION osmc.sv_afacode_encode(
       'type','Feature',
       'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
       'id',v.id,
+      'jurisd_base_id',222,
       'properties',jsonb_build_object(
           'area',l.area,
-          'side',l.side,
-          'jurisd_base_id',222,
-          'isolabel_ext','SV'))))::jsonb
+          'side',l.side))))::jsonb
     FROM (SELECT afa.sv_encode(p_lat,p_lon,p_level), afa.sv_cell_area(p_level), afa.sv_cell_side(p_level)) l(hbig,area,side),
-    LATERAL (SELECT afa.hBig_to_hex(hbig), afa.sv_decode(hbig)) v(id,geom)
+    LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.sv_decode(hbig)) v(id,geom)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.sv_afacode_encode(float,float,int)
   IS 'Encodes lat/lon to AFAcode grid scientific for El Salvador.';
@@ -112,15 +108,14 @@ CREATE or replace FUNCTION osmc.br_afacode_decode(
       'type','Feature',
       'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
       'id',v.id,
+      'jurisd_base_id',76,
       'properties',jsonb_build_object(
           'area',l.area,
           'side',l.side,
-          'jurisd_base_id',76,
-          'isolabel_ext','BR',
-          'truncated_code',(CASE WHEN length(v.id) <> length(code) THEN TRUE ELSE FALSE END)))))::jsonb
+          'truncated',(CASE WHEN length(v.id) - length(code) <> 3 THEN TRUE ELSE FALSE END)))))::jsonb
   FROM regexp_split_to_table(p_code,',') code,
   LATERAL (SELECT afa.br_hex_to_hBig(substring(code,1,11))) m(hbig),
-  LATERAL (SELECT afa.hBig_to_hex(hbig), afa.br_decode(hbig), afa.br_hBig_to_xyLRef(hbig)) v(id,geom,xyL),
+  LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.br_decode(hbig), afa.br_hBig_to_xyLRef(hbig)) v(id,geom,xyL),
   LATERAL (SELECT afa.br_cell_area(xyL[3]), afa.br_cell_side(xyL[3])) l(area,side)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.br_afacode_decode(text)
@@ -134,15 +129,14 @@ CREATE or replace FUNCTION osmc.cm_afacode_decode(
       'type','Feature',
       'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
       'id',v.id,
+      'jurisd_base_id',120,
       'properties',jsonb_build_object(
           'area',l.area,
           'side',l.side,
-          'jurisd_base_id',120,
-          'isolabel_ext', 'CM',
-          'truncated_code',(CASE WHEN length(v.id) <> length(code) THEN TRUE ELSE FALSE END)))))::jsonb
+          'truncated',(CASE WHEN length(v.id) - length(code) <> 3 THEN TRUE ELSE FALSE END)))))::jsonb
   FROM regexp_split_to_table(p_code,',') code,
   LATERAL (SELECT afa.cm_hex_to_hBig(substring(code,1,10))) m(hbig),
-  LATERAL (SELECT afa.hBig_to_hex(hbig), afa.cm_decode(hbig), afa.cm_hBig_to_xyLRef(hbig)) v(id,geom,xyL),
+  LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.cm_decode(hbig), afa.cm_hBig_to_xyLRef(hbig)) v(id,geom,xyL),
   LATERAL (SELECT afa.cm_cell_area(xyL[3]), afa.cm_cell_side(xyL[3])) l(area,side)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.cm_afacode_decode(text)
@@ -156,15 +150,14 @@ CREATE or replace FUNCTION osmc.co_afacode_decode(
       'type','Feature',
       'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
       'id',v.id,
+      'jurisd_base_id',170,
       'properties',jsonb_build_object(
           'area',l.area,
           'side',l.side,
-          'jurisd_base_id',170,
-          'isolabel_ext', 'CO',
-          'truncated_code',(CASE WHEN length(id) <> length(code) THEN TRUE ELSE FALSE END)))))::jsonb
+          'truncated',(CASE WHEN length(v.id) - length(code) <> 3 THEN TRUE ELSE FALSE END)))))::jsonb
   FROM regexp_split_to_table(p_code,',') code,
   LATERAL (SELECT afa.co_hex_to_hBig(substring(code,1,11))) m(hbig),
-  LATERAL (SELECT afa.hBig_to_hex(hbig), afa.co_decode(hbig), afa.co_hBig_to_xyLRef(hbig)) v(id,geom,xyL),
+  LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.co_decode(hbig), afa.co_hBig_to_xyLRef(hbig)) v(id,geom,xyL),
   LATERAL (SELECT afa.co_cell_area(xyL[3]), afa.co_cell_side(xyL[3])) l(area,side)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.co_afacode_decode(text)
@@ -178,15 +171,14 @@ CREATE or replace FUNCTION osmc.sv_afacode_decode(
       'type','Feature',
       'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
       'id',v.id,
+      'jurisd_base_id',222,
       'properties',jsonb_build_object(
           'area',l.area,
           'side',l.side,
-          'jurisd_base_id',222,
-          'isolabel_ext', 'SV',
-          'truncated_code',(CASE WHEN length(id) <> length(code) THEN TRUE ELSE FALSE END)))))::jsonb
+          'truncated',(CASE WHEN length(v.id) - length(code) <> 3 THEN TRUE ELSE FALSE END)))))::jsonb
   FROM regexp_split_to_table(p_code,',') code,
   LATERAL (SELECT afa.sv_hex_to_hBig(substring(code,1,9))) m(hbig),
-  LATERAL (SELECT afa.hBig_to_hex(hbig), afa.sv_decode(hbig), afa.sv_hBig_to_xyLRef(hbig)) v(id,geom,xyL),
+  LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.sv_decode(hbig), afa.sv_hBig_to_xyLRef(hbig)) v(id,geom,xyL),
   LATERAL (SELECT afa.sv_cell_area(xyL[3]), afa.sv_cell_side(xyL[3])) l(area,side)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.sv_afacode_decode(text)
@@ -233,16 +225,16 @@ CREATE or replace FUNCTION osmc.br_afacode_encode_log(
         'type','Feature',
         'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
         'id',v.id,
+        'jurisd_base_id',76,
         'properties',jsonb_build_object(
             'area',l.area,
             'side',l.side,
-            'jurisd_base_id',76,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id', canonical_prefix_with_cindex || COALESCE(natcod.vbit_to_strstd(substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1),'32nvu'),''),
             'jurisd_local_id', jurisd_local_id))))::jsonb
     FROM (SELECT afa.br_encode(p_lat,p_lon,p_level), afa.br_cell_area(p_level), afa.br_cell_side(p_level)) l(hbig,area,side),
-    LATERAL (SELECT afa.hBig_to_hex(hbig), afa.br_decode(hbig)) v(id,geom),
+    LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.br_decode(hbig)) v(id,geom),
     LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.br_afacode_encode_log(float,float,int,text)
@@ -259,16 +251,16 @@ CREATE or replace FUNCTION osmc.cm_afacode_encode_log(
         'type','Feature',
         'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
         'id',v.id,
+        'jurisd_base_id',120,
         'properties',jsonb_build_object(
             'area',l.area,
             'side',l.side,
-            'jurisd_base_id',120,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id',canonical_prefix_with_cindex || COALESCE(natcod.vbit_to_strstd(substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1),'32nvu'),''),
             'jurisd_local_id', jurisd_local_id))))::jsonb
     FROM (SELECT afa.cm_encode(p_lat,p_lon,p_level), afa.cm_cell_area(p_level), afa.cm_cell_side(p_level)) l(hbig,area,side),
-    LATERAL (SELECT afa.hBig_to_hex(hbig), afa.cm_decode(hbig)) v(id,geom),
+    LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.cm_decode(hbig)) v(id,geom),
     LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.cm_afacode_encode_log(float,float,int,text)
@@ -285,16 +277,16 @@ CREATE or replace FUNCTION osmc.co_afacode_encode_log(
         'type','Feature',
         'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
         'id',v.id,
+        'jurisd_base_id',170,
         'properties',jsonb_build_object(
             'area',l.area,
             'side',l.side,
-            'jurisd_base_id',170,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id', canonical_prefix_with_cindex || COALESCE(natcod.vbit_to_strstd(substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1),'32nvu'),''),
             'jurisd_local_id', jurisd_local_id))))::jsonb
     FROM (SELECT afa.co_encode(p_lat,p_lon,p_level), afa.co_cell_area(p_level), afa.co_cell_side(p_level)) l(hbig,area,side),
-    LATERAL (SELECT afa.hBig_to_hex(hbig), afa.co_decode(hbig)) v(id,geom),
+    LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.co_decode(hbig)) v(id,geom),
     LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.co_afacode_encode_log(float,float,int,text)
@@ -311,16 +303,16 @@ CREATE or replace FUNCTION osmc.sv_afacode_encode_log(
         'type','Feature',
         'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
         'id',v.id,
+        'jurisd_base_id',222,
         'properties',jsonb_build_object(
             'area',l.area,
             'side',l.side,
-            'jurisd_base_id',222,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id', canonical_prefix_with_cindex || COALESCE(natcod.vbit_to_baseh(substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'16'),''),
             'jurisd_local_id', jurisd_local_id))))::jsonb
     FROM (SELECT afa.sv_encode(p_lat,p_lon,p_level), afa.sv_cell_area(p_level), afa.sv_cell_side(p_level)) l(hbig,area,side),
-    LATERAL (SELECT afa.hBig_to_hex(hbig), afa.sv_decode(hbig)) v(id,geom),
+    LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.sv_decode(hbig)) v(id,geom),
     LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.sv_afacode_encode_log(float,float,int,text)
@@ -409,14 +401,14 @@ CREATE or replace FUNCTION osmc.br_afacode_decode_log(
         'type','Feature',
         'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
         'id',v.id,
+        'jurisd_base_id',jurisd_base_id,
         'properties',jsonb_build_object(
             'area',area,
             'side',side,
-            'jurisd_base_id',jurisd_base_id,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id',canonical_prefix_with_separator || p_code,
-            -- 'truncated_code',truncated_code,
+            -- 'truncated',truncated,
             'jurisd_local_id',jurisd_local_id))))::jsonb
   FROM
   (
@@ -426,7 +418,7 @@ CREATE or replace FUNCTION osmc.br_afacode_decode_log(
       AND c.isolabel_ext = p_isolabel_ext
       AND cindex = substring(p_code,1,1)
   ) j,
-  LATERAL (SELECT afa.hBig_to_hex(j.hbig), afa.br_decode(j.hbig), ((j.hbig)::bit(6))::int - 12) v(id,geom,id_length),
+  LATERAL (SELECT afa.hBig_to_hex(j.hbig,true), afa.br_decode(j.hbig), ((j.hbig)::bit(6))::int - 12) v(id,geom,id_length),
   LATERAL (SELECT afa.br_cell_area(v.id_length), afa.br_cell_side(v.id_length)) l(area,side)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.br_afacode_decode_log(text,text)
@@ -441,14 +433,14 @@ CREATE or replace FUNCTION osmc.cm_afacode_decode_log(
         'type','Feature',
         'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
         'id',v.id,
+        'jurisd_base_id',jurisd_base_id,
         'properties',jsonb_build_object(
             'area',area,
             'side',side,
-            'jurisd_base_id',jurisd_base_id,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id', canonical_prefix_with_separator || p_code,
-            -- 'truncated_code',truncated_code,
+            -- 'truncated',truncated,
             'jurisd_local_id', jurisd_local_id))))::jsonb
   FROM
   (
@@ -458,7 +450,7 @@ CREATE or replace FUNCTION osmc.cm_afacode_decode_log(
       AND c.isolabel_ext = p_isolabel_ext
       AND cindex = substring(p_code,1,1)
   ) j,
-  LATERAL (SELECT afa.hBig_to_hex(j.hbig), afa.cm_decode(j.hbig), ((j.hbig)::bit(6))::int - 12) v(id,geom,id_length),
+  LATERAL (SELECT afa.hBig_to_hex(j.hbig,true), afa.cm_decode(j.hbig), ((j.hbig)::bit(6))::int - 12) v(id,geom,id_length),
   LATERAL (SELECT afa.cm_cell_area(v.id_length), afa.cm_cell_side(v.id_length)) l(area,side)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.cm_afacode_decode_log(text,text)
@@ -473,14 +465,14 @@ CREATE or replace FUNCTION osmc.co_afacode_decode_log(
         'type','Feature',
         'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
         'id',v.id,
+        'jurisd_base_id',jurisd_base_id,
         'properties',jsonb_build_object(
             'area',area,
             'side',side,
-            'jurisd_base_id',jurisd_base_id,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id', canonical_prefix_with_separator || p_code,
-            -- 'truncated_code',truncated_code,
+            -- 'truncated',truncated,
             'jurisd_local_id', jurisd_local_id))))::jsonb
   FROM
   (
@@ -490,7 +482,7 @@ CREATE or replace FUNCTION osmc.co_afacode_decode_log(
       AND c.isolabel_ext = p_isolabel_ext
       AND cindex = substring(p_code,1,1)
   ) j,
-  LATERAL (SELECT afa.hBig_to_hex(j.hbig), afa.co_decode(j.hbig), ((j.hbig)::bit(6))::int - 12) v(id,geom,id_length),
+  LATERAL (SELECT afa.hBig_to_hex(j.hbig,true), afa.co_decode(j.hbig), ((j.hbig)::bit(6))::int - 12) v(id,geom,id_length),
   LATERAL (SELECT afa.co_cell_area(v.id_length), afa.co_cell_side(v.id_length)) l(area,side)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.co_afacode_decode_log(text,text)
@@ -505,14 +497,14 @@ CREATE or replace FUNCTION osmc.sv_afacode_decode_log(
         'type','Feature',
         'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
         'id',v.id,
+        'jurisd_base_id',jurisd_base_id,
         'properties',jsonb_build_object(
             'area',area,
             'side',side,
-            'jurisd_base_id',jurisd_base_id,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
             'logistic_id', canonical_prefix_with_separator || p_code,
-            -- 'truncated_code',truncated_code,
+            -- 'truncated',truncated,
             'jurisd_local_id', jurisd_local_id))))::jsonb
   FROM
   (
@@ -522,7 +514,7 @@ CREATE or replace FUNCTION osmc.sv_afacode_decode_log(
       AND c.isolabel_ext = p_isolabel_ext
       AND cindex = substring(p_code,1,1)
   ) j,
-  LATERAL (SELECT afa.hBig_to_hex(j.hbig), afa.sv_decode(j.hbig), ((j.hbig)::bit(6))::int - 12) v(id,geom,id_length),
+  LATERAL (SELECT afa.hBig_to_hex(j.hbig,true), afa.sv_decode(j.hbig), ((j.hbig)::bit(6))::int - 12) v(id,geom,id_length),
   LATERAL (SELECT afa.sv_cell_area(v.id_length), afa.sv_cell_side(v.id_length)) l(area,side)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.sv_afacode_decode_log(text,text)
@@ -676,7 +668,7 @@ COMMENT ON FUNCTION api.jurisdiction_coverage(text)
 
 ------------------
 
-DROP MATERIALIZED VIEW IF EXISTS osmc.mvwjurisdiction_geojson_from_isolabel;
+-- DROP MATERIALIZED VIEW IF EXISTS osmc.mvwjurisdiction_geojson_from_isolabel;
 CREATE MATERIALIZED VIEW osmc.mvwjurisdiction_geojson_from_isolabel AS
   SELECT j.isolabel_ext,
         jsonb_build_object(

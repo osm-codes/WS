@@ -72,7 +72,7 @@ CREATE TABLE osmc.citycover_dust_raw (
   UNIQUE (dust_b16h,dust_city)
 );
 
-DROP VIEW IF EXISTS osmc.vw_citycover_dust_cell;
+-- DROP VIEW IF EXISTS osmc.vw_citycover_dust_cell;
 CREATE VIEW osmc.vw_citycover_dust_cell AS
   WITH dust2 AS
   (
@@ -185,9 +185,9 @@ final AS
 )
 SELECT f.cbits, f.isolabel_ext, f.cindex, f.status, f.is_country, f.is_contained, f.is_overlay, f.kx_prefix,
        xx.abbreviations AS abbreviations,
-       CASE WHEN j.jurisd_base_id = 170 THEN x.abbrev || '~' || cindex ELSE f.isolabel_ext || '~' || cindex END AS canonical_prefix_with_cindex,
-       CASE WHEN j.jurisd_base_id = 170 THEN x.abbrev || '~'           ELSE f.isolabel_ext || '~'           END AS canonical_prefix_with_separator,
-       CASE WHEN j.jurisd_base_id = 170 THEN x.abbrev                  ELSE f.isolabel_ext                  END AS canonical_prefix,
+       x.abbrev || '~' || cindex AS canonical_prefix_with_cindex,
+       x.abbrev || '~'           AS canonical_prefix_with_separator,
+       x.abbrev                  AS canonical_prefix,
        j.jurisd_local_id, j.jurisd_base_id,
        f.geom, ST_Transform(f.geom,4326) AS geom_srid4326
 FROM final f
@@ -212,7 +212,7 @@ LEFT JOIN
       GROUP BY abbrev
       HAVING count(*) = 1
   )
-  AND abbrev NOT LIKE '%;%'
+  AND abbrev NOT LIKE '%;%' AND default_abbrev IS FALSE
   AND (CASE WHEN isolabel_ext like 'CO%' THEN default_abbrev is false ELSE TRUE END)
   GROUP BY isolabel_ext
 ) xx

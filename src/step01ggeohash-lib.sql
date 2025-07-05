@@ -185,9 +185,12 @@ final AS
 )
 SELECT f.cbits, f.isolabel_ext, f.cindex, f.status, f.is_country, f.is_contained, f.is_overlay, f.kx_prefix,
        xx.abbreviations AS abbreviations,
-       x.abbrev || '~' || cindex AS canonical_prefix_with_cindex,
-       x.abbrev || '~'           AS canonical_prefix_with_separator,
-       x.abbrev                  AS canonical_prefix,
+       -- x.abbrev || '~' || cindex AS canonical_prefix_with_cindex,
+       -- x.abbrev || '~'           AS canonical_prefix_with_separator,
+       -- x.abbrev                  AS canonical_prefix,
+       CASE WHEN x.abbrev IS NOT NULL THEN x.abbrev || '~' || cindex ELSE f.isolabel_ext || '~' || cindex END AS canonical_prefix_with_cindex,
+       CASE WHEN x.abbrev IS NOT NULL THEN x.abbrev || '~'           ELSE f.isolabel_ext || '~'           END AS canonical_prefix_with_separator,
+       CASE WHEN x.abbrev IS NOT NULL THEN x.abbrev                  ELSE f.isolabel_ext                  END AS canonical_prefix,
        j.jurisd_local_id, j.jurisd_base_id,
        f.geom, ST_Transform(f.geom,4326) AS geom_srid4326
 FROM final f
@@ -196,7 +199,7 @@ LEFT JOIN
   SELECT DISTINCT abbrev, isolabel_ext
   FROM optim.jurisdiction_abbrev_option
   WHERE default_abbrev IS TRUE
-) x
+) x(abbrev,isolabel_ext)
   ON x.isolabel_ext = f.isolabel_ext
 LEFT JOIN optim.jurisdiction j
   ON j.isolabel_ext = f.isolabel_ext

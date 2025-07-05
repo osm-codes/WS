@@ -309,11 +309,11 @@ server {
     }
 
     # Redireciona csv/json para o novo subdomínio
-    location ~ ^/_sql\.csv(/.*)?$ {
+    location ~ ^/_sql\.csv/(.*)?$ {
         return 301 https://api-csv.test.afa.codes/$1;
     }
 
-    location ~ ^/_sql(/.*)?$ {
+    location ~ ^/_sql/(.*)?$ {
         return 301 https://api.test.afa.codes/$1;
     }
 
@@ -327,11 +327,11 @@ server {
     }
 
     ## reduzido divipola/ibgegeocodigo 32
-    location ~* "^/(geo:)?(BR|CM|CO|UY|SV)((-[a-z0-9]{2,})(-[a-z0-9]{2,})?)((~|-)[a-z0-9\.]+)?$" {
+    location ~* "^/(geo:)?(BR|CM|CO|UY|SV)((-[a-z0-9\.]{2,})(-[a-z0-9\.]{2,})?)((~|-)[a-z0-9\.]+)?$" {
         rewrite "(?i)^.*$" /logistic/ break;
     }
 
-    location ~* "^/[a-z]{2}((-[a-z0-9]{3,}){1,2})((~|-)[a-z0-9\.]+)?$" {
+    location ~* "^/[a-z]{2}((-[a-z0-9\.]{3,}){1,2})((~|-)[a-z0-9\.]+)?$" {
         rewrite "(?i)^.*$" /logistic/ break;
     }
 
@@ -348,7 +348,7 @@ server {
         rewrite "(?i)^/.+" /scientific_full/ break;
     }
 
-    location ~* "^/geo:(ghs:|olc:)?\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?(/base16(h|h1c)?)?(/grid(2|4|8|16|32))?$" {
+    location ~* "^/geo:(ghs:|olc:)?\-?\d+\.?\d*,\-?\d+\.?\d*(;u=\d+\.?\d*)?(/base16h)?$" {
         rewrite "(?i)^.*$" /logistic/ break;
     }
 

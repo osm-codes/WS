@@ -755,7 +755,7 @@ CREATE or replace FUNCTION api.jurisdiction_buffer(
   WHERE isolabel_ext = (str_geocodeiso_decode(p_iso))[1]
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.jurisdiction_buffer(text)
-  IS 'Returns the jurisdiction geometry with a 50 meter buffer';
+  IS 'Returns the jurisdiction geometry with a 50 meter buffer.';
 
 ------------------
 -- api hbig:

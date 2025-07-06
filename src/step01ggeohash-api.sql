@@ -98,7 +98,7 @@ CREATE or replace FUNCTION api.afacode_encode(
   FROM osmc.str_geouri_decode(p_uri) t(u)
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.afacode_encode(text,text)
-  IS 'Wrapper for country-specific AFAcode encoders. Decodes a GeoURI string and dispatches to the corresponding national encoder based on ISO country code.';
+  IS 'Encodes a GeoURI into a scientific AFAcode. Jurisdictional context is required.';
 
 CREATE or replace FUNCTION osmc.br_afacode_decode(
    p_code text
@@ -199,7 +199,7 @@ CREATE or replace FUNCTION api.afacode_decode(
   FROM natcod.reduxseq_to_list(p_code) u(list)
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.afacode_decode(text,text)
-  IS 'Wrapper for country-specific AFAcode decoders. Converts an AFAcode or compressed list and delegates decoding to the appropriate national function based on ISO country code.';
+  IS 'Decodes a scientific AFAcode. Jurisdictional context is required.';
 
 CREATE or replace FUNCTION api.afacode_decode_with_prefix(
    p_code      text,
@@ -209,7 +209,7 @@ CREATE or replace FUNCTION api.afacode_decode_with_prefix(
   FROM regexp_split_to_array(p_code,p_separator) u
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.afacode_decode_with_prefix(text,text)
-  IS 'Parses and decodes a prefixed AFAcode. Splits the input code into ISO prefix and encoded string, then delegates to the standard AFAcode decoder.';
+  IS 'Decodes a prefixed scientific AFAcode.';
 -- EXPLAIN ANALYZE SELECT api.afacode_decode_with_prefix('BR+D1A');
 
 
@@ -333,7 +333,7 @@ CREATE or replace FUNCTION api.afacode_encode_log(
   FROM osmc.str_geouri_decode(p_uri) t(u)
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.afacode_encode_log(text,text)
-  IS 'Wrapper for country-specific Logistics AFAcode encoders. Includes logic for rounding and bounding grid levels per country.';
+  IS 'Encodes a GeoURI into a logistic AFAcode. Jurisdictional context is required.';
 
 CREATE or replace FUNCTION api.afacode_encode_log_no_context(
   p_uri  text
@@ -390,7 +390,7 @@ CREATE or replace FUNCTION api.afacode_encode_log_no_context(
   WHERE g.is_country IS FALSE
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.afacode_encode_log_no_context(text)
-  IS 'Encodes a GeoURI into a logistic AFAcode, without requiring prior jurisdictional context.';
+  IS 'Encodes a GeoURI into a logistic AFAcode. No jurisdictional context is required.';
 
 CREATE or replace FUNCTION osmc.br_afacode_decode_log(
    p_code          text,
@@ -535,7 +535,7 @@ CREATE or replace FUNCTION api.afacode_decode_log(
   LATERAL str_geocodeiso_decode(u[1]) l
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.afacode_decode_log(text)
-  IS 'Wrapper for country-specific Logistics AFAcode decoders.';
+  IS 'Decodes a logistic AFAcode.';
 -- EXPLAIN ANALYZE SELECT api.afacode_decode_log('CO-BOY-Tunja~44QZNW');
 
 ------------------
@@ -745,7 +745,7 @@ CREATE or replace FUNCTION api.jurisdiction_geojson(
   WHERE isolabel_ext = (str_geocodeiso_decode(p_iso))[1]
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.jurisdiction_geojson(text)
-  IS 'Returns jurisdiction coverage.';
+  IS 'Returns the jurisdiction geometry.';
 
 CREATE or replace FUNCTION api.jurisdiction_buffer(
    p_iso  text
@@ -755,7 +755,7 @@ CREATE or replace FUNCTION api.jurisdiction_buffer(
   WHERE isolabel_ext = (str_geocodeiso_decode(p_iso))[1]
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.jurisdiction_buffer(text)
-  IS 'Returns jurisdiction coverage.';
+  IS 'Returns the jurisdiction geometry with a 50 meter buffer';
 
 ------------------
 -- api hbig:

@@ -83,21 +83,54 @@ $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.sv_afacode_encode(float,float,int)
   IS 'Encodes lat/lon to AFAcode grid scientific for El Salvador.';
 
-CREATE or replace FUNCTION api.afacode_encode(
+CREATE OR REPLACE FUNCTION api.afacode_encode(
   p_uri  text,
   p_iso  text DEFAULT NULL
 ) RETURNS jsonb AS $wrap$
+  WITH
+  params AS (
+    SELECT
+      u[1]::float AS lat,
+      u[2]::float AS lon,
+      u[3]::float AS scale
+    FROM osmc.str_geouri_decode(p_uri) t(u)
+  ),
+  levels AS (
+    SELECT
+      lat, lon, scale,
+      CASE p_iso
+        WHEN 'BR' THEN COALESCE(afa.br_cell_nearst_level(scale), 40)
+        WHEN 'CM' THEN COALESCE(afa.cm_cell_nearst_level(scale), 36)
+        WHEN 'CO' THEN COALESCE(afa.co_cell_nearst_level(scale), 38)
+        WHEN 'SV' THEN COALESCE(afa.sv_cell_nearst_level(scale), 32)
+        ELSE NULL
+      END AS level
+    FROM params
+  ),
+  raw_result AS (
+    SELECT *,
+      CASE p_iso
+        WHEN 'BR' THEN osmc.br_afacode_encode(lat, lon, level)
+        WHEN 'CM' THEN osmc.cm_afacode_encode(lat, lon, level)
+        WHEN 'CO' THEN osmc.co_afacode_encode(lat, lon, level)
+        WHEN 'SV' THEN osmc.sv_afacode_encode(lat, lon, level)
+        ELSE NULL
+      END AS result
+    FROM levels
+  )
   SELECT
-    CASE p_iso
-      WHEN 'BR' THEN osmc.br_afacode_encode(u[1],u[2],COALESCE(afa.br_cell_nearst_level(u[3]),40))
-      WHEN 'CM' THEN osmc.cm_afacode_encode(u[1],u[2],COALESCE(afa.cm_cell_nearst_level(u[3]),36))
-      WHEN 'CO' THEN osmc.co_afacode_encode(u[1],u[2],COALESCE(afa.co_cell_nearst_level(u[3]),38))
-      WHEN 'SV' THEN osmc.sv_afacode_encode(u[1],u[2],COALESCE(afa.sv_cell_nearst_level(u[3]),32))
-      ELSE jsonb_build_object('error', 'Jurisdiction not supported.')
+    CASE
+      WHEN (result IS NULL)                                 THEN jsonb_build_object('error','Jurisdiction not supported.')
+      WHEN (result #> '{features,0}') IS NULL               THEN jsonb_build_object('error','No feature returned.')
+      WHEN (result #> '{features,0,geometry}') IS NULL
+           OR (result #>> '{features,0,geometry}') = 'null' THEN jsonb_build_object('error','Invalid geometry.')
+      WHEN (result #>> '{features,0,id}') IS NULL
+           OR (result #>> '{features,0,id}') = 'null'       THEN jsonb_build_object('error','Invalid ID.')
+      ELSE result
     END
-  FROM osmc.str_geouri_decode(p_uri) t(u)
+  FROM raw_result
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.afacode_encode(text,text)
+COMMENT ON FUNCTION api.afacode_encode(text, text)
   IS 'Encodes a GeoURI into a scientific AFAcode. Jurisdictional context is required.';
 
 CREATE or replace FUNCTION osmc.br_afacode_decode(
@@ -184,34 +217,43 @@ $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.sv_afacode_decode(text)
   IS 'Decodes a scientific AFAcode for El Salvador.';
 
-CREATE or replace FUNCTION api.afacode_decode(
+CREATE OR REPLACE FUNCTION api.afacode_decode(
   p_code text,
   p_iso  text DEFAULT NULL
 ) RETURNS jsonb AS $wrap$
+  WITH
+  input_validated AS (
+    SELECT
+      list,
+      --list IS NOT NULL AND array_length(list, 1) > 0 AS is_valid
+      TRUE AS is_valid
+    FROM natcod.reduxseq_to_list(p_code) u(list)
+  ),
+  decoded AS (
+    SELECT *,
+      CASE p_iso
+        WHEN 'BR' THEN osmc.br_afacode_decode(list)
+        WHEN 'CM' THEN osmc.cm_afacode_decode(list)
+        WHEN 'CO' THEN osmc.co_afacode_decode(list)
+        WHEN 'SV' THEN osmc.sv_afacode_decode(list)
+        ELSE NULL
+      END AS result
+    FROM input_validated
+  )
   SELECT
-    CASE p_iso
-      WHEN 'BR' THEN osmc.br_afacode_decode(list)
-      WHEN 'CM' THEN osmc.cm_afacode_decode(list)
-      WHEN 'CO' THEN osmc.co_afacode_decode(list)
-      WHEN 'SV' THEN osmc.sv_afacode_decode(list)
-      ELSE jsonb_build_object('error', 'Jurisdiction not supported.')
+    CASE
+      WHEN NOT is_valid                                   THEN jsonb_build_object('error','Invalid or empty AFAcode input.')
+      WHEN p_iso NOT IN ('BR', 'CM', 'CO', 'SV')          THEN jsonb_build_object('error','Jurisdiction not supported.')
+      WHEN (result #> '{features,0}') IS NULL             THEN jsonb_build_object('error','No feature returned.')
+      WHEN (result #> '{features,0,geometry}') IS NULL    THEN jsonb_build_object('error','Invalid geometry.')
+      WHEN (result #>> '{features,0,id}') IS NULL
+           OR (result #>> '{features,0,id}') = 'null'     THEN jsonb_build_object('error','Invalid ID.')
+      ELSE result
     END
-  FROM natcod.reduxseq_to_list(p_code) u(list)
+  FROM decoded
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.afacode_decode(text,text)
-  IS 'Decodes a scientific AFAcode. Jurisdictional context is required.';
-
-CREATE or replace FUNCTION api.afacode_decode_with_prefix(
-   p_code      text,
-   p_separator text DEFAULT '\+'
-) RETURNS jsonb AS $wrap$
-  SELECT api.afacode_decode(REPLACE(u[2],'.',''),u[1])
-  FROM regexp_split_to_array(p_code,p_separator) u
-$wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.afacode_decode_with_prefix(text,text)
-  IS 'Decodes a prefixed scientific AFAcode.';
--- EXPLAIN ANALYZE SELECT api.afacode_decode_with_prefix('BR+D1A');
-
+COMMENT ON FUNCTION api.afacode_decode(text, text)
+  IS 'Decodes a scientific AFAcode. Jurisdictional context is required. Returns GeoJSON or structured error.';
 
 -- logistics
 CREATE or replace FUNCTION osmc.br_afacode_encode_log(
@@ -318,19 +360,47 @@ $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.sv_afacode_encode_log(float,float,int,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for El Savador.';
 
-CREATE or replace FUNCTION api.afacode_encode_log(
+CREATE OR REPLACE FUNCTION api.afacode_encode_log(
   p_uri  text,
-  p_iso  text DEFAULT NULL
+  p_iso  text
 ) RETURNS jsonb AS $wrap$
+  WITH
+  parsed AS (
+    SELECT u[1]::float AS lat, u[2]::float AS lon, u[3] AS lvl
+    FROM osmc.str_geouri_decode(p_uri) t(u)
+  ),
+  resolved_level AS (
+    SELECT *,
+      CASE split_part(p_iso,'-',1)
+        WHEN 'BR' THEN COALESCE(ROUND((afa.br_cell_nearst_level(lvl)/5)*5)::int, 35)
+        WHEN 'CM' THEN COALESCE(ROUND((LEAST(afa.cm_cell_nearst_level(lvl),36)/5)*5 + 1)::int, 31)
+        WHEN 'CO' THEN COALESCE(ROUND((LEAST(afa.co_cell_nearst_level(lvl),38)/5)*5 + 3)::int, 33)
+        WHEN 'SV' THEN COALESCE(ROUND((LEAST(afa.sv_cell_nearst_level(lvl),32)/4)*4)::int, 28)
+        ELSE NULL
+      END AS level
+    FROM parsed
+  ),
+  encoded AS (
+    SELECT *,
+      CASE split_part(p_iso,'-',1)
+        WHEN 'BR' THEN osmc.br_afacode_encode_log(lat,lon,level,p_iso)
+        WHEN 'CM' THEN osmc.cm_afacode_encode_log(lat,lon,level,p_iso)
+        WHEN 'CO' THEN osmc.co_afacode_encode_log(lat,lon,level,p_iso)
+        WHEN 'SV' THEN osmc.sv_afacode_encode_log(lat,lon,level,p_iso)
+        ELSE NULL
+      END AS result
+    FROM resolved_level
+  )
   SELECT
-    CASE split_part(p_iso,'-',1)
-      WHEN 'BR' THEN osmc.br_afacode_encode_log(u[1],u[2],COALESCE(ROUND((      (afa.br_cell_nearst_level(u[3])    )/5)*5  )::int,35),p_iso)
-      WHEN 'CM' THEN osmc.cm_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.cm_cell_nearst_level(u[3])),36)/5)*5+1)::int,31),p_iso)
-      WHEN 'CO' THEN osmc.co_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.co_cell_nearst_level(u[3])),38)/5)*5+3)::int,33),p_iso)
-      WHEN 'SV' THEN osmc.sv_afacode_encode_log(u[1],u[2],COALESCE(ROUND((LEAST((afa.sv_cell_nearst_level(u[3])),32)/4)*4  )::int,28),p_iso)
-      ELSE jsonb_build_object('error', 'Jurisdiction not supported.')
+    CASE
+      WHEN split_part(p_iso,'-',1) NOT IN ('BR','CM','CO','SV') THEN jsonb_build_object('error','Jurisdiction not supported.')
+      WHEN (result #> '{features,0}') IS NULL                   THEN jsonb_build_object('error','No feature returned.')
+      WHEN (result #> '{features,0,geometry}') IS NULL
+           OR (result #>> '{features,0,geometry}') = 'null'     THEN jsonb_build_object('error','Invalid geometry.')
+      WHEN (result #>> '{features,0,id}') IS NULL               THEN jsonb_build_object('error','Invalid ID.')
+      ELSE result
     END
-  FROM osmc.str_geouri_decode(p_uri) t(u)
+  FROM encoded
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.afacode_encode_log(text,text)
   IS 'Encodes a GeoURI into a logistic AFAcode. Jurisdictional context is required.';
@@ -380,14 +450,29 @@ CREATE or replace FUNCTION api.afacode_encode_log_no_context(
           WHEN 'SV' THEN ST_Transform(rj.pt,5399)
         END AS pt
     FROM resolved_jurisdiction rj
+  ),
+  matched_coverage AS (
+    SELECT g.isolabel_ext
+    FROM osmc.mvwcoverage g
+    JOIN transformed_point e
+    ON e.pt && g.geom
+      AND g.isolabel_ext LIKE split_part(e.isolabel_ext,'-',1) || '%'
+      AND (is_contained IS TRUE OR ST_intersects(e.pt,g.geom))
+    WHERE g.is_country IS FALSE
+  ),
+  encoded AS (
+    SELECT api.afacode_encode_log(p_uri,mc.isolabel_ext) AS result
+    FROM matched_coverage mc
   )
-  SELECT api.afacode_encode_log(p_uri,g.isolabel_ext)
-  FROM osmc.mvwcoverage g
-  JOIN transformed_point e
-  ON e.pt && g.geom
-     AND g.isolabel_ext LIKE split_part(e.isolabel_ext,'-',1) || '%'
-     AND (is_contained IS TRUE OR ST_intersects(e.pt,g.geom))
-  WHERE g.is_country IS FALSE
+  SELECT
+    CASE
+      WHEN NOT EXISTS (SELECT 1 FROM decoded_point)         THEN jsonb_build_object('error','Invalid or unparsable URI.')
+      WHEN NOT EXISTS (SELECT 1 FROM resolved_jurisdiction) THEN jsonb_build_object('error','Jurisdiction not found for coordinates.')
+      WHEN NOT EXISTS (SELECT 1 FROM matched_coverage)      THEN jsonb_build_object('error','No jurisdiction coverage found for coordinates.')
+      WHEN (encoded.result #> '{features,0}') IS NULL       THEN jsonb_build_object('error','No feature returned from encoding.')
+      ELSE encoded.result
+    END
+  FROM encoded
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.afacode_encode_log_no_context(text)
   IS 'Encodes a GeoURI into a logistic AFAcode. No jurisdictional context is required.';
@@ -523,20 +608,45 @@ COMMENT ON FUNCTION osmc.sv_afacode_decode_log(text,text)
 CREATE or replace FUNCTION api.afacode_decode_log(
    p_code text
 ) RETURNS jsonb AS $wrap$
+  WITH
+  split_parts AS (
+    SELECT regexp_split_to_array(p_code, '~') AS u
+  ),
+  parts AS (
+    SELECT
+      u[1] AS geo_part,
+      u[2] AS code_part
+    FROM split_parts
+    WHERE array_length(u,1) = 2
+  ),
+  decoded_iso AS (
+    SELECT
+      str_geocodeiso_decode(geo_part) AS l,
+      code_part
+    FROM parts
+  ),
+  encoded AS (
+    SELECT *,
+      CASE l[2]
+        WHEN 'BR' THEN osmc.br_afacode_decode_log( upper(REPLACE(code_part,'.','')), l[1] )
+        WHEN 'CM' THEN osmc.cm_afacode_decode_log( upper(REPLACE(code_part,'.','')), l[1] )
+        WHEN 'CO' THEN osmc.co_afacode_decode_log( upper(REPLACE(code_part,'.','')), l[1] )
+        WHEN 'SV' THEN osmc.sv_afacode_decode_log( upper(REPLACE(code_part,'.','')), l[1] )
+        ELSE jsonb_build_object('error', 'Jurisdiction not supported.')
+      END AS result
+    FROM decoded_iso
+  )
   SELECT
-    CASE l[2]
-      WHEN 'BR' THEN osmc.br_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
-      WHEN 'CM' THEN osmc.cm_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
-      WHEN 'CO' THEN osmc.co_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
-      WHEN 'SV' THEN osmc.sv_afacode_decode_log( upper(REPLACE(u[2],'.','')), l[1] )
-      ELSE jsonb_build_object('error', 'Jurisdiction not supported.')
+    CASE
+      WHEN NOT EXISTS (SELECT 1 FROM split_parts) OR array_length((SELECT u FROM split_parts), 1) != 2 THEN jsonb_build_object('error','Invalid AFAcode format.')
+      WHEN (SELECT code_part FROM parts) IS NULL THEN jsonb_build_object('error','Missing code component after jurisdiction.')
+      WHEN l[2] NOT IN ('BR','CM','CO','SV') THEN jsonb_build_object('error','Jurisdiction not supported.')
+      ELSE result
     END
-  FROM regexp_split_to_array(p_code,'~') u,
-  LATERAL str_geocodeiso_decode(u[1]) l
+  FROM encoded
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.afacode_decode_log(text)
-  IS 'Decodes a logistic AFAcode.';
--- EXPLAIN ANALYZE SELECT api.afacode_decode_log('CO-BOY-Tunja~44QZNW');
+COMMENT ON FUNCTION api.afacode_encode_log(text,text)
+  IS 'Encodes a GeoURI into a logistic AFAcode. Jurisdictional context is required.';
 
 ------------------
 -- jurisdiction coverage

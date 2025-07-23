@@ -466,10 +466,10 @@ CREATE or replace FUNCTION api.afacode_encode_log_no_context(
   )
   SELECT
     CASE
-      WHEN NOT EXISTS (SELECT 1 FROM decoded_point)         THEN jsonb_build_object('error','Invalid or unparsable URI.')
-      WHEN NOT EXISTS (SELECT 1 FROM resolved_jurisdiction) THEN jsonb_build_object('error','Jurisdiction not found for coordinates.')
-      WHEN NOT EXISTS (SELECT 1 FROM matched_coverage)      THEN jsonb_build_object('error','No jurisdiction coverage found for coordinates.')
-      WHEN (encoded.result #> '{features,0}') IS NULL       THEN jsonb_build_object('error','No feature returned from encoding.')
+      WHEN NOT EXISTS (SELECT 1 FROM decoded_point)         THEN jsonb_build_object('error','Invalid GeoURI.')
+      WHEN NOT EXISTS (SELECT 1 FROM resolved_jurisdiction) THEN jsonb_build_object('error','Jurisdiction not found.')
+      WHEN NOT EXISTS (SELECT 1 FROM matched_coverage)      THEN jsonb_build_object('error','Jurisdiction coverage not found.')
+      WHEN (encoded.result #> '{features,0}') IS NULL       THEN jsonb_build_object('error','No feature returned.')
       ELSE encoded.result
     END
   FROM encoded

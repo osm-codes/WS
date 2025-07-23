@@ -120,12 +120,12 @@ CREATE OR REPLACE FUNCTION api.afacode_encode(
   )
   SELECT
     CASE
-      WHEN (result IS NULL)                                 THEN jsonb_build_object('error','Jurisdiction not supported.')
-      WHEN (result #> '{features,0}') IS NULL               THEN jsonb_build_object('error','No feature returned.')
+      WHEN (result IS NULL)                                 THEN jsonb_build_object('error','Jurisdiction not supported.','code',1)
+      WHEN (result #> '{features,0}') IS NULL               THEN jsonb_build_object('error','No feature returned.','code',2)
       WHEN (result #> '{features,0,geometry}') IS NULL
-           OR (result #>> '{features,0,geometry}') = 'null' THEN jsonb_build_object('error','Invalid geometry.')
+           OR (result #>> '{features,0,geometry}') = 'null' THEN jsonb_build_object('error','Invalid geometry.','code',3)
       WHEN (result #>> '{features,0,id}') IS NULL
-           OR (result #>> '{features,0,id}') = 'null'       THEN jsonb_build_object('error','Invalid ID.')
+           OR (result #>> '{features,0,id}') = 'null'       THEN jsonb_build_object('error','Invalid ID.','code',4)
       ELSE result
     END
   FROM raw_result
@@ -242,12 +242,12 @@ CREATE OR REPLACE FUNCTION api.afacode_decode(
   )
   SELECT
     CASE
-      WHEN NOT is_valid                                   THEN jsonb_build_object('error','Invalid or empty AFAcode input.')
-      WHEN p_iso NOT IN ('BR', 'CM', 'CO', 'SV')          THEN jsonb_build_object('error','Jurisdiction not supported.')
-      WHEN (result #> '{features,0}') IS NULL             THEN jsonb_build_object('error','No feature returned.')
-      WHEN (result #> '{features,0,geometry}') IS NULL    THEN jsonb_build_object('error','Invalid geometry.')
+      WHEN NOT is_valid                                   THEN jsonb_build_object('error','Invalid or empty AFAcode input.','code',1)
+      WHEN p_iso NOT IN ('BR', 'CM', 'CO', 'SV')          THEN jsonb_build_object('error','Jurisdiction not supported.','code',2)
+      WHEN (result #> '{features,0}') IS NULL             THEN jsonb_build_object('error','No feature returned.','code',3)
+      WHEN (result #> '{features,0,geometry}') IS NULL    THEN jsonb_build_object('error','Invalid geometry.','code',4)
       WHEN (result #>> '{features,0,id}') IS NULL
-           OR (result #>> '{features,0,id}') = 'null'     THEN jsonb_build_object('error','Invalid ID.')
+           OR (result #>> '{features,0,id}') = 'null'     THEN jsonb_build_object('error','Invalid ID.','code',5)
       ELSE result
     END
   FROM decoded
@@ -393,11 +393,11 @@ CREATE OR REPLACE FUNCTION api.afacode_encode_log(
   )
   SELECT
     CASE
-      WHEN split_part(p_iso,'-',1) NOT IN ('BR','CM','CO','SV') THEN jsonb_build_object('error','Jurisdiction not supported.')
-      WHEN (result #> '{features,0}') IS NULL                   THEN jsonb_build_object('error','No feature returned.')
+      WHEN split_part(p_iso,'-',1) NOT IN ('BR','CM','CO','SV') THEN jsonb_build_object('error','Jurisdiction not supported.','code',1)
+      WHEN (result #> '{features,0}') IS NULL                   THEN jsonb_build_object('error','No feature returned.','code',2)
       WHEN (result #> '{features,0,geometry}') IS NULL
-           OR (result #>> '{features,0,geometry}') = 'null'     THEN jsonb_build_object('error','Invalid geometry.')
-      WHEN (result #>> '{features,0,id}') IS NULL               THEN jsonb_build_object('error','Invalid ID.')
+           OR (result #>> '{features,0,geometry}') = 'null'     THEN jsonb_build_object('error','Invalid geometry.','code',3)
+      WHEN (result #>> '{features,0,id}') IS NULL               THEN jsonb_build_object('error','Invalid ID.','code',4)
       ELSE result
     END
   FROM encoded
@@ -466,10 +466,10 @@ CREATE or replace FUNCTION api.afacode_encode_log_no_context(
   )
   SELECT
     CASE
-      WHEN NOT EXISTS (SELECT 1 FROM decoded_point)         THEN jsonb_build_object('error','Invalid GeoURI.')
-      WHEN NOT EXISTS (SELECT 1 FROM resolved_jurisdiction) THEN jsonb_build_object('error','Jurisdiction not found.')
-      WHEN NOT EXISTS (SELECT 1 FROM matched_coverage)      THEN jsonb_build_object('error','Jurisdiction coverage not found.')
-      WHEN (encoded.result #> '{features,0}') IS NULL       THEN jsonb_build_object('error','No feature returned.')
+      WHEN NOT EXISTS (SELECT 1 FROM decoded_point)         THEN jsonb_build_object('error','Invalid GeoURI.','code',1)
+      WHEN NOT EXISTS (SELECT 1 FROM resolved_jurisdiction) THEN jsonb_build_object('error','Jurisdiction not found.','code',2)
+      WHEN NOT EXISTS (SELECT 1 FROM matched_coverage)      THEN jsonb_build_object('error','Jurisdiction coverage not found.','code',3)
+      WHEN (encoded.result #> '{features,0}') IS NULL       THEN jsonb_build_object('error','No feature returned.','code',4)
       ELSE encoded.result
     END
   FROM encoded
@@ -638,9 +638,9 @@ CREATE or replace FUNCTION api.afacode_decode_log(
   )
   SELECT
     CASE
-      WHEN NOT EXISTS (SELECT 1 FROM split_parts) OR array_length((SELECT u FROM split_parts), 1) != 2 THEN jsonb_build_object('error','Invalid AFAcode format.')
-      WHEN (SELECT code_part FROM parts) IS NULL THEN jsonb_build_object('error','Missing code component after jurisdiction.')
-      WHEN l[2] NOT IN ('BR','CM','CO','SV') THEN jsonb_build_object('error','Jurisdiction not supported.')
+      WHEN NOT EXISTS (SELECT 1 FROM split_parts) OR array_length((SELECT u FROM split_parts), 1) != 2 THEN jsonb_build_object('error','Invalid AFAcode format.','code',1)
+      WHEN (SELECT code_part FROM parts) IS NULL THEN jsonb_build_object('error','Missing code component after jurisdiction.','code',2)
+      WHEN l[2] NOT IN ('BR','CM','CO','SV') THEN jsonb_build_object('error','Jurisdiction not supported.','code',3)
       ELSE result
     END
   FROM encoded

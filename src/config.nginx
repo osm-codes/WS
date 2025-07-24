@@ -477,19 +477,19 @@ server {
 
     # encode olc|ghs
     location ~* "^/geo(?<type>olc|ghs):(?<coords>\-?\d+\.?\d*,\-?\d+\.?\d*)(?:;(?<unit>u=\d+\.?\d*))?$" {
-        rewrite "^" "/rpc/${type}_encode?uri=geo${type}:$coords$unit_suffix" break;
+        rewrite "^" "/rpc/${type}_encode?p_uri=geo${type}:$coords$unit_suffix" break;
         proxy_pass http://test_backend;
     }
 
     # decode ghs
     location ~* "^/geo:ghs:(?<code>[0123456789BCDEFGHJKMNPQRSTUVWXYZ]+)$" {
-        rewrite "^" "/rpc/ghs_decode?code=$code" break;
+        rewrite "^" "/rpc/ghs_decode?p_code=$code" break;
         proxy_pass http://test_backend;
     }
 
     # decode olc
     location ~* "^/geo:olc:(?<code>([23456789CFGHJMPQRVWX]+0*){1,8}\+([23456789CFGHJMPQRVWX]+)?)$" {
-        rewrite "^" "/rpc/olc_decode?code=$code" break;
+        rewrite "^" "/rpc/olc_decode?p_code=$code" break;
         proxy_pass http://test_backend;
     }
 } # \server

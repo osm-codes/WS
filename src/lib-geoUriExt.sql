@@ -882,7 +882,7 @@ CREATE or replace FUNCTION natcod.list_to_reduxseq(
     SELECT g.i, t2.*
     FROM ( -- podem ocorrer listas completas (ex. '2,G,H,Q'), e mais de uma simultaneamente: troca a lista completa por "."
       SELECT CASE WHEN '{0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f}'::text[] <@ i0 THEN '{.}'||array_subtract(i0,'{0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f}'::text[]) ELSE i0 END FROM (
-        SELECT CASE WHEN '{J,K,N,P,S,T,Z,Y}'::text[] <@ i0 THEN '{.}'||array_subtract(i0,'{J,K,N,P,S,T,Z,Y}'::text[]) ELSE i0 END FROM (
+        SELECT CASE WHEN '{J,K,N,P,S,T,Y,Z}'::text[] <@ i0 THEN '{.}'||array_subtract(i0,'{J,K,N,P,S,T,Y,Z}'::text[]) ELSE i0 END FROM (
           SELECT CASE WHEN '{H,M,R,V}'::text[] <@ i0 THEN '{.}'||array_subtract(i0,'{H,M,R,V}'::text[]) ELSE i0 END FROM (
             SELECT CASE WHEN '{G,Q}'::text[] <@ i0 THEN '{.}'||array_subtract(i0,'{G,Q}'::text[]) ELSE i0 END
             FROM ( SELECT natcod.b16hSet_normalize($1) ) t0i0(i0)

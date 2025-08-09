@@ -111,15 +111,16 @@ WITH raw_prefixes AS (
   SELECT *
   FROM
   (
-    SELECT isolabel_ext, status, unnest(string_to_array(cover, ' ')) AS prefix, FALSE AS is_overlay,
+    SELECT isolabel_ext, status, unnest(string_to_array(cover, ' ')) AS prefix, unnest(string_to_array(cover_order, ' ')) AS prefix_index, FALSE AS is_overlay,
            (CASE WHEN array_position(string_to_array(cover, ' '), 'NULL') = 1 THEN 0 ELSE 1 END) AS firts_null
     FROM osmc.citycover_raw
+    WHERE isolabel_ext like 'CM%'
   ) x
   WHERE prefix IS NOT NULL
 
   UNION ALL
 
-  SELECT  isolabel_ext, status, unnest(string_to_array(overlay, ' ')) AS prefix,  TRUE AS is_overlay,
+  SELECT  isolabel_ext, status, unnest(string_to_array(overlay, ' ')) AS prefix, unnest(string_to_array(overlay_order, ' ')) AS prefix_index,  TRUE AS is_overlay,
           (CASE WHEN array_position(string_to_array(cover, ' '), 'NULL') = 1 THEN 0 ELSE 1 END) AS firts_null
   FROM osmc.citycover_raw
 ),
@@ -160,7 +161,7 @@ datas AS (
         d.isolabel_ext,
           CASE country_code
           WHEN 'SV' THEN natcod.vbit_to_baseh(order_id::bit(4),16)
-          WHEN 'CM' THEN (SELECT index FROM testeCM.coverage_new_index zz WHERE lower(zz.kx_prefix) = lower(d.prefix) AND zz.isolabel_ext = d.isolabel_ext)
+          WHEN 'CM' THEN prefix_index
           ELSE natcod.vbit_to_strstd(order_id::bit(5),'32nvu')
           END AS cindex,
         status,

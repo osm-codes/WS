@@ -126,7 +126,7 @@ WITH raw_prefixes AS (
 ),
 prefix_hbig AS (
   SELECT
-    isolabel_ext, status,prefix, is_overlay,
+    isolabel_ext,status,prefix,prefix_index,is_overlay,
     split_part(isolabel_ext, '-', 1) AS country_code, firts_null,
     CASE split_part(isolabel_ext, '-', 1)
       WHEN 'BR' THEN afa.br_hex_to_hBig(prefix)
@@ -137,7 +137,7 @@ prefix_hbig AS (
   FROM raw_prefixes
 ),
 decoded_geom AS (
-  SELECT isolabel_ext, status,prefix, is_overlay, hBig, country_code,
+  SELECT isolabel_ext,status,prefix,prefix_index,is_overlay,hBig,country_code,
     (ROW_NUMBER() OVER (PARTITION BY isolabel_ext  ORDER BY is_overlay ASC, hBig ASC) - firts_null) AS order_id,
     CASE country_code
       WHEN 'BR' THEN afa.br_decode(hBig)

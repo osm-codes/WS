@@ -59,6 +59,8 @@ CREATE TABLE osmc.citycover_raw (
   base_intlevel int,
   cover text NOT NULL,
   overlay text,
+  cover_order text,
+  overlay_order text,
   UNIQUE (isolabel_ext)
 );
 
@@ -158,6 +160,7 @@ datas AS (
         d.isolabel_ext,
           CASE country_code
           WHEN 'SV' THEN natcod.vbit_to_baseh(order_id::bit(4),16)
+          WHEN 'CM' THEN (SELECT index FROM testeCM.coverage_new_index zz WHERE lower(zz.kx_prefix) = lower(d.prefix) AND zz.isolabel_ext = d.isolabel_ext)
           ELSE natcod.vbit_to_strstd(order_id::bit(5),'32nvu')
           END AS cindex,
         status,
@@ -349,7 +352,8 @@ BEGIN
           isolabel_ext,
           status,
           kx_prefix,
-          is_overlay
+          is_overlay,
+          cindex
         FROM osmc.mvwcoverage
         WHERE is_country IS FALSE
           AND isolabel_ext LIKE '%s%%'
@@ -357,8 +361,11 @@ BEGIN
       SELECT
         isolabel_ext,
         MIN(status) AS status,
+        NULL AS base_intlevel,
         STRING_AGG(kx_prefix, ' ') FILTER (WHERE is_overlay IS FALSE) AS cover,
-        STRING_AGG(kx_prefix, ' ') FILTER (WHERE is_overlay IS TRUE) AS overlay
+        STRING_AGG(kx_prefix, ' ') FILTER (WHERE is_overlay IS TRUE) AS overlay,
+        STRING_AGG(cindex,    ' ') FILTER (WHERE is_overlay IS FALSE) AS cover_order,
+        STRING_AGG(cindex,    ' ') FILTER (WHERE is_overlay IS TRUE) AS overlay_order
       FROM base
       GROUP BY isolabel_ext
       ORDER BY isolabel_ext

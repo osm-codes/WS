@@ -158,7 +158,7 @@ datas AS (
   SELECT
         d.hBig AS cbits,
         d.isolabel_ext,
-          CASE country_code
+          CASE
           WHEN country_code = 'SV' THEN natcod.vbit_to_baseh(order_id::bit(4),16)
           WHEN country_code = 'CM' THEN prefix_index
           WHEN country_code = 'BR' AND d.isolabel_ext like 'BR-693%' THEN prefix_index

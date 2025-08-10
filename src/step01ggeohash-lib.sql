@@ -159,8 +159,9 @@ datas AS (
         d.hBig AS cbits,
         d.isolabel_ext,
           CASE country_code
-          WHEN 'SV' THEN natcod.vbit_to_baseh(order_id::bit(4),16)
-          WHEN 'CM' THEN prefix_index
+          WHEN country_code = 'SV' THEN natcod.vbit_to_baseh(order_id::bit(4),16)
+          WHEN country_code = 'CM' THEN prefix_index
+          WHEN country_code = 'BR' AND d.isolabel_ext like 'BR-693%' THEN prefix_index
           ELSE natcod.vbit_to_strstd(order_id::bit(5),'32nvu')
           END AS cindex,
         status,

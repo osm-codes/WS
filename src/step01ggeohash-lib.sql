@@ -114,7 +114,6 @@ WITH raw_prefixes AS (
     SELECT isolabel_ext, status, unnest(string_to_array(cover, ' ')) AS prefix, unnest(string_to_array(cover_order, ' ')) AS prefix_index, FALSE AS is_overlay,
            (CASE WHEN array_position(string_to_array(cover, ' '), 'NULL') = 1 THEN 0 ELSE 1 END) AS firts_null
     FROM osmc.citycover_raw
-    WHERE isolabel_ext like 'CM%'
   ) x
   WHERE prefix IS NOT NULL
 

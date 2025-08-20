@@ -162,7 +162,7 @@ datas AS (
           WHEN country_code = 'SV' THEN natcod.vbit_to_baseh(order_id::bit(4),16)
           WHEN country_code = 'CM' THEN prefix_index
           WHEN country_code = 'BR' AND d.isolabel_ext like 'BR-RR-693%' THEN prefix_index
-          ELSE natcod.vbit_to_strstd(order_id::bit(5),'32nvu')
+          ELSE afa.vbit_to_32nvu(order_id::bit(5))
           END AS cindex,
         status,
         (CASE WHEN d.isolabel_ext IN ('BR','CM','CO','SV') THEN TRUE ELSE FALSE END) AS is_country,
@@ -196,6 +196,7 @@ SELECT f.cbits, f.isolabel_ext, f.cindex, f.status, f.is_country, f.is_contained
        CASE WHEN x.abbrev IS NOT NULL THEN x.abbrev || '~'           ELSE f.isolabel_ext || '~'           END AS canonical_prefix_with_separator,
        CASE WHEN x.abbrev IS NOT NULL THEN x.abbrev                  ELSE f.isolabel_ext                  END AS canonical_prefix,
        j.jurisd_local_id, j.jurisd_base_id,
+       afa.hBig_to_vbit(f.cbits) AS cbits_in_vbit,
        f.geom, ST_Transform(f.geom,4326) AS geom_srid4326
 FROM final f
 LEFT JOIN

@@ -273,11 +273,11 @@ CREATE or replace FUNCTION osmc.br_afacode_encode_log(
             'side',l.side,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
-            'logistic_id', canonical_prefix_with_cindex || COALESCE(afa.vbit_to_32nvu(substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1)),''),
+            'logistic_id', canonical_prefix_with_cindex || COALESCE(afa.vbit_to_32nvu(vbit_without_prefix),''),
             'jurisd_local_id', jurisd_local_id))))::jsonb
     FROM (SELECT afa.br_encode(p_lat,p_lon,p_level), afa.br_cell_area(p_level), afa.br_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.br_decode(hbig)) v(id,geom),
-    LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
+    LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex, vbit_without_prefix FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex, vbit_without_prefix)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.br_afacode_encode_log(float,float,int,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for Brazil.';
@@ -299,11 +299,11 @@ CREATE or replace FUNCTION osmc.cm_afacode_encode_log(
             'side',l.side,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
-            'logistic_id',canonical_prefix_with_cindex || COALESCE(afa.vbit_to_32nvu(substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1)),''),
+            'logistic_id',canonical_prefix_with_cindex || COALESCE(afa.vbit_to_32nvu(vbit_without_prefix),''),
             'jurisd_local_id', jurisd_local_id))))::jsonb
     FROM (SELECT afa.cm_encode(p_lat,p_lon,p_level), afa.cm_cell_area(p_level), afa.cm_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.cm_decode(hbig)) v(id,geom),
-    LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
+    LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex, vbit_without_prefix FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex, vbit_without_prefix)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.cm_afacode_encode_log(float,float,int,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for Cameroon.';
@@ -325,11 +325,11 @@ CREATE or replace FUNCTION osmc.co_afacode_encode_log(
             'side',l.side,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
-            'logistic_id', canonical_prefix_with_cindex || COALESCE(afa.vbit_to_32nvu(substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1)),''),
+            'logistic_id', canonical_prefix_with_cindex || COALESCE(afa.vbit_to_32nvu(vbit_without_prefix),''),
             'jurisd_local_id', jurisd_local_id))))::jsonb
     FROM (SELECT afa.co_encode(p_lat,p_lon,p_level), afa.co_cell_area(p_level), afa.co_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.co_decode(hbig)) v(id,geom),
-    LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
+    LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex, vbit_without_prefix FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex, vbit_without_prefix)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.co_afacode_encode_log(float,float,int,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for Colombia.';
@@ -351,11 +351,11 @@ CREATE or replace FUNCTION osmc.sv_afacode_encode_log(
             'side',l.side,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
-            'logistic_id', canonical_prefix_with_cindex || COALESCE(natcod.vbit_to_baseh(substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1) ,'16'),''),
+            'logistic_id', canonical_prefix_with_cindex || COALESCE(natcod.vbit_to_baseh(vbit_without_prefix ,'16'),''),
             'jurisd_local_id', jurisd_local_id))))::jsonb
     FROM (SELECT afa.sv_encode(p_lat,p_lon,p_level), afa.sv_cell_area(p_level), afa.sv_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.sv_decode(hbig)) v(id,geom),
-    LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex)
+    LATERAL (SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex, vbit_without_prefix FROM osmc.encode_short_code(hbig,p_isolabel_ext)) d(cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex, vbit_without_prefix)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.sv_afacode_encode_log(float,float,int,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for El Savador.';

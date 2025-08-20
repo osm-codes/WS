@@ -273,7 +273,7 @@ CREATE or replace FUNCTION osmc.br_afacode_encode_log(
             'side',l.side,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
-            'logistic_id', canonical_prefix_with_cindex || COALESCE(natcod.vbit_to_strstd(substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1),'32nvu'),''),
+            'logistic_id', canonical_prefix_with_cindex || COALESCE(afa.vbit_to_32nvu(substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1)),''),
             'jurisd_local_id', jurisd_local_id))))::jsonb
     FROM (SELECT afa.br_encode(p_lat,p_lon,p_level), afa.br_cell_area(p_level), afa.br_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.br_decode(hbig)) v(id,geom),
@@ -299,7 +299,7 @@ CREATE or replace FUNCTION osmc.cm_afacode_encode_log(
             'side',l.side,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
-            'logistic_id',canonical_prefix_with_cindex || COALESCE(natcod.vbit_to_strstd(substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1),'32nvu'),''),
+            'logistic_id',canonical_prefix_with_cindex || COALESCE(afa.vbit_to_32nvu(substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1)),''),
             'jurisd_local_id', jurisd_local_id))))::jsonb
     FROM (SELECT afa.cm_encode(p_lat,p_lon,p_level), afa.cm_cell_area(p_level), afa.cm_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.cm_decode(hbig)) v(id,geom),
@@ -325,7 +325,7 @@ CREATE or replace FUNCTION osmc.co_afacode_encode_log(
             'side',l.side,
             'isolabel_ext',p_isolabel_ext,
             'isolabel_ext_abbrev',abbreviations,
-            'logistic_id', canonical_prefix_with_cindex || COALESCE(natcod.vbit_to_strstd(substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1),'32nvu'),''),
+            'logistic_id', canonical_prefix_with_cindex || COALESCE(afa.vbit_to_32nvu(substring(afa.hBig_to_vbit(hbig) FROM (cbits::bit(6))::int +1)),''),
             'jurisd_local_id', jurisd_local_id))))::jsonb
     FROM (SELECT afa.co_encode(p_lat,p_lon,p_level), afa.co_cell_area(p_level), afa.co_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.co_decode(hbig)) v(id,geom),

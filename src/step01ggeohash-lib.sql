@@ -289,6 +289,8 @@ CREATE or replace FUNCTION osmc.encode_short_code(
   LATERAL (SELECT (cbits::bit(6))::int AS prefixlen) l
   WHERE isolabel_ext = p_isolabel_ext
     AND afa.hBig_to_vbit(cbits) = substring(v.hbitstr FROM 1 FOR l.prefixlen)
+    order by is_overlay DESC
+    LIMIT 1
   ;
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.encode_short_code(bigint,text)

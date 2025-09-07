@@ -197,6 +197,7 @@ SELECT f.cbits, f.isolabel_ext, f.cindex, f.status, f.is_country, f.is_contained
        CASE WHEN x.abbrev IS NOT NULL THEN x.abbrev                  ELSE f.isolabel_ext                  END AS canonical_prefix,
        j.jurisd_local_id, j.jurisd_base_id,
        afa.hBig_to_vbit(f.cbits) AS cbits_in_vbit,
+       (f.cbits::bit(6))::int AS prefixlen,
        f.geom, ST_Transform(f.geom,4326) AS geom_srid4326
 FROM final f
 LEFT JOIN
@@ -284,12 +285,11 @@ CREATE or replace FUNCTION osmc.encode_short_code(
   p_hbig           bigint,
   p_isolabel_ext   text
 ) RETURNS TABLE(cindex text, cbits bigint, abbreviations text[], jurisd_local_id int, canonical_prefix_with_cindex text, vbit_without_prefix varbit) AS $f$
-  SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex, substring(v.hbitstr FROM (cbits::bit(6))::int +1) AS vbit_without_prefix
+  SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex, substring(v.hbitstr FROM (r.prefixlen +1) AS vbit_without_prefix
   FROM osmc.mvwcoverage r,
-  LATERAL (SELECT afa.hBig_to_vbit(p_hbig) AS hbitstr) v,
-  LATERAL (SELECT (cbits::bit(6))::int AS prefixlen) l
+  LATERAL (SELECT afa.hBig_to_vbit(p_hbig) AS hbitstr) v
   WHERE isolabel_ext = p_isolabel_ext
-    AND afa.hBig_to_vbit(cbits) = substring(v.hbitstr FROM 1 FOR l.prefixlen)
+    AND afa.hBig_to_vbit(cbits) = substring(v.hbitstr FROM 1 FOR r.prefixlen)
     order by is_overlay DESC
     LIMIT 1
   ;

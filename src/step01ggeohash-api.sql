@@ -593,7 +593,7 @@ CREATE or replace FUNCTION osmc.sv_afacode_decode_log(
             'jurisd_local_id', jurisd_local_id))))::jsonb
   FROM
   (
-    SELECT jurisd_local_id, jurisd_base_id, abbreviations, canonical_prefix_with_separator, afa.vbit_to_hBig( cbits_in_vbit || afa.hex_to_vbit(substring(lower(p_code),2),'16') ) AS hbig, cbits
+    SELECT jurisd_local_id, jurisd_base_id, abbreviations, canonical_prefix_with_separator, afa.vbit_to_hBig( cbits_in_vbit || afa.hex_to_vbit(substring(lower(p_code),2)) ) AS hbig, cbits
     FROM osmc.mvwcoverage c
     WHERE is_country IS FALSE
       AND c.isolabel_ext = p_isolabel_ext

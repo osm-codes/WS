@@ -285,7 +285,7 @@ CREATE or replace FUNCTION osmc.encode_short_code(
   p_hbig           bigint,
   p_isolabel_ext   text
 ) RETURNS TABLE(cindex text, cbits bigint, abbreviations text[], jurisd_local_id int, canonical_prefix_with_cindex text, vbit_without_prefix varbit) AS $f$
-  SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex, substring(v.hbitstr FROM (r.prefixlen +1) AS vbit_without_prefix
+  SELECT cindex, cbits, abbreviations, jurisd_local_id, canonical_prefix_with_cindex, substring(v.hbitstr FROM (r.prefixlen +1)) AS vbit_without_prefix
   FROM osmc.mvwcoverage r,
   LATERAL (SELECT afa.hBig_to_vbit(p_hbig) AS hbitstr) v
   WHERE isolabel_ext = p_isolabel_ext

@@ -668,7 +668,7 @@ CREATE or replace FUNCTION osmc.br_jurisdiction_coverage(
                 'is_overlay', is_overlay,
                 'level', id_length))))::jsonb
   FROM osmc.mvwcoverage c,
-  LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.br_decode(c.cbits), (c.prefixlen - 12 ) v(id,geom,id_length),
+  LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.br_decode(c.cbits), (c.prefixlen - 12 )) v(id,geom,id_length),
   LATERAL (SELECT afa.br_cell_area(v.id_length), afa.br_cell_side(v.id_length)) l(area,side)
   WHERE isolabel_ext = p_iso
 $f$ LANGUAGE SQL IMMUTABLE;
@@ -693,7 +693,7 @@ CREATE or replace FUNCTION osmc.cm_jurisdiction_coverage(
                 'is_overlay', is_overlay,
                 'level', id_length))))::jsonb
   FROM osmc.mvwcoverage c,
-  LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.cm_decode(c.cbits), (c.prefixlen - 12 ) v(id,geom,id_length),
+  LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.cm_decode(c.cbits), (c.prefixlen - 12 )) v(id,geom,id_length),
   LATERAL (SELECT afa.cm_cell_area(v.id_length), afa.cm_cell_side(v.id_length)) l(area,side)
   WHERE isolabel_ext = p_iso
 $f$ LANGUAGE SQL IMMUTABLE;
@@ -717,7 +717,7 @@ CREATE or replace FUNCTION osmc.co_jurisdiction_coverage(
                 'is_overlay', is_overlay,
                 'level', id_length))))::jsonb
   FROM osmc.mvwcoverage c,
-  LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.co_decode(c.cbits), (c.prefixlen - 12 ) v(id,geom,id_length),
+  LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.co_decode(c.cbits), (c.prefixlen - 12 )) v(id,geom,id_length),
   LATERAL (SELECT afa.co_cell_area(v.id_length), afa.co_cell_side(v.id_length)) l(area,side)
   WHERE isolabel_ext = p_iso
 $f$ LANGUAGE SQL IMMUTABLE;
@@ -741,7 +741,7 @@ CREATE or replace FUNCTION osmc.sv_jurisdiction_coverage(
                 'is_overlay', is_overlay,
                 'level', id_length))))::jsonb
   FROM osmc.mvwcoverage c,
-  LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.sv_decode(c.cbits), (c.prefixlen - 12 ) v(id,geom,id_length),
+  LATERAL (SELECT afa.hBig_to_hex(c.cbits), afa.sv_decode(c.cbits), (c.prefixlen - 12 )) v(id,geom,id_length),
   LATERAL (SELECT afa.sv_cell_area(v.id_length), afa.sv_cell_side(v.id_length)) l(area,side)
   WHERE isolabel_ext = p_iso
 $f$ LANGUAGE SQL IMMUTABLE;

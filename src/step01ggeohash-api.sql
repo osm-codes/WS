@@ -282,6 +282,27 @@ $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.br_afacode_encode_log(float,float,int,text)
   IS 'Encodes lat/lon to a Logistics AFAcode for Brazil.';
 
+CREATE or replace FUNCTION osmc.br_afacode_encode_log_abs(
+  p_lat   float,
+  p_lon   float,
+  p_level int
+) RETURNS jsonb AS $f$
+    SELECT
+      jsonb_build_object('type','FeatureCollection','features',jsonb_agg(jsonb_build_object(
+        'type','Feature',
+        'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
+        'id',v.id,
+        'jurisd_base_id',76,
+        'properties',jsonb_build_object(
+            'area',l.area,
+            'side',l.side,
+            'logistic_id', COALESCE(afa.vbit_to_b32nvu(substring(afa.hBig_to_vbit(hbig) FROM 9)),'') ))))::jsonb
+    FROM (SELECT afa.br_encode(p_lat,p_lon,p_level), afa.br_cell_area(p_level), afa.br_cell_side(p_level)) l(hbig,area,side),
+    LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.br_decode(hbig)) v(id,geom)
+$f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
+COMMENT ON FUNCTION osmc.br_afacode_encode_log_abs(float,float,int)
+  IS 'Encodes lat/lon to a Logistics AFAcode for Brazil.';
+
 CREATE or replace FUNCTION osmc.cm_afacode_encode_log(
   p_lat   float,
   p_lon   float,
@@ -405,6 +426,47 @@ $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION api.afacode_encode_log(text,text)
   IS 'Encodes a GeoURI into a logistic AFAcode. Jurisdictional context is required.';
 
+CREATE OR REPLACE FUNCTION api.afacode_encode_log_abs(
+  p_uri  text,
+  p_iso  text
+) RETURNS jsonb AS $wrap$
+  WITH
+  parsed AS (
+    SELECT u[1]::float AS lat, u[2]::float AS lon, u[3] AS lvl
+    FROM osmc.str_geouri_decode(p_uri) t(u)
+  ),
+  resolved_level AS (
+    SELECT *,
+      CASE split_part(p_iso,'-',1)
+        WHEN 'BR' THEN COALESCE(ROUND((afa.br_cell_nearst_level(lvl)/5)*5)::int+1, 36)
+        ELSE NULL
+      END AS level
+    FROM parsed
+  ),
+  encoded AS (
+    SELECT *,
+      CASE split_part(p_iso,'-',1)
+        WHEN 'BR' THEN osmc.br_afacode_encode_log_abs(lat,lon,level)
+        ELSE NULL
+      END AS result
+    FROM resolved_level
+  )
+  SELECT
+    CASE
+      WHEN split_part(p_iso,'-',1) NOT IN ('BR') THEN jsonb_build_object('error','Jurisdiction not supported.','code',1)
+      WHEN (result #> '{features,0}') IS NULL                   THEN jsonb_build_object('error','No feature returned.','code',2)
+      WHEN (result #> '{features,0,geometry}') IS NULL
+           OR (result #>> '{features,0,geometry}') = 'null'     THEN jsonb_build_object('error','Invalid geometry.','code',3)
+      WHEN (result #>> '{features,0,id}') IS NULL               THEN jsonb_build_object('error','Invalid ID.','code',4)
+      ELSE result
+    END
+  FROM encoded
+$wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
+COMMENT ON FUNCTION api.afacode_encode_log_abs(text,text)
+  IS 'Encodes a GeoURI into a logistic AFAcode. Jurisdictional context is required.';
+-- SELECT osmc.br_afacode_encode_log_abs(-33.323105,-50.840013,11);
+-- SELECT api.afacode_encode_log_abs('geo:-33.323105,-50.840013;u=300','BR');
+
 CREATE or replace FUNCTION api.afacode_encode_log_no_context(
   p_uri  text
 ) RETURNS jsonb AS $wrap$
@@ -507,6 +569,29 @@ CREATE or replace FUNCTION osmc.br_afacode_decode_log(
   LATERAL (SELECT afa.br_cell_area(v.id_length), afa.br_cell_side(v.id_length)) l(area,side)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 COMMENT ON FUNCTION osmc.br_afacode_decode_log(text,text)
+  IS 'Decodes a logistic AFAcode for Brazil. Requiring prior jurisdictional context.';
+
+CREATE or replace FUNCTION osmc.br_afacode_decode_log_abs(
+   p_code          text
+) RETURNS jsonb AS $f$
+  SELECT
+      jsonb_build_object('type','FeatureCollection','features',jsonb_agg(jsonb_build_object(
+        'type','Feature',
+        'geometry',ST_AsGeoJSON(ST_Transform_Resilient(v.geom,4326,0.005,0.00000005),8,0)::jsonb,
+        'id',v.id,
+        'jurisd_base_id',76,
+        'properties',jsonb_build_object(
+            'area',area,
+            'side',side,
+            'logistic_id','BR~'||p_code))))::jsonb
+  FROM
+  (
+    SELECT afa.vbit_to_hBig( b'00010100' || afa.b32nvu_to_vbit(p_code) ) AS hbig
+  ) j,
+  LATERAL (SELECT afa.hBig_to_hex(j.hbig,true), afa.br_decode(j.hbig), ((j.hbig)::bit(6))::int - 12) v(id,geom,id_length),
+  LATERAL (SELECT afa.br_cell_area(v.id_length), afa.br_cell_side(v.id_length)) l(area,side)
+$f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
+COMMENT ON FUNCTION osmc.br_afacode_decode_log_abs(text)
   IS 'Decodes a logistic AFAcode for Brazil. Requiring prior jurisdictional context.';
 
 CREATE or replace FUNCTION osmc.cm_afacode_decode_log(
@@ -645,8 +730,50 @@ CREATE or replace FUNCTION api.afacode_decode_log(
     END
   FROM encoded
 $wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
-COMMENT ON FUNCTION api.afacode_encode_log(text,text)
+COMMENT ON FUNCTION api.afacode_decode_log(text)
   IS 'Encodes a GeoURI into a logistic AFAcode. Jurisdictional context is required.';
+
+CREATE or replace FUNCTION api.afacode_decode_log_abs(
+   p_code text
+) RETURNS jsonb AS $wrap$
+  WITH
+  split_parts AS (
+    SELECT regexp_split_to_array(p_code, '~') AS u
+  ),
+  parts AS (
+    SELECT
+      u[1] AS geo_part,
+      u[2] AS code_part
+    FROM split_parts
+    WHERE array_length(u,1) = 2
+  ),
+  decoded_iso AS (
+    SELECT
+      str_geocodeiso_decode(geo_part) AS l,
+      code_part
+    FROM parts
+  ),
+  encoded AS (
+    SELECT *,
+      CASE l[2]
+        WHEN 'BR' THEN osmc.br_afacode_decode_log_abs( upper(REPLACE(code_part,'.','')) )
+        ELSE jsonb_build_object('error', 'Jurisdiction not supported.')
+      END AS result
+    FROM decoded_iso
+  )
+  SELECT
+    CASE
+      WHEN NOT EXISTS (SELECT 1 FROM split_parts) OR array_length((SELECT u FROM split_parts), 1) != 2 THEN jsonb_build_object('error','Invalid AFAcode format.','code',1)
+      WHEN (SELECT code_part FROM parts) IS NULL THEN jsonb_build_object('error','Missing code component after jurisdiction.','code',2)
+      WHEN l[2] NOT IN ('BR') THEN jsonb_build_object('error','Jurisdiction not supported.','code',3)
+      ELSE result
+    END
+  FROM encoded
+$wrap$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
+COMMENT ON FUNCTION api.afacode_decode_log_abs(text)
+  IS 'Encodes a GeoURI into a logistic AFAcode. Jurisdictional context is required.';
+-- SELECT osmc.br_afacode_decode_log_abs('1H');
+-- SELECT api.afacode_decode_log_abs('BR~1HBG');
 
 ------------------
 -- jurisdiction coverage
@@ -870,7 +997,7 @@ COMMENT ON FUNCTION api.jurisdiction_buffer(text)
 ------------------
 -- api hbig:
 
-CREATE or replace VIEW api.consolidated_data AS
+/*CREATE or replace VIEW api.consolidated_data AS
 SELECT afa_id, split_part(isolabel_ext,'-',1) AS iso1, split_part(isolabel_ext,'-',2) AS iso2, name AS city_name, via_type, via_name, house_number, postcode,
        license_data->>'family' AS license_family,
        ST_X(geom) AS latitude, ST_Y(geom) AS longitude,
@@ -896,4 +1023,4 @@ COMMENT ON COLUMN api.consolidated_data.afacodes_scientific IS 'AFAcodes scienti
 COMMENT ON COLUMN api.consolidated_data.geom_frontparcel    IS 'Flag. Indicates if geometry is in front of the parcel.';
 COMMENT ON COLUMN api.consolidated_data.score               IS '...';
 COMMENT ON VIEW api.consolidated_data
-  IS 'Returns consolidated data.';
+  IS 'Returns consolidated data.';*/

@@ -296,7 +296,7 @@ CREATE or replace FUNCTION osmc.br_afacode_encode_log_abs(
         'properties',jsonb_build_object(
             'area',l.area,
             'side',l.side,
-            'logistic_id', COALESCE(afa.vbit_to_b32nvu(substring(afa.hBig_to_vbit(hbig) FROM 9)),'') ))))::jsonb
+            'logistic_id', COALESCE('BR~'||afa.vbit_to_b32nvu(substring(afa.hBig_to_vbit(hbig) FROM 9)),'') ))))::jsonb
     FROM (SELECT afa.br_encode(p_lat,p_lon,p_level), afa.br_cell_area(p_level), afa.br_cell_side(p_level)) l(hbig,area,side),
     LATERAL (SELECT afa.hBig_to_hex(hbig,true), afa.br_decode(hbig)) v(id,geom)
 $f$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;

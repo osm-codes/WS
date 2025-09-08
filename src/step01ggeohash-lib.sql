@@ -162,7 +162,7 @@ datas AS (
           WHEN country_code = 'SV' THEN natcod.vbit_to_baseh(order_id::bit(4),16)
           WHEN country_code = 'CM' THEN prefix_index
           WHEN country_code = 'BR' AND d.isolabel_ext like 'BR-RR-693%' THEN prefix_index
-          ELSE afa.vbit_to_32nvu(order_id::bit(5))
+          ELSE afa.vbit_to_b32nvu(order_id::bit(5))
           END AS cindex,
         status,
         (CASE WHEN d.isolabel_ext IN ('BR','CM','CO','SV') THEN TRUE ELSE FALSE END) AS is_country,

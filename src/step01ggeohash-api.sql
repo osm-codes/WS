@@ -438,7 +438,7 @@ CREATE OR REPLACE FUNCTION api.afacode_encode_log_abs(
   resolved_level AS (
     SELECT *,
       CASE split_part(p_iso,'-',1)
-        WHEN 'BR' THEN COALESCE(ROUND((afa.br_cell_nearst_level(lvl)/5)*5)::int+1, 36)
+        WHEN 'BR' THEN COALESCE(ROUND((LEAST(afa.br_cell_nearst_level(lvl),36)/5)*5)::int+1, 36)
         ELSE NULL
       END AS level
     FROM parsed
